@@ -1,4 +1,4 @@
-# immunoepi-enterics
+# enterics-immuno-epi
 Insights into the complex immuno-epidemiology of enteric pathogens
 
 
