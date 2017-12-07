@@ -1,0 +1,443 @@
+
+R version 3.4.1 (2017-06-30) -- "Single Candle"
+Copyright (C) 2017 The R Foundation for Statistical Computing
+Platform: x86_64-apple-darwin15.6.0 (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+[Previously saved workspace restored]
+
+> #-----------------------------
+> # asembo-ab-agecurves-means.R
+> #
+> # Estimate age-dependent antibody
+> # curves for log10 antibody levels
+> #-----------------------------
+> 
+> #-----------------------------
+> # preamble
+> #-----------------------------
+> library(tidyverse)
+Loading tidyverse: ggplot2
+Loading tidyverse: tibble
+Loading tidyverse: tidyr
+Loading tidyverse: readr
+Loading tidyverse: purrr
+Loading tidyverse: dplyr
+Conflicts with tidy packages ---------------------------------------------------
+filter(): dplyr, stats
+lag():    dplyr, stats
+> 
+> # set up for parallel computing
+> # configure for a laptop (use only 3 cores)
+> library(foreach)
+
+Attaching package: ‘foreach’
+
+The following objects are masked from ‘package:purrr’:
+
+    accumulate, when
+
+> library(doParallel)
+Loading required package: iterators
+Loading required package: parallel
+Warning message:
+package ‘doParallel’ was built under R version 3.4.2 
+> registerDoParallel(cores=3)
+> 
+> 
+> 
+> #-----------------------------
+> # load the data
+> #-----------------------------
+> 
+> d <- readRDS("~/dropbox/asembo/data/final/asembo_sero.rds")
+> 
+> d <- d %>%
++   ungroup() %>%
++   mutate(childid=factor(childid))
+> 
+> # filter out 6 measurements with no age for now
+> d <- d %>%
++   filter(!is.na(age))
+> 
+> 
+> mbavars <- c("vsp3","vsp5","cp17","cp23","leca","rotavirus","p18","p39","etec","cholera")
+> mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23",
++              "E. histolytica LecA","Rotavirus","Campylobacter p18","Campylobacter p39","ETEC toxin beta subunit","Cholera toxin beta subunit")
+> #-----------------------------
+> # reshape long and convert
+> # to log10 values
+> #-----------------------------
+> dl <- d %>%
++   select(childid,time,sex,age,tr,mbavars) %>%
++   gather(antigen,mfi,-childid,-time,-sex,-age,-tr)
+> 
+> # set negative and zero values to 1 before the log10 transform
+> dl <- dl %>%
++   mutate(mfi = ifelse(mfi<=0,1,mfi),
++          log10mfi = log10(mfi),
++          antigen=factor(antigen,levels=mbavars)
++   )
+>          
+> 
+> #-----------------------------
+> # group antigens by pathogen
+> # for plot aesthetics
+> # label antigens with fancier names
+> #-----------------------------
+> dl$pathogen <- NA
+> dl$pathogen[dl$antigen %in% c("vsp3","vsp5")] <- "Giardia"
+> dl$pathogen[dl$antigen %in% c("cp17","cp23")] <- "Cryptosporidium"
+> dl$pathogen[dl$antigen %in% c("leca")] <- "E. histolytica"
+> dl$pathogen[dl$antigen %in% c("rotavirus")] <- "Rotavirus"
+> dl$pathogen[dl$antigen %in% c("p18","p39")] <- "Campylobacter"
+> dl$pathogen[dl$antigen %in% c("etec")] <- "ETEC"
+> dl$pathogen[dl$antigen %in% c("cholera")] <- "V. cholerae"
+> dl <- dl %>%
++   mutate(pathogen = factor(pathogen,levels=c("Giardia","Cryptosporidium","E. histolytica","Rotavirus","Campylobacter","ETEC","V. cholerae")),
++          antigenf=factor(antigen,levels=mbavars,labels=mbalabs))
+> 
+> #-----------------------------
+> # estimate curves with 
+> # splines
+> #-----------------------------
+> 
+> 
+> #----------------------------------
+> # simulataneous CIs for GAMs
+> # estimated by resampling the 
+> # Baysian posterior estimates of
+> # the variance-covariance matrix
+> # assuming that it is multivariate normal
+> # much better coverage than pointwise
+> # see: http://www.fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/
+> #----------------------------------
+> 
+> gamCI <- function(m,newdata,nreps=10000) {
++   require(mgcv)
++   require(dplyr)
++   Vb <- vcov(m,unconditional = TRUE)
++   pred <- predict(m, newdata, se.fit = TRUE)
++   fit <- pred$fit
++   se.fit <- pred$se.fit
++   BUdiff <- MASS::mvrnorm(n=nreps, mu = rep(0, nrow(Vb)), Sigma = Vb)
++   Cg <- predict(m, newdata, type = "lpmatrix")
++   simDev <- Cg %*% t(BUdiff)
++   absDev <- abs(sweep(simDev, 1, se.fit, FUN = "/"))
++   masd <- apply(absDev, 2L, max)
++   crit <- quantile(masd, prob = 0.95, type = 8)
++   pred <- data.frame(newdata,fit=pred$fit,se.fit=pred$se.fit)
++   pred <- mutate(pred,
++                  uprP = fit + (2 * se.fit),
++                  lwrP = fit - (2 * se.fit),
++                  uprS = fit + (crit * se.fit),
++                  lwrS = fit - (crit * se.fit)
++   )
++   return(pred)
++ }
+> 
+> 
+> # fit cubic spline over age, separately for each antigen
+> library(mgcv)
+Loading required package: nlme
+
+Attaching package: ‘nlme’
+
+The following object is masked from ‘package:dplyr’:
+
+    collapse
+
+This is mgcv 1.8-20. For overview type 'help("mgcv-package")'.
+> gamfits <- foreach(ab=levels(dl$antigen),.combine=rbind) %dopar% {
++     pd <- filter(dl, antigen==ab)
++     gfit <- gam(log10mfi~s(age, bs="cr"),data=pd)
++     gsci <- gamCI(m=gfit,newdata=pd,nreps=1000)
++     gsci$antigen <- ab
++     return(gsci)
++   }
+>   
+> 
+> #-----------------------------
+> # estimate curves with 
+> # ensemble machine learning
+> # including a library with
+> # GLM, GAM, Loess, and 
+> # extreme gradient boosting
+> #-----------------------------
+> detach("package:mgcv", unload=TRUE)
+> library(tmleAb)
+Welcome to the tmleAb package
+Targeted maximum likelihood estimation for antibody measurements.
+(Version 0.3.3, release date 2017-08-10)
+
+Periodically check for the latest development version using 
+devtools::install_github('ben-arnold/tmleAb')  
+
+This software is based on work funded by the
+National Institute of Allergy and Infectious Diseases
+grant K01-AI119180
+
+
+> set.seed(12345)
+> slfits <-  foreach(ab=levels(dl$antigen),.combine=rbind) %dopar% {
++   pd <- filter(dl, antigen==ab)
++   slfit <- agecurveAb(Y=pd$log10mfi,
++                       Age=pd$age,
++                       id=pd$childid,
++                       SL.library = c("SL.glm","SL.gam","SL.loess","SL.xgboost"))
++   sld <- data.frame(age=slfit$Age,fit=slfit$pY)
++   sld <- sld %>% group_by(age) %>% filter(row_number()==1) %>% ungroup()
++   slres <- left_join(pd,sld,by=c("age"))
++   return(slres)
++ }
+Loading required package: SuperLearner
+Loading required package: SuperLearner
+Loading required package: SuperLearner
+Loading required package: nnls
+Loading required package: nnls
+Loading required package: nnls
+Super Learner
+Version: 2.0-22
+Package created on 2017-07-18
+
+Super Learner
+Super Learner
+Version: 2.0-22
+Version: 2.0-22
+Package created on 2017-07-18
+
+Package created on 2017-07-18
+
+Loading required package: gam
+Loading required package: gam
+Loading required package: splines
+Loading required package: gam
+Loading required package: splines
+Loading required package: splines
+Warning: namespace ‘mgcv’ is not available and has been replaced
+by .GlobalEnv when processing object ‘na.last’
+Warning: namespace ‘mgcv’ is not available and has been replaced
+by .GlobalEnv when processing object ‘na.last’
+Warning: namespace ‘mgcv’ is not available and has been replaced
+by .GlobalEnv when processing object ‘na.last’
+Warning: namespace ‘mgcv’ is not available and has been replaced
+by .GlobalEnv when processing object ‘na.last’
+Warning: namespace ‘mgcv’ is not available and has been replaced
+by .GlobalEnv when processing object ‘na.last’
+Warning: namespace ‘mgcv’ is not available and has been replaced
+by .GlobalEnv when processing object ‘na.last’
+Warning: namespace ‘mgcv’ is not available and has been replaced
+by .GlobalEnv when processing object ‘na.last’
+Warning: namespace ‘mgcv’ is not available and has been replaced
+by .GlobalEnv when processing object ‘na.last’
+Warning: namespace ‘mgcv’ is not available and has been replaced
+by .GlobalEnv when processing object ‘na.last’
+Warning: namespace ‘mgcv’ is not available and has been replaced
+by .GlobalEnv when processing object ‘na.last’
+Warning: namespace ‘mgcv’ is not available and has been replaced
+by .GlobalEnv when processing object ‘na.last’
+Warning: namespace ‘mgcv’ is not available and has been replaced
+by .GlobalEnv when processing object ‘na.last’
+Warning: namespace ‘mgcv’ is not available and has been replaced
+by .GlobalEnv when processing object ‘na.last’
+Warning: namespace ‘mgcv’ is not available and has been replaced
+by .GlobalEnv when processing object ‘na.last’
+Warning: namespace ‘mgcv’ is not available and has been replaced
+by .GlobalEnv when processing object ‘na.last’
+Warning: namespace ‘mgcv’ is not available and has been replaced
+by .GlobalEnv when processing object ‘na.last’
+Loaded gam 1.14-4
+
+Warning: namespace ‘mgcv’ is not available and has been replaced
+by .GlobalEnv when processing object ‘na.last’
+Loaded gam 1.14-4
+
+Warning: namespace ‘mgcv’ is not available and has been replaced
+by .GlobalEnv when processing object ‘na.last’
+Loaded gam 1.14-4
+
+Loading required package: xgboost
+Loading required package: xgboost
+Loading required package: xgboost
+
+Attaching package: ‘xgboost’
+
+The following object is masked from ‘package:dplyr’:
+
+    slice
+
+
+Attaching package: ‘xgboost’
+
+The following object is masked from ‘package:dplyr’:
+
+    slice
+
+
+Attaching package: ‘xgboost’
+
+The following object is masked from ‘package:dplyr’:
+
+    slice
+
+
+Summary of SuperLearner cross validated risk and 
+weights for algorithms included in the library:
+
+                CV-Risk      Coef
+SL.glm_All     1.451772 0.3186385
+SL.gam.df3_All 1.448768 0.6813615
+SL.loess_All   1.450554 0.0000000
+SL.xgboost_All 1.510379 0.0000000
+
+Summary of SuperLearner cross validated risk and 
+weights for algorithms included in the library:
+
+                CV-Risk      Coef
+SL.glm_All     1.436036 0.3595357
+SL.gam.df2_All 1.435265 0.0000000
+SL.loess_All   1.435135 0.6404643
+SL.xgboost_All 1.484062 0.0000000
+
+Summary of SuperLearner cross validated risk and 
+weights for algorithms included in the library:
+
+                CV-Risk      Coef
+SL.glm_All     1.210421 0.1806238
+SL.gam.df4_All 1.205716 0.8193762
+SL.loess_All   1.208991 0.0000000
+SL.xgboost_All 1.239528 0.0000000
+
+Summary of SuperLearner cross validated risk and 
+weights for algorithms included in the library:
+
+                CV-Risk      Coef
+SL.glm_All     1.189589 0.2062681
+SL.gam.df6_All 1.174809 0.7937319
+SL.loess_All   1.182208 0.0000000
+SL.xgboost_All 1.207228 0.0000000
+
+Summary of SuperLearner cross validated risk and 
+weights for algorithms included in the library:
+
+                 CV-Risk Coef
+SL.glm_All     0.2355385    0
+SL.gam.df2_All 0.2346984    1
+SL.loess_All   0.2355395    0
+SL.xgboost_All 0.2428930    0
+
+Summary of SuperLearner cross validated risk and 
+weights for algorithms included in the library:
+
+                 CV-Risk      Coef
+SL.glm_All     0.9472086 0.0000000
+SL.gam.df3_All 0.9235618 0.8046415
+SL.loess_All   0.9254652 0.1953585
+SL.xgboost_All 0.9530113 0.0000000
+
+Summary of SuperLearner cross validated risk and 
+weights for algorithms included in the library:
+
+                 CV-Risk       Coef
+SL.glm_All     0.8837700 0.05765648
+SL.gam.df7_All 0.7827065 0.00000000
+SL.loess_All   0.7781135 0.94234352
+SL.xgboost_All 0.7968183 0.00000000
+
+Summary of SuperLearner cross validated risk and 
+weights for algorithms included in the library:
+
+                 CV-Risk     Coef
+SL.glm_All     0.5973540 0.000000
+SL.gam.df3_All 0.5209256 0.835687
+SL.loess_All   0.5230595 0.000000
+SL.xgboost_All 0.5299923 0.164313
+
+Summary of SuperLearner cross validated risk and 
+weights for algorithms included in the library:
+
+                 CV-Risk      Coef
+SL.glm_All     0.4677009 0.0520780
+SL.gam.df3_All 0.4461945 0.1830138
+SL.loess_All   0.4454921 0.3582804
+SL.xgboost_All 0.4484607 0.4066278
+
+Summary of SuperLearner cross validated risk and 
+weights for algorithms included in the library:
+
+                 CV-Risk      Coef
+SL.glm_All     0.6324067 0.1534347
+SL.gam.df5_All 0.6163140 0.0000000
+SL.loess_All   0.6140015 0.4813871
+SL.xgboost_All 0.6194491 0.3651783
+> 
+> 
+> #-----------------------------
+> # plot results
+> #-----------------------------
+> 
+> log10labs <- c( 
++   expression(10^0),
++   expression(10^1),
++   expression(10^2),
++   expression(10^3),
++   expression(10^4)
++ )
+> 
+> # bright color blind palette:  https://personal.sron.nl/~pault/ 
+> cblack <- "#000004FF"
+> cblue <- "#3366AA"
+> cteal <- "#11AA99"
+> cgreen <- "#66AA55"
+> cchartr <- "#CCCC55"
+> cmagent <- "#992288"
+> cred <- "#EE3333"
+> corange <- "#EEA722"
+> cyellow <- "#FFEE33"
+> cgrey <- "#777777"
+> 
+> pcols <- c(cred,corange,cchartr,cgreen,cteal,cblue,cmagent)
+> 
+> p <- ggplot(data=gamfits,aes(x=age,group=pathogen,color=pathogen,fill=pathogen)) +
++   # approximate simultaneous CI from spline fit
++   geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA) +
++   # actual measurements
++   geom_jitter(aes(y=log10mfi),width=0.2,height=0,color="black",alpha=0.4,size=0.3) +
++   # ensemble fit
++   geom_line(data=slfits,aes(x=age,y=fit),color=cgrey) +
++   # spline fit
++   geom_line(aes(y=fit)) +
++   # plot aesthetics
++   facet_wrap(~antigenf,nrow=5,ncol=2) +
++   scale_x_continuous(breaks=seq(4,18,by=2))+
++   scale_y_continuous(breaks=0:4,labels=log10labs)+
++   coord_cartesian(ylim=c(0,4.5))+
++   labs(x="Age in months",y="Luminex Response (MFI-bg)") +
++   scale_fill_manual(values=pcols) +
++   scale_color_manual(values=pcols) +
++   theme_minimal() +
++   theme(legend.position = "none")
+> 
+> p
+> 
+> ggsave("~/dropbox/asembo/results/figs/asembo-ab-agecurves-mean.pdf",plot=p,device="pdf",width=7,height=14)
+> 
+> 
+> 
+> 
+> proc.time()
+   user  system elapsed 
+ 23.081   1.068  17.209 
