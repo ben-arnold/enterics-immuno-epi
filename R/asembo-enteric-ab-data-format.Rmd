@@ -1,0 +1,122 @@
+---
+title: "Format the Asembo enteric antibody data"
+output: 
+  html_notebook:
+    theme: default
+    highlight: haddock
+    toc: true
+    toc_depth: 3
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+---
+
+# Summary
+
+This script loads the raw data and formats it for all of the analyses
+
+# Script preamble
+```{r preamble}
+#-----------------------------
+# preamble
+#-----------------------------
+rm(list=ls())
+library(tidyverse)
+
+
+```
+
+
+#Load and format the data
+
+```{r data format}
+#-----------------------------
+# load the data
+#-----------------------------
+
+d <- readRDS("~/dropbox/asembo/data/final/assembo_sero.rds")
+
+# exclude 6 measurements with missing age 
+d <- d %>%
+  filter(!is.na(age))
+
+# list the enteric antigens and make formatted labels for them
+mbavars <- c("vsp3","vsp5","cp17","cp23","leca","rotavirus","p18","p39","etec","cholera")
+
+mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23",
+             "E. histolytica LecA","Rotavirus","Campylobacter p18","Campylobacter p39","ETEC toxin beta subunit","Cholera toxin beta subunit")
+
+
+#-----------------------------
+# reshape long and convert
+# to log10 values
+#-----------------------------
+dl <- d %>%
+  select(childid,time,sex,age,tr,mbavars) %>%
+  gather(antigen,mfi,-childid,-time,-sex,-age,-tr)
+
+# set negative and zero values to 1 before the log10 transform
+dl <- dl %>%
+  mutate(mfi = ifelse(mfi<=0,1,mfi),
+         logmfi = log10(mfi),
+         antigen=factor(antigen,levels=mbavars)
+  )
+
+#-----------------------------
+# calculate the difference in 
+# MFI values within children  
+# longitudinally
+# to look at increases and decreases
+#-----------------------------
+dmfidiff <- dl %>%
+  select(childid,antigen,time,logmfi) %>%
+  spread(time,logmfi) %>%
+  filter(!is.na(A) & !is.na(B)) %>%
+  mutate(logmfidiff = B-A) %>%
+  select(childid,antigen,logmfidiff)
+dl <- left_join(dl,dmfidiff,by=c("childid","antigen"))
+
+#-----------------------------
+# calculate the difference in age (months)
+# for person-time of observation
+#-----------------------------
+dagediff <- dl %>%
+  select(childid,antigen,time,age) %>%
+  spread(time,age) %>%
+  filter(!is.na(A) & !is.na(B)) %>%
+  mutate(agediff = B-A) %>%
+  select(childid,antigen,agediff)
+dl <- left_join(dl,dagediff,by=c("childid","antigen"))
+
+#-----------------------------
+# group antigens by pathogen
+# for plot aesthetics
+# label antigens with fancier names
+#-----------------------------
+dl$pathogen <- NA
+dl$pathogen[dl$antigen %in% c("vsp3","vsp5")] <- "Giardia"
+dl$pathogen[dl$antigen %in% c("cp17","cp23")] <- "Cryptosporidium"
+dl$pathogen[dl$antigen %in% c("leca")] <- "E. histolytica"
+dl$pathogen[dl$antigen %in% c("rotavirus")] <- "Rotavirus"
+dl$pathogen[dl$antigen %in% c("p18","p39")] <- "Campylobacter"
+dl$pathogen[dl$antigen %in% c("etec")] <- "ETEC"
+dl$pathogen[dl$antigen %in% c("cholera")] <- "V. cholerae"
+dl <- dl %>%
+  mutate(pathogen = factor(pathogen,levels=c("Giardia","Cryptosporidium","E. histolytica","Rotavirus","Campylobacter","ETEC","V. cholerae")),
+         antigenf=factor(antigen,levels=mbavars,labels=mbalabs))
+     
+#-----------------------------
+# save a long version of the
+# dataset for all future 
+# analyses
+#-----------------------------
+saveRDS(dl,file="~/enterics-immuno-epi/data/assembo_analysis.rds")
+```
+# Session Info
+```{r session info}
+sessionInfo()
+```
+
+
+
+
