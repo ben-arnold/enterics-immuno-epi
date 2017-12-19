@@ -158,7 +158,7 @@ slfits <-  foreach(ab=levels(dl$antigenf),.combine=rbind) %dopar% {
 ```
 
 ##Plot age-dependent mean antibody curves
-```{r age-curve mean figure, fig.height=8, fig.width=4}
+```{r age-curve mean figure, fig.height=12, fig.width=6}
 
 log10labs <- c( 
   expression(10^0),
@@ -264,7 +264,8 @@ pslfits <-  foreach(ab=levels(dlp$antigenf),.combine=rbind) %dopar% {
   slfit <- agecurveAb(Y=pd$posmix,
                       Age=pd$age,
                       id=pd$childid,
-                      SL.library = c("SL.glm","SL.gam","SL.loess","SL.xgboost"))
+                      family="binomial",
+                      SL.library = c("SL.glm","SL.gam","SL.xgboost"))
   sld <- data.frame(age=slfit$Age,fit=slfit$pY)
   sld <- sld %>% group_by(age) %>% filter(row_number()==1) %>% ungroup()
   slres <- left_join(pd,sld,by=c("age"))
@@ -274,7 +275,7 @@ pslfits <-  foreach(ab=levels(dlp$antigenf),.combine=rbind) %dopar% {
 ```
 
 ##Plot age-dependent seroprevalence  curves
-```{r age-curve seroprevalence figure, fig.height=6, fig.width=4}
+```{r age-curve seroprevalence figure, fig.height=9, fig.width=6}
 
 
 # bright color-blind palette defined in an earlier code chunk
