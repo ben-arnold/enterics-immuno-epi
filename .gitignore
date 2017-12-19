@@ -5,6 +5,12 @@
 # Session Data files
 .RData
 
+# RDS files (to save space in git)
+.rds
+*
+# R notebook HTML output files (to save space in git)
+*.nb.html
+
 # Example code in package build process
 *-Ex.R
 
