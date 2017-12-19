@@ -1,0 +1,356 @@
+---
+title: "Asembo enteric antibody analysis of longitudinal change"
+output: 
+  html_notebook:
+    theme: default
+    highlight: haddock
+    toc: true
+    toc_depth: 3
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+---
+
+# Summary
+
+This script summarizes the change in antibody levels within individual children and also estimates the incidence proportion over a 6-7 month period of seroconversion and seroreversion.
+
+The Asembo study was longitudinal and followed children prospectively. We can estimate the average seroconversion rate among children who were at risk (seronegative) at enrollment and seroconverted during the study. We can also estimate the sero-reversion rate, albeit with very little precision since, with the exception of rotavirus, very few children were at risk (seropositive) at enrollment.
+
+# Script preamble
+```{r preamble}
+#-----------------------------
+# preamble
+#-----------------------------
+rm(list=ls())
+library(tidyverse)
+library(mixtools)
+
+# set up for parallel computing
+# configure for a laptop (use only 3 cores)
+library(foreach)
+library(doParallel)
+registerDoParallel(cores=3)
+
+# bright color blind palette:  https://personal.sron.nl/~pault/ 
+cblack <- "#000004FF"
+cblue <- "#3366AA"
+cteal <- "#11AA99"
+cgreen <- "#66AA55"
+cchartr <- "#CCCC55"
+cmagent <- "#992288"
+cred <- "#EE3333"
+corange <- "#EEA722"
+cyellow <- "#FFEE33"
+cgrey <- "#777777"
+
+```
+
+
+```{r load data}
+#-----------------------------
+# load the formatted data
+# created with 
+# asembo-enteric-ab-data-format.Rmd
+#-----------------------------
+dl <- readRDS("~/enterics-immuno-epi/data/assembo_analysis.rds")
+
+# list the enteric antigens and formatted labels for them
+mbavars <- c("vsp3","vsp5","cp17","cp23","leca","rotavirus","p18","p39","etec","cholera")
+
+mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23",
+             "E. histolytica LecA","Rotavirus","Campylobacter p18","Campylobacter p39","ETEC toxin beta subunit","Cholera toxin beta subunit")
+```
+
+# Identify incident changes
+Among children, identify those that changed status between enrollment and follow-up. Those who changed from negative to positive are seroconverters (`seroi` below), and those who changed from positive to negative are seroreverters (`seror` below).
+
+
+```{r long incidence}
+
+#-----------------------------
+# subset the data to antigens
+# with seropositivity estimates
+#-----------------------------
+dlp <- dl %>%
+  filter(!is.na(posmix)) %>%
+  mutate(antigenf=factor(antigenf))
+
+#-----------------------------
+# identify incident 
+# seroconversions and reversions
+#-----------------------------
+# spread the data to wide format to 
+# identify incident sero-conversions and sero-reversions
+# based on seropositives identified through the mixture model
+# subset to the individuals measured at both timepoints
+dlpw <- dlp %>%
+  select(childid,antigen,time,posmix) %>%
+  spread(time,posmix) %>% 
+  filter(!is.na(A) & !is.na(B)) %>%
+  mutate(seroi=ifelse(B==1 & A==0,1,0),
+         seror=ifelse(B==0 & A==1,1,0)) %>%
+  select(childid,antigen,seroi,seror)
+
+#  merge these new variables back to the main data
+dlp <- left_join(dlp,dlpw,by=c("childid","antigen"))
+
+
+```
+
+# Antibody MFI trajectories
+Longitudinal antibody trajectories of individual children for all antigens measured, colored by the change in antibody levels (increases and decreases)
+```{r change in antibody level figure, fig.height=12, fig.width=6}
+#-----------------------------
+# Plot individual antibody
+# trajectories, colored
+# by increases and decreases
+#-----------------------------
+
+# create an change category factor for plot aesthetics
+dl <- dl %>%
+  mutate(mficat=factor(ifelse(logmfidiff>0,"Increase","Decrease"),levels=c("Increase","Decrease")))
+
+# convert time to numeric (for plotting)
+dl <- dl %>%
+  mutate(svy=ifelse(time=="A",0,1))
+
+log10labs <- c( 
+  expression(10^0),
+  expression(10^1),
+  expression(10^2),
+  expression(10^3),
+  expression(10^4)
+)
+
+ppq <- ggplot(data=filter(dl,!is.na(mficat)),aes(x=svy,y=logmfi,group=factor(childid),color=mficat)) +
+  # geom_point(alpha=0.2) +
+  geom_line(alpha=0.2) +
+  # geom_hline(aes(yintercept=mixcut),linetype="dashed") +
+  
+  scale_x_continuous(limits=c(-0.25,1.25),breaks=c(0,1),labels=c("Enrollment","Follow-up"))+
+  scale_y_continuous(breaks=0:4,labels=log10labs) +
+  scale_color_manual(values=c(corange,cteal,"gray80"),
+                     guide=guide_legend(title="Change in MFI between measurements:",override.aes = list(alpha=1))
+                     ) +
+  facet_wrap(~antigenf,nrow=5,ncol=2) +
+  labs(x="Measurement",y="Luminex response (MFI-bg)") +
+  theme_minimal() +
+  theme(
+    panel.grid.minor.x = element_blank(),
+    panel.grid.minor.y = element_blank(),
+    panel.grid.major.y = element_blank(),
+    axis.ticks.y=element_line(color="gray80"),
+    legend.position = "top"
+    )
+
+ppq
+
+# save a PDF version
+ggsave("~/dropbox/asembo/results/figs/asembo-ab-long-mfi.pdf",plot=ppq,device="pdf",width=5,height=10)
+
+```
+
+Create the same figure of individual antibody trajectories between measurements, but limit it to antigens with seroincidence measures, and color the trajectories by seroconversion/reversion status. There is value in this because the MFI responses among children who actively seroconverted during the 6 month period help further reveal distributions of "negative" and "positive" responses.
+
+```{r change in antibody seroincidence figure, fig.height=9, fig.width=6}
+#-----------------------------
+# pull the incidence info
+# and just merge it back
+# to the full longidudinal data
+#-----------------------------
+
+dlp2 <- dlp %>% select(childid,time,antigen,seroi,seror)
+dl2 <- left_join(dl,dlp2,by=c("childid","time","antigen"))
+
+# create an incidence category factor for plot aesthetics
+dl2$icat <- factor(NA,levels=c("Seroconversion","Seroreversion","No change"))
+dl2$icat[dl2$seroi==1] <- "Seroconversion"
+dl2$icat[dl2$seror==1] <- "Seroreversion"
+dl2$icat[dl2$seroi==0 & dl2$seror==0] <- "No change"
+
+
+pp <- ggplot(data=filter(dl2,!is.na(icat)),aes(x=svy,y=logmfi,group=factor(childid),color=icat)) +
+  # geom_point(alpha=0.2) +
+  geom_line(alpha=0.2) +
+  # geom_hline(aes(yintercept=mixcut),linetype="dashed") +
+  
+  scale_x_continuous(limits=c(-0.25,1.25),breaks=c(0,1),labels=c("Enrollment","Follow-up"))+
+  scale_y_continuous(breaks=0:4,labels=log10labs) +
+  scale_color_manual(values=c(corange,cteal,"gray80"),
+                     guide=guide_legend(title="Sero-incidence:",override.aes = list(alpha=1))
+                     ) +
+  facet_wrap(~antigenf,nrow=5,ncol=2) +
+  labs(x="Measurement",y="Luminex response (MFI-bg)") +
+  theme_minimal() +
+  theme(
+    panel.grid.minor.x = element_blank(),
+    panel.grid.minor.y = element_blank(),
+    panel.grid.major.y = element_blank(),
+    axis.ticks.y=element_line(color="gray80"),
+    legend.position = "top" 
+    )
+
+pp
+
+# save a PDF version
+ggsave("~/dropbox/asembo/results/figs/asembo-ab-long-seroincidence.pdf",plot=pp,device="pdf",width=5,height=8)
+
+```
+
+# Antibody distributions conditional on seroconversion
+Taking advantage of the longitudinal measurements within individual children, examine the distributions of antibody response among those who seroconverted.
+
+```{r ab ditributions among sero-converters, fig.height=9, fig.width=6}
+dl2 <- dl2 %>% mutate(posmixf=ifelse(posmix==1,"Seropositive","Seronegative"))
+pdist <- ggplot(data=filter(dl2,seroi==1),aes(x=logmfi,group=posmixf,color=posmixf,fill=posmixf))+
+  facet_wrap(~antigenf,nrow=5,ncol=2,scales="free_y") +
+  geom_histogram(aes(y=..density..),color=NA,position="identity",bins=50,alpha=0.2) +
+  geom_density(alpha=0.4) +
+  geom_vline(aes(xintercept=mixcut))+
+  scale_x_continuous(limits = c(0,4.5),breaks = 0:4,labels=log10labs) +
+  scale_fill_manual(values=c(cteal,corange),guide=guide_legend(title="Status:")) +
+  scale_color_manual(values=c(cteal,corange),guide=FALSE) +
+  labs(x="Luminex Response (MFI-bg)") +
+  theme_minimal(base_size=14) +
+  theme(legend.position = "top")
+
+pdist
+
+
+```
+Examine the distributions of _change_ antibody response by whether they sero-converted, sero-reverted, or did not change sero-status
+
+```{r ab distribution of change, fig.height=9, fig.width=6}
+pdiff <- ggplot(data=filter(dl2,!is.na(icat)),aes(x=logmfidiff,group=icat,color=icat,fill=icat))+
+  facet_wrap(~antigenf,nrow=5,ncol=2,scales="free_y") +
+  geom_histogram(bins=50,alpha=0.4) +
+  scale_fill_manual(values=c(corange,cteal,cgrey),guide=guide_legend(title="Seroincidence:")) +
+  scale_color_manual(values=c(corange,cteal,cgrey),guide=FALSE) +
+  labs(y="Frequency",x="Change in log10 Luminex Response (MFI-bg),\nfollow-up minus enrollment") +
+  theme_minimal(base_size=14) +
+  theme(legend.position = "top")
+
+pdiff
+
+
+
+```
+
+# Seroincidence estimates
+Estimates of the incidence proportion over a 6-7 month risk period for sero-conversion and sero-reversion, by antigen
+
+```{r long incidence estimates}
+#-----------------------------
+# estimate sero-incidence
+# for conversion and reversion
+# using exact binomial CIs
+#-----------------------------
+#-----------------------------
+# filter to just 1 observation per child
+# (enrolment information)
+#-----------------------------
+dp <- dlp %>% filter(time=="A")
+
+#-----------------------------
+# drop 38 children that were not 
+# measured at both time points
+#-----------------------------
+table(dp$antigen,is.na(dp$seroi))
+dp <- dp %>% filter(!is.na(seroi))
+
+#-----------------------------
+# drop 6 children that were
+# measured longitudinally but
+# not at 6- or 7 months between
+# measurements to ensure a
+# reasonably consistent risk 
+# period
+#-----------------------------
+table(dp$agediff[dp$antigen=="vsp3"])
+dp <- dp %>% filter(agediff>=6 & agediff<=7)
+
+#-----------------------------
+# function to estimate exact binomial CIs for
+# incident sero-conversion and sero-reversion
+#-----------------------------
+exactprev <- function(x) {
+  # x : a binary indicator of the outcome (1/0)
+  tabx <- table(x)
+  if(length(tabx)<2) {
+    if(names(tabx)=="1") {
+      tabx <- c(0,tabx)
+    } else{
+      tabx <- c(tabx,0)
+    }
+  } 
+  estx <- binom.test(x=tabx[2],n=sum(tabx))
+  res <- c(estx$parameter,estx$statistic,estx$estimate,estx$conf.int)
+  names(res) <- c("N","n","mean","min95","max95")
+  return(res)
+}
+
+#-----------------------------
+# incident sero-conversions
+# at risk conditional on
+# being sero-negative at the
+# first measurement (dp$posmix==0)
+#-----------------------------
+est_seroi <- foreach(ab=levels(dp$antigenf),.combine=rbind) %do% {
+  res <- exactprev(dp$seroi[dp$antigenf==ab & dp$posmix==0])
+  res <- data.frame(antigenf=ab,N=res[1],n=res[2],mean=res[3],min95=res[4],max95=res[5])
+  res
+}
+#-----------------------------
+# incident sero-reversions
+# at risk conditional on
+# being sero-positive at the
+# first measurement (dp$posmix==1)
+#-----------------------------
+est_seror <- foreach(ab=levels(dp$antigenf),.combine=rbind) %do% {
+  res <- exactprev(dp$seror[dp$antigenf==ab & dp$posmix==1])
+  res <- data.frame(antigenf=ab,N=res[1],n=res[2],mean=res[3],min95=res[4],max95=res[5])
+  res
+}
+```
+Table of results
+```{r long incidence tables}
+knitr::kable(est_seroi,digits=3,
+             caption="Incidence proportion of seroconversion over a 6-month period",
+             col.names = c("Antigen","N at risk","n events","Incidence per 100","min95","max95"),
+             row.names = FALSE)
+
+
+knitr::kable(est_seror,digits=3,
+             caption="Incidence proportion of seroreversion over a 6-month period",
+             col.names = c("Antigen","N at risk","n events","Incidence per 100","min95","max95"),
+             row.names = FALSE)
+
+```
+
+Summary observations from the above figures and tables:
+
+Giardia VSP-3 and VSP-5: The two antigens provide very similar information. At this age there is a clear distinction between sero-negative and sero-positive groups, and this is born out in very similar seron-conversion trajectories across individual children. Seroreversion is rare.
+
+Cryptosporidium Cp17 and Cp23: There is a lot of heterogeneity and dynamisim in Cryptosporidium response in this population. Cp17 provides a  more consistent signal in terms of distinguishing between sero-negative and sero-positive states. The Cp23 antigen is extremely heterogeneous and there are not clearly distinct equilibria for low and high responses. 
+
+E. histolytica: overall, seroconversion is very rare, but the assay appears to clearly distinguish children who are exposed. 
+
+Rotavirus: Although there is some heterogeneity, there does appear to be two
+
+Overall, it is difficult to estimate sero-reversion rates because of the relatively small number of children who were sero-positive at enrollment. 
+
+# Save incidence estimates
+```{r save estimates}
+saveRDS(est_seroi,file="~/enterics-immuno-epi/output/asembo-enteric-ab-ests-seroconversion.rds")
+saveRDS(est_seror,file="~/enterics-immuno-epi/output/asembo-enteric-ab-ests-seroreversion.rds")
+```
+
+# Session Info
+```{r session info}
+sessionInfo()
+```
+
+
+
+
