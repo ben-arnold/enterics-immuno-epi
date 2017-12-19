@@ -6,8 +6,8 @@
 .RData
 
 # RDS files (to save space in git)
-.rds
-*
+*.rds
+
 # R notebook HTML output files (to save space in git)
 *.nb.html
 
