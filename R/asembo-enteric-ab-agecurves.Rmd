@@ -12,7 +12,7 @@ output:
 ---
 
 #Summary
-This script estimates age-dependent mean antibody curves using cubic splines (in a GAM model from the \code{mgcv} package) and using ensemble machine learning (using super learning from the \code{tmleAb} package). 
+This script estimates age-dependent mean antibody curves using cubic splines (in a GAM model from the `mgcv` package) and using ensemble machine learning (using super learning from the `tmleAb` package). 
 
 # Script preamble
 ```{r preamble}
@@ -46,7 +46,7 @@ cgrey <- "#777777"
 
 #Load the formatted data
 
-```{r data format}
+```{r load data}
 #-----------------------------
 # load the formatted data
 # with seropositivity indicators
@@ -158,6 +158,9 @@ slfits <-  foreach(ab=levels(dl$antigenf),.combine=rbind) %dopar% {
 ```
 
 ##Plot age-dependent mean antibody curves
+
+The spline fits are colored and the highly adaptive ensemble fits are grey. The approximate simultaneous confidence bands for the spline fit are shaded.
+
 ```{r age-curve mean figure, fig.height=12, fig.width=6}
 
 log10labs <- c( 
@@ -275,6 +278,9 @@ pslfits <-  foreach(ab=levels(dlp$antigenf),.combine=rbind) %dopar% {
 ```
 
 ##Plot age-dependent seroprevalence  curves
+
+The spline fits are colored and the highly adaptive ensemble fits are grey. The approximate simultaneous confidence bands for the spline fit are shaded.
+
 ```{r age-curve seroprevalence figure, fig.height=9, fig.width=6}
 
 
