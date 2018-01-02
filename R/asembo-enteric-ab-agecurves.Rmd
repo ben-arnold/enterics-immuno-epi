@@ -155,6 +155,7 @@ slfits <-  foreach(ab=levels(dl$antigenf),.combine=rbind) %dopar% {
   return(slres)
 }
 
+
 ```
 
 ##Plot age-dependent mean antibody curves
@@ -176,13 +177,13 @@ pcols <- c(cred,corange,cchartr,cgreen,cteal,cblue,cmagent)
 
 pcurve <- ggplot(data=gamfits,aes(x=age,group=pathogen,color=pathogen,fill=pathogen)) +
   # approximate simultaneous CI from spline fit
-  geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA) +
+  geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA,fill=cgrey) +
   # actual measurements
   geom_jitter(aes(y=logmfi),width=0.2,height=0,color="black",alpha=0.4,size=0.3) +
-  # ensemble fit
-  geom_line(data=slfits,aes(x=age,y=fit),color=cgrey) +
   # spline fit
-  geom_line(aes(y=fit)) +
+  geom_line(aes(y=fit),color=cgrey) +
+  # ensemble fit
+  geom_line(data=slfits,aes(x=age,y=fit)) +
   # plot aesthetics
   facet_wrap(~antigenf,nrow=5,ncol=2) +
   scale_x_continuous(breaks=seq(4,18,by=2))+
@@ -289,13 +290,13 @@ pcols <- c(cred,corange,cchartr,cgreen,cteal,cblue,cmagent)
 
 ppcurve <- ggplot(data=pgamfits,aes(x=age,group=pathogen,color=pathogen,fill=pathogen)) +
   # approximate simultaneous CI from spline fit
-  geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA) +
+  geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA,fill=cgrey) +
   # actual measurements
   geom_jitter(aes(y=posmix),width=0.2,height=0,color="black",alpha=0.4,size=0.3) +
-  # ensemble fit
-  geom_line(data=pslfits,aes(x=age,y=fit),color=cgrey) +
   # spline fit
-  geom_line(aes(y=fit)) +
+  geom_line(aes(y=fit),color=cgrey) +
+  # ensemble fit
+  geom_line(data=pslfits,aes(x=age,y=fit)) +
   # plot aesthetics
   facet_wrap(~antigenf,nrow=5,ncol=2) +
   scale_x_continuous(breaks=seq(4,18,by=2))+
