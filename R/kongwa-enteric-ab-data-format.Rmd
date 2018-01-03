@@ -1,0 +1,106 @@
+---
+title: "Format the Kongwa enteric antibody data"
+output: 
+  html_notebook:
+    theme: default
+    highlight: haddock
+    toc: true
+    toc_depth: 3
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+---
+
+# Summary
+
+This script loads the raw data and formats it for all of the analyses
+
+# Script preamble
+```{r preamble}
+#-----------------------------
+# preamble
+#-----------------------------
+rm(list=ls())
+library(tidyverse)
+
+
+```
+
+
+#Load and format the data
+
+```{r data format}
+#-----------------------------
+# load the data
+#-----------------------------
+
+d <- readRDS("~/dropbox/kongwa/data/final/kongwa-mba-kids.rds")
+
+# list the enteric antigens and make formatted labels for them
+mbavars <- c("vsp3","vsp5","cp17","cp23","p18","p39","etec","cholera","salb","sald","leca")
+
+mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","Campylobacter p18","Campylobacter p39","ETEC toxin beta subunit","Cholera toxin beta subunit","Salmonella LPS B","Salmonella LPS D","E. histolytica LecA")
+
+#-----------------------------
+# filter to just the relevant
+# variables
+#-----------------------------
+d2 <- d %>% 
+  select(svy,year,vilid,clusterid,hhid,seroid,age,mbavars)
+
+#-----------------------------
+# create a unique individual
+# observation id
+#-----------------------------
+d2 <- d2 %>%
+  arrange(svy,vilid,clusterid,hhid) %>%
+  mutate(id = row_number()) %>%
+  select(svy,year,vilid,clusterid,hhid,seroid,id,age,mbavars)
+
+#-----------------------------
+# reshape long and convert
+# to log10 values
+#-----------------------------
+dl <- d2 %>%
+  gather(antigen,mfi,-svy,-year,-vilid,-clusterid,-hhid,-seroid,-id,-age)
+
+# set negative and zero values to 1 before the log10 transform
+dl <- dl %>%
+  mutate(mfi = ifelse(mfi<=0,1,mfi),
+         logmfi = log10(mfi),
+         antigen=factor(antigen,levels=mbavars)
+  )
+
+#-----------------------------
+# group antigens by pathogen
+# for plot aesthetics
+# label antigens with fancier names
+#-----------------------------
+dl$pathogen <- NA
+dl$pathogen[dl$antigen %in% c("vsp3","vsp5")] <- "Giardia"
+dl$pathogen[dl$antigen %in% c("cp17","cp23")] <- "Cryptosporidium"
+dl$pathogen[dl$antigen %in% c("leca")] <- "E. histolytica"
+dl$pathogen[dl$antigen %in% c("p18","p39")] <- "Campylobacter"
+dl$pathogen[dl$antigen %in% c("etec")] <- "ETEC"
+dl$pathogen[dl$antigen %in% c("cholera")] <- "V. cholerae"
+dl$pathogen[dl$antigen %in% c("salb","sald")] <- "Salmonella"
+
+dl <- dl %>%
+  mutate(pathogen = factor(pathogen,levels=c("Giardia","Cryptosporidium","E. histolytica","Campylobacter","ETEC","V. cholerae","Salmonella")),
+         antigenf=factor(antigen,levels=mbavars,labels=mbalabs))
+     
+#-----------------------------
+# save a long version of the
+# dataset for all future 
+# analyses
+#-----------------------------
+saveRDS(dl,file="~/enterics-immuno-epi/data/kongwa_analysis.rds")
+```
+# Session Info
+```{r session info}
+sessionInfo()
+```
+
+
+
+
