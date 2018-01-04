@@ -110,7 +110,7 @@ dl <- dl %>%
 # dataset for all future 
 # analyses
 #-----------------------------
-saveRDS(dl,file="~/enterics-immuno-epi/data/assembo_analysis.rds")
+saveRDS(dl,file="~/enterics-immuno-epi/data/asembo_analysis.rds")
 ```
 # Session Info
 ```{r session info}

@@ -57,7 +57,7 @@ cgrey <- "#777777"
 # created with 
 # asembo-enteric-ab-data-format.Rmd
 #-----------------------------
-dl <- readRDS("~/enterics-immuno-epi/data/assembo_analysis.rds")
+dl <- readRDS("~/enterics-immuno-epi/data/asembo_analysis.rds")
 
 # list the enteric antigens and formatted labels for them
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","rotavirus","p18","p39","etec","cholera")
@@ -250,7 +250,7 @@ knitr::kable(dclass,digits=2,caption="Summary of seropositivity classifications 
 # that includes cutoff values
 # and seropositive indicators
 #-----------------------------
-saveRDS(dl,file="~/enterics-immuno-epi/data/assembo_analysis2.rds")
+saveRDS(dl,file="~/enterics-immuno-epi/data/asembo_analysis2.rds")
 
 ```
 
