@@ -1,0 +1,108 @@
+---
+title: "Format the Leogane, Haiti enteric antibody data"
+output: 
+  html_notebook:
+    theme: default
+    highlight: haddock
+    toc: true
+    toc_depth: 3
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+---
+
+# Summary
+
+This script loads the raw data and formats it for all of the analyses
+
+# Script preamble
+```{r preamble}
+#-----------------------------
+# preamble
+#-----------------------------
+rm(list=ls())
+library(tidyverse)
+library(foreign)
+
+
+```
+
+
+#Load and format the data
+
+```{r data format}
+#-----------------------------
+# load the data
+#-----------------------------
+
+d <- read.dta("~/dropbox/haiti2/data/final/haiti2-long.dta")
+
+# recode one incorrect sampleid
+d$sampleid[d$sampleid=="B7"] <- "3"
+
+# rename one antigen and a few vars
+d <- d %>% rename(vsp3=vsp3s,sdate=sampledate,age=agey)
+
+#----------------------------------
+# list the enteric antigens and 
+# make formatted labels for them
+#----------------------------------
+mbavars <- c("vsp3","vsp5","cp17","cp23","leca","etec","salb","sald","norogi","norogii")
+
+mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","ETEC toxin beta subunit","Salmonella LPS B","Salmonella LPS D","Norovirus GI", "Norovirus GII")
+
+#-----------------------------
+# filter to just the relevant
+# variables
+#-----------------------------
+d2 <- d %>% 
+  select(id,sampleid,sdate,age,mbavars)
+
+
+
+#-----------------------------
+# reshape long and convert
+# to log10 values
+#-----------------------------
+dl <- d2 %>%
+  gather(antigen,mfi,-id,-sampleid,-sdate,-age)
+
+# set negative and zero values to 1 before the log10 transform
+dl <- dl %>%
+  mutate(mfi = ifelse(mfi<=0,1,mfi),
+         logmfi = log10(mfi))
+
+
+#-----------------------------
+# group antigens by pathogen
+# for plot aesthetics
+# label antigens with fancier names
+#-----------------------------
+dl$pathogen <- NA
+dl$pathogen[dl$antigen %in% c("vsp3","vsp5")] <- "Giardia"
+dl$pathogen[dl$antigen %in% c("cp17","cp23")] <- "Cryptosporidium"
+dl$pathogen[dl$antigen %in% c("leca")] <- "E. histolytica"
+dl$pathogen[dl$antigen %in% c("etec")] <- "ETEC"
+dl$pathogen[dl$antigen %in% c("salb","sald")] <- "Salmonella"
+dl$pathogen[dl$antigen %in% c("norogi","norogii")] <- "Norovirus"
+
+
+dl <- dl %>%
+  mutate(pathogen = factor(pathogen,levels=c("Giardia","Cryptosporidium","E. histolytica","ETEC","Salmonella","Norovirus")),
+         antigenf=factor(antigen,levels=mbavars,labels=mbalabs))
+     
+#-----------------------------
+# save a long version of the
+# dataset for all future 
+# analyses
+#-----------------------------
+saveRDS(dl,file="~/enterics-immuno-epi/data/haiti_analysis.rds")
+```
+# Session Info
+```{r session info}
+sessionInfo()
+```
+
+
+
+
