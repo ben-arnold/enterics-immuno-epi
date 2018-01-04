@@ -70,7 +70,7 @@ mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptospori
 ```{r Ab distribution figure, fig.height=12, fig.width=6}
 
 # custom color blind color palette is in the preamble chunck
-pcols <- c(cred,corange,cchartr,cgreen,cteal,cblue,cmagent)
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
 
 # custom log labels
 log10labs <- c( 
@@ -213,6 +213,55 @@ pmix
 ggsave("~/enterics-immuno-epi/figs/haiti-ab-mixture-distributions.pdf",plot=pmix,device="pdf",width=7,height=14)
 
 ```
+
+## Figure of age-stratified antibody distributions, with cutoffs
+
+```{r age stratified distribution figure, fig.width=12,fig.height=6}
+dl <- dl %>%
+  mutate(agecat = cut(age,breaks=c(0,1,2,3,12),
+                      labels=c("0-1 years","1-2 years","2-3 years","3-11 years"))
+         )
+
+# custom color blind color palette is in the preamble chunck
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+
+# custom log labels
+log10labs <- c( 
+  expression(10^0),
+  expression(10^1),
+  expression(10^2),
+  expression(10^3),
+  expression(10^4)
+)
+
+p2 <- ggplot(data=dl,aes(x=logmfi,fill=pathogen)) +
+  facet_grid(agecat~antigenf,scales='free')+
+  geom_histogram(aes(y=..density..),bins=50,alpha=0.6,show.legend=FALSE) +
+  # geom_density(alpha=0.5,size=0,color="black",fill=NA)+
+  geom_vline(aes(xintercept = log10(roccut))) +
+  geom_vline(aes(xintercept = mixcut),linetype="dashed") +
+  # scale_y_continuous(expand=c(0,0),breaks=seq(0,40,by=10)) +
+  coord_cartesian(ylim=c(0, 1.5))+
+  scale_x_continuous(expand=c(0,0),limits=c(0,5),breaks=0:4,labels=log10labs) +
+  # scale_y_continuous(expand=c(0,0),breaks=c(0,0.5,1,1.5),labels=c("0","","1","")) +
+  scale_fill_manual(values=pcols,guide_legend(title="antigen"))+
+  labs(title="",x="Luminex Response (MFI-bg)",y="Density") +
+  theme_minimal()+
+  theme(
+    strip.text.x = element_text(size=9),
+    strip.text.y=element_text(size=12,angle=0),
+    axis.title.y=element_text(color="gray40"),
+    axis.text.y=element_text(color="gray60"),
+    # panel.grid.minor.y = element_blank(),
+    legend.position="none"
+  )
+
+p2
+
+ggsave("~/enterics-immuno-epi/figs/haiti-ab-distributions-byage.pdf",plot=p2,device="pdf",width=16,height=6)
+
+```
+
 
 #Comparison of seropositivity cutoffs
 
