@@ -29,7 +29,7 @@ cgrey <- "#777777"
 #-----------------------------------------
 # load the underlying dataset for viewing
 #-----------------------------------------
-d_kongwa <- readRDS("~/enterics-immuno-epi/data/kongwa_analysis2.rds")
+d_kongwa <- readRDS("data/kongwa_analysis2.rds")
 
 # drop antigens that were not measured in >1 year
 d_kongwa <- d_kongwa %>%
