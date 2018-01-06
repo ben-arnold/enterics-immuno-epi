@@ -54,13 +54,12 @@ cgrey <- "#777777"
 # asembo-enteric-ab-data-format.Rmd -->
 # asembo-enteric-ab-distributions.Rmd
 #-----------------------------
-dl <- readRDS("~/enterics-immuno-epi/data/assembo_analysis2.rds")
+dl <- readRDS("~/enterics-immuno-epi/data/asembo_analysis2.rds")
 
-# list the enteric antigens and formatted labels for them
-mbavars <- c("vsp3","vsp5","cp17","cp23","leca","rotavirus","p18","p39","etec","cholera")
+# list the enteric antigens and make formatted labels for them
+mbavars <- c("vsp3","vsp5","cp17","cp23","leca","rotavirus","salb","sald","p18","p39","etec","cholera")
 
-mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23",
-             "E. histolytica LecA","Rotavirus","Campylobacter p18","Campylobacter p39","ETEC toxin beta subunit","Cholera toxin beta subunit")
+mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Rotavirus","Salmonella LPS B","Salmonella LPS D","Campylobacter p18","Campylobacter p39","ETEC toxin beta subunit","Cholera toxin beta subunit")
 ```
 
 #Estimate age-dependent mean antibody levels
@@ -173,7 +172,7 @@ log10labs <- c(
 )
 
 # bright color-blind palette defined in an earlier code chunk
-pcols <- c(cred,corange,cchartr,cgreen,cteal,cblue,cmagent)
+pcols <- c(cred,corange,cchartr,cgreen,cteal,cblue,cmagent,cmagent)
 
 pcurve <- ggplot(data=gamfits,aes(x=age,group=pathogen,color=pathogen,fill=pathogen)) +
   # approximate simultaneous CI from spline fit
@@ -185,7 +184,7 @@ pcurve <- ggplot(data=gamfits,aes(x=age,group=pathogen,color=pathogen,fill=patho
   # ensemble fit
   geom_line(data=slfits,aes(x=age,y=fit)) +
   # plot aesthetics
-  facet_wrap(~antigenf,nrow=5,ncol=2) +
+  facet_wrap(~antigenf,nrow=6,ncol=2) +
   scale_x_continuous(breaks=seq(4,18,by=2))+
   scale_y_continuous(breaks=0:4,labels=log10labs)+
   coord_cartesian(ylim=c(0,4.5))+
@@ -198,7 +197,7 @@ pcurve <- ggplot(data=gamfits,aes(x=age,group=pathogen,color=pathogen,fill=patho
 pcurve
 
 # save a PDF version 
-ggsave("~/dropbox/asembo/results/figs/asembo-ab-agecurves-mean.pdf",plot=pcurve,device="pdf",width=7,height=14)
+ggsave("~/enterics-immuno-epi/figs/asembo-ab-agecurves-mean.pdf",plot=pcurve,device="pdf",width=7,height=14)
 
 ```
 
@@ -214,7 +213,8 @@ ggsave("~/dropbox/asembo/results/figs/asembo-ab-agecurves-mean.pdf",plot=pcurve,
 #-----------------------------
 
 dlp <- dl %>%
-  filter(!is.na(posmix)) %>%
+  mutate(seropos=ifelse(!is.na(posroc),posroc,posmix)) %>%
+  filter(!is.na(seropos)) %>%
   mutate(antigenf=factor(antigenf))
 
 
@@ -230,7 +230,7 @@ dlp <- dl %>%
 library(mgcv)
 pgamfits <- foreach(ab=levels(dlp$antigenf),.combine=rbind) %dopar% {
     pd <- filter(dlp, antigenf==ab)
-    gfit <- mgcv::gam(posmix~s(age, bs="cr"),data=pd,family="binomial")
+    gfit <- mgcv::gam(seropos~s(age, bs="cr"),data=pd,family="binomial")
     gsci <- gamCI(m=gfit,newdata=pd,nreps=1000)
     gsci$antigenf <- ab
     return(gsci)
@@ -265,7 +265,7 @@ detach("package:mgcv", unload=TRUE)
 set.seed(12345)
 pslfits <-  foreach(ab=levels(dlp$antigenf),.combine=rbind) %dopar% {
   pd <- filter(dlp, antigenf==ab)
-  slfit <- agecurveAb(Y=pd$posmix,
+  slfit <- agecurveAb(Y=pd$seropos,
                       Age=pd$age,
                       id=pd$childid,
                       family="binomial",
@@ -292,7 +292,7 @@ ppcurve <- ggplot(data=pgamfits,aes(x=age,group=pathogen,color=pathogen,fill=pat
   # approximate simultaneous CI from spline fit
   geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA,fill=cgrey) +
   # actual measurements
-  geom_jitter(aes(y=posmix),width=0.2,height=0,color="black",alpha=0.4,size=0.3) +
+  geom_jitter(aes(y=seropos),width=0.2,height=0,color="black",alpha=0.4,size=0.3) +
   # spline fit
   geom_line(aes(y=fit),color=cgrey) +
   # ensemble fit
@@ -311,7 +311,7 @@ ppcurve <- ggplot(data=pgamfits,aes(x=age,group=pathogen,color=pathogen,fill=pat
 ppcurve
 
 # save a PDF version
-ggsave("~/dropbox/asembo/results/figs/asembo-ab-agecurves-seroprev.pdf",plot=ppcurve,device="pdf",width=7,height=14)
+ggsave("~/enterics-immuno-epi/figs/asembo-ab-agecurves-seroprev.pdf",plot=ppcurve,device="pdf",width=7,height=14)
 
 ```
 

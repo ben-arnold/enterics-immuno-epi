@@ -59,11 +59,10 @@ cgrey <- "#777777"
 #-----------------------------
 dl <- readRDS("~/enterics-immuno-epi/data/asembo_analysis.rds")
 
-# list the enteric antigens and formatted labels for them
-mbavars <- c("vsp3","vsp5","cp17","cp23","leca","rotavirus","p18","p39","etec","cholera")
+# list the enteric antigens and make formatted labels for them
+mbavars <- c("vsp3","vsp5","cp17","cp23","leca","rotavirus","salb","sald","p18","p39","etec","cholera")
 
-mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23",
-             "E. histolytica LecA","Rotavirus","Campylobacter p18","Campylobacter p39","ETEC toxin beta subunit","Cholera toxin beta subunit")
+mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Rotavirus","Salmonella LPS B","Salmonella LPS D","Campylobacter p18","Campylobacter p39","ETEC toxin beta subunit","Cholera toxin beta subunit")
 ```
 
 #Distribution of antibody levels
@@ -71,7 +70,7 @@ mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptospori
 ```{r Ab distribution figure, fig.height=12, fig.width=6}
 
 # custom color blind color palette is in the preamble chunck
-pcols <- c(cred,corange,cchartr,cgreen,cteal,cblue,cmagent)
+pcols <- c(cred,corange,cchartr,cgreen,cteal,cblue,cmagent,cmagent)
 
 # custom log labels
 log10labs <- c( 
@@ -83,7 +82,7 @@ log10labs <- c(
 )
 
 p <- ggplot(data=dl,aes(x=logmfi,group=pathogen,color=pathogen,fill=pathogen)) +
-  facet_wrap(~antigenf,nrow=5,ncol=2,scales="free_y") +
+  facet_wrap(~antigenf,nrow=6,ncol=2,scales="free_y") +
   geom_histogram(aes(y=..density..),bins=50,alpha=0.7) +
   geom_density(aes(fill=NULL),color=cgrey) +
   scale_x_continuous(limits = c(0,4.5),breaks = 0:4,labels=log10labs) +
@@ -96,7 +95,7 @@ p <- ggplot(data=dl,aes(x=logmfi,group=pathogen,color=pathogen,fill=pathogen)) +
 p
 
 # save a PDF version
-ggsave("~/dropbox/asembo/results/figs/asembo-ab-distributions.pdf",plot=p,device="pdf",width=7,height=14)
+ggsave("~/enterics-immuno-epi/figs/asembo-ab-distributions.pdf",plot=p,device="pdf",width=7,height=14)
 
 ```
 
@@ -183,13 +182,13 @@ plotmixdens <- mixdens %>%
 # defined in a previous code chunk
 
 pmix <- ggplot(data=dl,aes(x=logmfi,group=pathogen,color=pathogen,fill=pathogen)) +
-  facet_wrap(~antigenf,nrow=5,ncol=2,scales="free_y") +
+  facet_wrap(~antigenf,nrow=6,ncol=2,scales="free_y") +
   # plot empirical distribution and smooth
   geom_histogram(aes(y=..density..),bins=50,alpha=0.7) +
   geom_density(aes(fill=NULL),color=cgrey) +
   # plot fitted mixture distributions
   geom_line(data=plotmixdens,aes(x=x,y=den1p),color=cblack) +
-  geom_line(data=plotmixdens,aes(x=x,y=den2p),color=cblack) +
+  # geom_line(data=plotmixdens,aes(x=x,y=den2p),color=cblack) +
   # add vertical lines for the cutoff values
   geom_vline(aes(xintercept=log10(roccut))) +
   geom_vline(aes(xintercept=mixcut),linetype=2) +
@@ -205,7 +204,7 @@ pmix <- ggplot(data=dl,aes(x=logmfi,group=pathogen,color=pathogen,fill=pathogen)
 pmix
 
 # save a PDF version
-ggsave("~/dropbox/asembo/results/figs/asembo-ab-mixture-distributions.pdf",plot=pmix,device="pdf",width=7,height=14)
+ggsave("~/enterics-immuno-epi/figs/asembo-ab-mixture-distributions.pdf",plot=pmix,device="pdf",width=7,height=14)
 
 ```
 
