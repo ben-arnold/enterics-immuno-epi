@@ -53,13 +53,12 @@ cgrey <- "#777777"
 # created with 
 # asembo-enteric-ab-data-format.Rmd
 #-----------------------------
-dl <- readRDS("~/enterics-immuno-epi/data/assembo_analysis.rds")
+dl <- readRDS("~/enterics-immuno-epi/data/asembo_analysis2.rds")
 
-# list the enteric antigens and formatted labels for them
-mbavars <- c("vsp3","vsp5","cp17","cp23","leca","rotavirus","p18","p39","etec","cholera")
+# list the enteric antigens and make formatted labels for them
+mbavars <- c("vsp3","vsp5","cp17","cp23","leca","rotavirus","salb","sald","p18","p39","etec","cholera")
 
-mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23",
-             "E. histolytica LecA","Rotavirus","Campylobacter p18","Campylobacter p39","ETEC toxin beta subunit","Cholera toxin beta subunit")
+mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Rotavirus","Salmonella LPS B","Salmonella LPS D","Campylobacter p18","Campylobacter p39","ETEC toxin beta subunit","Cholera toxin beta subunit")
 ```
 
 # Identify incident changes
@@ -73,7 +72,8 @@ Among children, identify those that changed status between enrollment and follow
 # with seropositivity estimates
 #-----------------------------
 dlp <- dl %>%
-  filter(!is.na(posmix)) %>%
+  mutate(seropos=ifelse(!is.na(posroc),posroc,posmix)) %>%
+  filter(!is.na(seropos)) %>%
   mutate(antigenf=factor(antigenf))
 
 #-----------------------------
@@ -85,8 +85,8 @@ dlp <- dl %>%
 # based on seropositives identified through the mixture model
 # subset to the individuals measured at both timepoints
 dlpw <- dlp %>%
-  select(childid,antigen,time,posmix) %>%
-  spread(time,posmix) %>% 
+  select(childid,antigen,time,seropos) %>%
+  spread(time,seropos) %>% 
   filter(!is.na(A) & !is.na(B)) %>%
   mutate(seroi=ifelse(B==1 & A==0,1,0),
          seror=ifelse(B==0 & A==1,1,0)) %>%
@@ -133,7 +133,7 @@ ppq <- ggplot(data=filter(dl,!is.na(mficat)),aes(x=svy,y=logmfi,group=factor(chi
   scale_color_manual(values=c(corange,cteal,"gray80"),
                      guide=guide_legend(title="Change in MFI between measurements:",override.aes = list(alpha=1))
                      ) +
-  facet_wrap(~antigenf,nrow=5,ncol=2) +
+  facet_wrap(~antigenf,nrow=6,ncol=2) +
   labs(x="Measurement",y="Luminex response (MFI-bg)") +
   theme_minimal() +
   theme(
@@ -147,7 +147,7 @@ ppq <- ggplot(data=filter(dl,!is.na(mficat)),aes(x=svy,y=logmfi,group=factor(chi
 ppq
 
 # save a PDF version
-ggsave("~/dropbox/asembo/results/figs/asembo-ab-long-mfi.pdf",plot=ppq,device="pdf",width=5,height=10)
+ggsave("~/enterics-immuno-epi/figs/asembo-ab-long-mfi.pdf",plot=ppq,device="pdf",width=5,height=12)
 
 ```
 
@@ -161,7 +161,9 @@ Create the same figure of individual antibody trajectories between measurements,
 #-----------------------------
 
 dlp2 <- dlp %>% select(childid,time,antigen,seroi,seror)
-dl2 <- left_join(dl,dlp2,by=c("childid","time","antigen"))
+dl2 <- left_join(dl,dlp2,by=c("childid","time","antigen")) %>%
+  mutate(seropos=ifelse(!is.na(posroc),posroc,posmix))
+
 
 # create an incidence category factor for plot aesthetics
 dl2$icat <- factor(NA,levels=c("Seroconversion","Seroreversion","No change"))
@@ -180,7 +182,7 @@ pp <- ggplot(data=filter(dl2,!is.na(icat)),aes(x=svy,y=logmfi,group=factor(child
   scale_color_manual(values=c(corange,cteal,"gray80"),
                      guide=guide_legend(title="Sero-incidence:",override.aes = list(alpha=1))
                      ) +
-  facet_wrap(~antigenf,nrow=5,ncol=2) +
+  facet_wrap(~antigenf,nrow=6,ncol=2) +
   labs(x="Measurement",y="Luminex response (MFI-bg)") +
   theme_minimal() +
   theme(
@@ -194,7 +196,7 @@ pp <- ggplot(data=filter(dl2,!is.na(icat)),aes(x=svy,y=logmfi,group=factor(child
 pp
 
 # save a PDF version
-ggsave("~/dropbox/asembo/results/figs/asembo-ab-long-seroincidence.pdf",plot=pp,device="pdf",width=5,height=8)
+ggsave("~/enterics-immuno-epi/figs/asembo-ab-long-seroincidence.pdf",plot=pp,device="pdf",width=5,height=8)
 
 ```
 
@@ -202,12 +204,15 @@ ggsave("~/dropbox/asembo/results/figs/asembo-ab-long-seroincidence.pdf",plot=pp,
 Taking advantage of the longitudinal measurements within individual children, examine the distributions of antibody response among those who seroconverted.
 
 ```{r ab ditributions among sero-converters, fig.height=9, fig.width=6}
-dl2 <- dl2 %>% mutate(posmixf=ifelse(posmix==1,"Seropositive","Seronegative"))
-pdist <- ggplot(data=filter(dl2,seroi==1),aes(x=logmfi,group=posmixf,color=posmixf,fill=posmixf))+
-  facet_wrap(~antigenf,nrow=5,ncol=2,scales="free_y") +
+dl2 <- dl2 %>% 
+  mutate(seroposf=ifelse(seropos==1,"Seropositive","Seronegative"),
+         poscut=ifelse(!is.na(posroc),log10(roccut),mixcut))
+
+pdist <- ggplot(data=filter(dl2,seroi==1),aes(x=logmfi,group=seroposf,color=seroposf,fill=seroposf))+
+  facet_wrap(~antigenf,nrow=6,ncol=2,scales="free_y") +
   geom_histogram(aes(y=..density..),color=NA,position="identity",bins=50,alpha=0.2) +
   geom_density(alpha=0.4) +
-  geom_vline(aes(xintercept=mixcut))+
+  geom_vline(aes(xintercept=poscut))+
   scale_x_continuous(limits = c(0,4.5),breaks = 0:4,labels=log10labs) +
   scale_fill_manual(values=c(cteal,corange),guide=guide_legend(title="Status:")) +
   scale_color_manual(values=c(cteal,corange),guide=FALSE) +
@@ -223,7 +228,7 @@ Examine the distributions of _change_ antibody response by whether they sero-con
 
 ```{r ab distribution of change, fig.height=9, fig.width=6}
 pdiff <- ggplot(data=filter(dl2,!is.na(icat)),aes(x=logmfidiff,group=icat,color=icat,fill=icat))+
-  facet_wrap(~antigenf,nrow=5,ncol=2,scales="free_y") +
+  facet_wrap(~antigenf,nrow=6,ncol=2,scales="free_y") +
   geom_histogram(bins=50,alpha=0.4) +
   scale_fill_manual(values=c(corange,cteal,cgrey),guide=guide_legend(title="Seroincidence:")) +
   scale_color_manual(values=c(corange,cteal,cgrey),guide=FALSE) +
@@ -294,10 +299,10 @@ exactprev <- function(x) {
 # incident sero-conversions
 # at risk conditional on
 # being sero-negative at the
-# first measurement (dp$posmix==0)
+# first measurement (dp$seropos==0)
 #-----------------------------
 est_seroi <- foreach(ab=levels(dp$antigenf),.combine=rbind) %do% {
-  res <- exactprev(dp$seroi[dp$antigenf==ab & dp$posmix==0])
+  res <- exactprev(dp$seroi[dp$antigenf==ab & dp$seropos==0])
   res <- data.frame(antigenf=ab,N=res[1],n=res[2],mean=res[3],min95=res[4],max95=res[5])
   res
 }
@@ -305,10 +310,10 @@ est_seroi <- foreach(ab=levels(dp$antigenf),.combine=rbind) %do% {
 # incident sero-reversions
 # at risk conditional on
 # being sero-positive at the
-# first measurement (dp$posmix==1)
+# first measurement (dp$seropos==1)
 #-----------------------------
 est_seror <- foreach(ab=levels(dp$antigenf),.combine=rbind) %do% {
-  res <- exactprev(dp$seror[dp$antigenf==ab & dp$posmix==1])
+  res <- exactprev(dp$seror[dp$antigenf==ab & dp$seropos==1])
   res <- data.frame(antigenf=ab,N=res[1],n=res[2],mean=res[3],min95=res[4],max95=res[5])
   res
 }
