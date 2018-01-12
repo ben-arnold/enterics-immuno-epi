@@ -1,5 +1,5 @@
 ---
-title: "Asembo enteric antibody distributions and seropositivity cutoffs"
+title: "Haiti enteric antibody distributions and seropositivity cutoffs"
 output: 
   html_notebook:
     theme: default
@@ -13,11 +13,11 @@ output:
 
 # Summary
 
-This script summarizes the distribution of antibody responses in the Asembo cohort. 
+This script summarizes the distribution of antibody responses in the Leogane, Haiti cohort. 
 
 It fits Gaussian mixture models to the distributions, and where possible, estimates seropositivity cutoffs based on the mixture model fits.
 
-For Giardia and Cryptosporidium antigens, the CDC lab estimated cutoff values using a receiver operator characteristic (ROC) curve approach with known positive and negative specimens. For these antigens, the script compares the classification of measurements by cutoff values derived from ROC and mixture models.
+For Giardia, Cryptosporidium, and E. histolytica antigens, the CDC lab estimated cutoff values using a receiver operator characteristic (ROC) curve approach with known positive and negative specimens. For these antigens, the script compares the classification of measurements by cutoff values derived from ROC and mixture models.
 
 # Script preamble
 ```{r preamble}
@@ -83,8 +83,8 @@ log10labs <- c(
 
 p <- ggplot(data=dl,aes(x=logmfi,group=pathogen,color=pathogen,fill=pathogen)) +
   facet_wrap(~antigenf,nrow=6,ncol=2,scales="free_y") +
-  geom_histogram(aes(y=..density..),bins=50,alpha=0.7) +
-  geom_density(aes(fill=NULL),color=cgrey) +
+  # geom_histogram(aes(y=..density..),bins=50,alpha=0.7) +
+  geom_density(aes(y=..density..),color=NA,alpha=0.7)+
   scale_x_continuous(limits = c(0,4.5),breaks = 0:4,labels=log10labs) +
   scale_fill_manual(values=pcols) +
   scale_color_manual(values=pcols) +
@@ -176,14 +176,14 @@ dl <- left_join(dl,mixcuts,by=c("antigen"))
 ```{r Ab mixture distribution figure, fig.height=12, fig.width=6}
 
 # Get the mixture density distributions
-# Distributions for p18, ETEC and Cholera did not have reasonable
-# fits to set them to missing
+# Distributions for ETEC did not have reasonable
+# fits to set them to missing (actually, include for completeness!)
 # set the pathogen field to an arbitrary value (Giardia) to 
 # mesh with the global ggplot aesthetics
 plotmixdens <- mixdens %>%
-  mutate(den1p = ifelse(antigen %in% c("etec"),NA,den1),
-         den2p = ifelse(antigen %in% c("etec"),NA,den2)
-         ) %>%
+  # mutate(den1p = ifelse(antigen %in% c("etec"),NA,den1),
+  #        den2p = ifelse(antigen %in% c("etec"),NA,den2)
+  #        ) %>%
   mutate(antigenf=factor(antigen,levels=mbavars,labels=mbalabs),
          pathogen="Giardia"
          )
@@ -195,11 +195,11 @@ plotmixdens <- mixdens %>%
 pmix <- ggplot(data=filter(dl,age<=1),aes(x=logmfi,group=pathogen,color=pathogen,fill=pathogen)) +
   facet_wrap(~antigenf,nrow=6,ncol=2,scales="free_y") +
   # plot empirical distribution and smooth
-  geom_histogram(aes(y=..density..),bins=50,alpha=0.7) +
-  geom_density(aes(fill=NULL),color=cgrey) +
+  # geom_histogram(aes(y=..density..),bins=50,alpha=0.7) +
+  geom_density(aes(y=..density..),color=NA,alpha=0.7)+
   # plot fitted mixture distributions
-  geom_line(data=plotmixdens,aes(x=x,y=den1p),color=cblack) +
-  # geom_line(data=plotmixdens,aes(x=x,y=den2p),color=cblack) +
+  geom_line(data=plotmixdens,aes(x=x,y=den1),color=cblack) +
+  # geom_line(data=plotmixdens,aes(x=x,y=den2),color=cblack) +
   # add vertical lines for the cutoff values
   geom_vline(aes(xintercept=log10(roccut))) +
   geom_vline(aes(xintercept=mixcut),linetype=2) +
@@ -224,7 +224,7 @@ ggsave("~/enterics-immuno-epi/figs/haiti-ab-mixture-distributions.pdf",plot=pmix
 ```{r age stratified distribution figure, fig.width=12,fig.height=6}
 dl <- dl %>%
   mutate(agecat = cut(age,breaks=c(0,1,2,3,12),
-                      labels=c("0-1 years","1-2 years","2-3 years","3-11 years"))
+                      labels=c("0 years","1 year","2 years","3-11 years"))
          )
 
 # custom color blind color palette is in the preamble chunck
@@ -239,17 +239,17 @@ log10labs <- c(
   expression(10^4)
 )
 
-p2 <- ggplot(data=dl,aes(x=logmfi,fill=pathogen)) +
+# faceted over age and antigen
+p2 <- ggplot(data=dl,aes(x=logmfi,fill=pathogen,color=pathogen)) +
   facet_grid(agecat~antigenf,scales='free')+
-  geom_histogram(aes(y=..density..),bins=50,alpha=0.7,show.legend=FALSE) +
-  # geom_density(alpha=0.5,size=0,color="black",fill=NA)+
+  geom_density(aes(y=..density..),color=NA,alpha=0.7)+
   geom_vline(aes(xintercept = log10(roccut))) +
   geom_vline(aes(xintercept = mixcut),linetype="dashed") +
   # scale_y_continuous(expand=c(0,0),breaks=seq(0,40,by=10)) +
-  coord_cartesian(ylim=c(0, 1.5))+
+  coord_cartesian(ylim=c(0, 1.25))+
   scale_x_continuous(expand=c(0,0),limits=c(0,5),breaks=0:4,labels=log10labs) +
   # scale_y_continuous(expand=c(0,0),breaks=c(0,0.5,1,1.5),labels=c("0","","1","")) +
-  scale_fill_manual(values=pcols,guide_legend(title="antigen"))+
+  scale_fill_manual(values=pcols,guide_legend(title="Age category"))+
   labs(title="",x="Luminex Response (MFI-bg)",y="Density") +
   theme_minimal()+
   theme(
@@ -264,6 +264,55 @@ p2 <- ggplot(data=dl,aes(x=logmfi,fill=pathogen)) +
 p2
 
 ggsave("~/enterics-immuno-epi/figs/haiti-ab-distributions-byage.pdf",plot=p2,device="pdf",width=16,height=6)
+
+```
+
+## Figure of age-stratified antibody densities, with cutoffs
+
+This figure includes that same information as the figure in the last section, but in a more compact format, overlaying smooth density distributions in the same panel. Doesn't look as good as the previous plot 
+
+```{r age stratified distribution figure2, fig.width=6,fig.height=12}
+
+# custom color blind color palette is in the preamble chunck
+# pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+pcols <- c(cred,corange,cgreen,cblue)
+
+
+# custom log labels
+log10labs <- c( 
+  expression(10^0),
+  expression(10^1),
+  expression(10^2),
+  expression(10^3),
+  expression(10^4)
+)
+
+p2den <- ggplot(data=dl,aes(x=logmfi,fill=agecat,color=agecat,group=agecat)) +
+  facet_wrap(~antigenf,nrow=6,ncol=2,scales='free_y')+
+  geom_density(aes(y=..density..),fill=NA)+
+  # stat_density(geom="line") +
+  geom_vline(aes(xintercept = log10(roccut))) +
+  geom_vline(aes(xintercept = mixcut),linetype="dashed") +
+  # scale_y_continuous(expand=c(0,0),breaks=seq(0,40,by=10)) +
+  coord_cartesian(ylim=c(0, 1.25))+
+  scale_x_continuous(expand=c(0,0),limits=c(0,5),breaks=0:4,labels=log10labs) +
+  # scale_y_continuous(expand=c(0,0),breaks=c(0,0.5,1,1.5),labels=c("0","","1","")) +
+  scale_color_manual(values=pcols,guide_legend(title="Age category"))+
+  labs(title="",x="Luminex Response (MFI-bg)",y="Density") +
+  theme_minimal()+
+  theme(
+    strip.text.x = element_text(size=9),
+    strip.text.y=element_text(size=12,angle=0),
+    axis.title.y=element_text(color="gray40"),
+    axis.text.y=element_text(color="gray60"),
+    # panel.grid.minor.y = element_blank(),
+    legend.position="top"
+  )
+
+p2den
+
+ggsave("~/enterics-immuno-epi/figs/haiti-ab-distributions-byage-compact.pdf",plot=p2den,device="pdf",width=7,height=14)
+
 
 ```
 
