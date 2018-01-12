@@ -1,0 +1,311 @@
+---
+title: "Haiti enteric antibody analysis of longitudinal change"
+output: 
+  html_document:
+    theme: default
+    highlight: haddock
+    toc: true
+    toc_depth: 3
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+---
+
+# Summary
+
+This script summarizes the change in antibody levels within individual children and also estimates the incidence proportion of seroconversion and seroreversion over different age windows.
+
+
+# Script preamble
+```{r preamble}
+#-----------------------------
+# preamble
+#-----------------------------
+rm(list=ls())
+library(tidyverse)
+
+# set up for parallel computing
+# configure for a laptop (use only 3 cores)
+library(foreach)
+library(doParallel)
+registerDoParallel(cores=3)
+
+# bright color blind palette:  https://personal.sron.nl/~pault/ 
+cblack <- "#000004FF"
+cblue <- "#3366AA"
+cteal <- "#11AA99"
+cgreen <- "#66AA55"
+cchartr <- "#CCCC55"
+cmagent <- "#992288"
+cred <- "#EE3333"
+corange <- "#EEA722"
+cyellow <- "#FFEE33"
+cgrey <- "#777777"
+
+```
+
+
+```{r load data}
+#-----------------------------
+# load the formatted data
+# created with 
+# asembo-enteric-ab-data-format.Rmd
+#-----------------------------
+dl <- readRDS("~/enterics-immuno-epi/data/haiti_analysis2.rds")
+
+# list the enteric antigens and formatted labels for them
+mbavars <- c("vsp3","vsp5","cp17","cp23","leca","etec","salb","sald","norogi","norogii")
+
+mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","ETEC toxin beta subunit","Salmonella LPS B","Salmonella LPS D","Norovirus GI", "Norovirus GII")
+```
+
+# Identify incident changes
+Among children, identify those that changed status between enrollment and follow-up. Those who changed from negative to positive are seroconverters (`seroi` below), and those who changed from positive to negative are seroreverters (`seror` below).
+
+
+```{r long incidence}
+
+#-----------------------------
+# Identify seropositive
+# measurements using ROC-based
+# cutoffs if available or
+# mixture model cutoffs as
+# a secondary. ETEC has no
+# defined cutoff through either
+# method
+#-----------------------------
+dl <- dl %>%
+  mutate(seropos=ifelse(!is.na(posroc),posroc,posmix)) %>%
+  mutate(antigenf=factor(antigenf))
+
+#-----------------------------
+# identify incident 
+# seroconversions and reversions
+#-----------------------------
+
+# group the data by child and
+# use lags to identify
+# time in years between measurements,
+# sero-conversions + sero-reversions 
+# between measurements
+# set the first measurement to 
+# missing for the incidence indicators
+# (using the is.na(age_diff) to identify them)
+dl2 <- dl %>%
+  group_by(antigen,id) %>% 
+  arrange(antigen,id,sdate,sampleid) %>%
+  mutate(age_min  = min(age),
+         age_diff = age - lag(age),
+         
+         logmfi_lag  = lag(logmfi),
+         logmfi_lead = lead(logmfi),
+         logmfi_dlag  = logmfi - logmfi_lag,
+         logmfi_dlead = logmfi_lead - logmfi,
+         
+         # incident seroconversions and reversions
+         # including cumulative numbers
+         seropos_lag  = lag(seropos),
+         seroi = ifelse(seropos==1 & seropos_lag==0,1,0),
+         seroi = ifelse(is.na(age_diff),NA,seroi),
+         seroin = cumsum(ifelse(is.na(seroi),0,seroi)),
+         seroin = ifelse(seroi==1,seroin,0),
+         seror = ifelse(seropos==0 & seropos_lag==1,1,0),
+         seror = ifelse(is.na(age_diff),NA,seror),
+         serorn = cumsum(ifelse(is.na(seror),0,seror)),
+         serorn = ifelse(seror==1,serorn,0)
+         ) %>%
+  select(
+         id,sampleid,sdate,
+         starts_with("age"),
+         pathogen,antigen,antigenf,
+         mfi,logmfi,logmfi_dlag,logmfi_dlead,
+         roccut,mixcut,
+         posroc,posmix,seropos,seroi,seroin,seror,serorn,
+         -logmfi_lag,-logmfi_lead,-seropos_lag)
+
+
+```
+
+# Longitudinal child trajectories
+
+```{r figure of individual MFI trajectories}
+
+dl2plot <- dl2 %>% group_by(id)
+dl2plot$sid <- group_indices(dl2plot)
+dl2plot$sid <- factor(dl2plot$sid)
+
+# color by MFI increases/decreases or seroconversion/reversion statsus
+dl2plot <- dl2plot %>%
+  mutate(
+    logmfi_chng  = ifelse(logmfi_dlag>0,"Increasing","Decreasing"),
+    logmfi_chng = ifelse(is.na(logmfi_chng) & logmfi_dlead>0,"Increasing",logmfi_chng),
+    logmfi_chng = ifelse(is.na(logmfi_chng) & logmfi_dlead<0,"Decreasing",logmfi_chng),
+    logmfi_chng = factor(logmfi_chng,levels=c("Increasing","Decreasing")),
+    
+    sero_chng = ifelse(lead(seroi)==1,"Seroconversion","No change"),
+    sero_chng = ifelse(lead(seror)==1,"Seroreversion",sero_chng),
+    sero_chng = ifelse(is.na(sero_chng),lead(sero_chng),sero_chng),
+    sero_chng = factor(sero_chng,levels=c("Seroconversion","Seroreversion","No change"))
+    
+  )
+
+
+# custom color blind color palette is in the preamble chunck
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+
+# custom log labels
+log10labs <- c( 
+  expression(10^0),
+  expression(10^1),
+  expression(10^2),
+  expression(10^3),
+  expression(10^4)
+)
+
+# plot all trajectories, colored (doesn't look that great)
+# p <- ggplot(dl2plot, aes(x=age, y=logmfi, group=factor(id),color=sero_chng) ) +
+#     facet_wrap(~antigenf,nrow=6,ncol=2)+
+#     geom_line(alpha=0.1) +
+#     guides(colour=FALSE) +
+#     guides(alpha=FALSE) +
+#     # geom_line(data=filter(dl2plot,sid==iid),aes(x=age,y=logmfi),size=1.2) +
+#     scale_color_manual(values=c(corange,cteal,cgrey))+
+#     xlab("Child Age (Years)") +
+#     ylab("Luminex Response (MFI-bg)") +
+#     coord_cartesian(ylim=c(0, 4.5))+
+#     scale_y_continuous(breaks=0:4,labels=log10labs) +
+#     scale_x_continuous(limits=c(0,10),breaks=seq(0,10,by=2)) +
+#     theme_minimal() +
+#     theme(
+#       # strip.text = element_text(size=16),
+#       # axis.text.x=element_text(size=12),
+#       # axis.text.y=element_text(size=12),
+#       # axis.title.x=element_text(size=14),
+#       # axis.title.y=element_text(size=14),
+#       legend.position="none"
+#     )
+# 
+# p
+
+# highlight a handfull of example individual trajectories
+foreach(iid=c(20,24,30,34,35,38,43,47,72,76,77,119,135)) %do% {
+  p <- ggplot(dl2plot, aes(x=age, y=logmfi, group=factor(id)) ) +
+    facet_wrap(~antigenf,nrow=6,ncol=2)+
+    geom_line(alpha=0.1,color=cgrey) +
+    guides(colour=FALSE) +
+    guides(alpha=FALSE) +
+    geom_hline(aes(yintercept=ifelse(!is.na(roccut),log10(roccut),mixcut)),linetype="dashed") +
+    geom_line(data=filter(dl2plot,sid==iid),aes(x=age,y=logmfi,color=sero_chng)) +
+    scale_color_manual(values=c(corange,cteal,cgrey))+
+    xlab("Child Age (Years)") +
+    ylab("Luminex Response (MFI-bg)") +
+    coord_cartesian(ylim=c(0, 4.5))+
+    scale_y_continuous(breaks=0:4,labels=log10labs) +
+    scale_x_continuous(limits=c(0,10),breaks=seq(0,10,by=2)) +
+    theme_minimal() +
+    theme(
+      legend.position="none"
+    )
+
+  ggsave(filename=paste("~/enterics-immuno-epi/figs/haiti-spaghetti-",iid,".pdf",sep=""),plot = p,device='pdf',width=5,height=14)
+
+}
+
+```
+
+# Analysis of change in MFI
+
+
+## Summarize distribution of changes in MFI by age category
+```{r change in MFI by agecat, fig.width=5,fig.height=12}
+
+# Difference in MFI values - boxplot
+dl2plot <- dl2 %>%
+  mutate(agecat=factor(agecat,levels=levels(agecat),labels=c("0","1","2","3+")))
+
+
+# custom color blind color palette is in the preamble chunck
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+
+diffmfi_byage <- ggplot(data=dl2plot,aes(x=agecat,y=logmfi_dlead,fill=pathogen)) +
+  facet_wrap(~antigenf,nrow=6,ncol=2)+ # ,scales='free_y'
+  geom_boxplot(alpha=0.6,notch=FALSE,outlier.color=NA)+
+  # geom_violin(alpha=0.6)+
+  geom_hline(aes(yintercept = 0)) +
+  scale_y_continuous(expand=c(0,0),limits=c(-3,4.5),breaks=-3:4) +
+  scale_fill_manual(values=pcols)+
+  scale_color_manual(values=pcols)+
+  labs(title="",x="Age at beginning of period (years completed)",y="Change in log10 Luminex Response (MFI-bg) between measurements") +
+  theme_minimal()+
+  theme(
+    axis.title = element_text(size=14),
+    axis.text.y = element_text(size=10),
+    axis.text.x = element_text(size=10),
+    strip.text = element_text(size=12),
+    strip.text.y=element_text(angle=0),
+    # panel.grid.minor.y = element_blank(),
+    panel.grid.minor.x = element_blank(),
+    # panel.grid.major.x = element_blank(),
+    legend.position="none"
+  )
+
+diffmfi_byage
+
+# save a PDF version
+ggsave("~/enterics-immuno-epi/figs/haiti-ab-mfidiff-byage.pdf",plot=diffmfi_byage,device="pdf",width=5,height=14)
+
+
+```
+
+## Summarize distribution of changes in MFI by incident episode number
+```{r change in MFI by episode, fig.width=5,fig.height=12}
+
+# Difference in MFI values by episode number - boxplot
+dl2plot <- dl2 %>%
+  mutate(seroinf=factor(seroin,levels=c(0,1,2,3),labels=c("0","1","2","3")))
+
+# set ETEC all to 0 since we don't have episodes
+dl2plot$seroinf[dl2plot$antigen=="etec"] <- "0"
+
+
+# custom color blind color palette is in the preamble chunck
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+
+diffmfi_byepisode <- ggplot(data=filter(dl2plot,!is.na(seroinf)),aes(x=seroinf,y=logmfi_dlag,fill=pathogen)) +
+  facet_wrap(~antigenf,nrow=6,ncol=2)+ # ,scales='free_y'
+  geom_boxplot(alpha=0.6,notch=FALSE,outlier.color=NA,position=position_dodge(width=1))+
+  geom_hline(aes(yintercept = 0)) +
+  scale_y_continuous(expand=c(0,0),limits=c(-3,4.5),breaks=-3:4) +
+  scale_fill_manual(values=pcols)+
+  scale_color_manual(values=pcols)+
+  labs(title="",x="Incident Episode Number",y="Change in log10 Luminex Response (MFI-bg) between measurements") +
+  theme_minimal()+
+  theme(
+    axis.title = element_text(size=14),
+    axis.text.y = element_text(size=10),
+    axis.text.x = element_text(size=10),
+    strip.text = element_text(size=12),
+    strip.text.y=element_text(angle=0),
+    # panel.grid.minor.y = element_blank(),
+    panel.grid.minor.x = element_blank(),
+    # panel.grid.major.x = element_blank(),
+    legend.position="none"
+  )
+
+diffmfi_byepisode
+
+# save a PDF version
+ggsave("~/enterics-immuno-epi/figs/haiti-ab-mfidiff-byepisode.pdf",plot=diffmfi_byepisode,device="pdf",width=5,height=14)
+
+
+```
+
+
+# Session Info
+```{r session info}
+sessionInfo()
+```
+
+
+
+
