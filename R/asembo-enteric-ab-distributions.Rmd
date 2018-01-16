@@ -60,9 +60,9 @@ cgrey <- "#777777"
 dl <- readRDS("~/enterics-immuno-epi/data/asembo_analysis.rds")
 
 # list the enteric antigens and make formatted labels for them
-mbavars <- c("vsp3","vsp5","cp17","cp23","leca","rotavirus","salb","sald","p18","p39","etec","cholera")
+mbavars <- c("vsp3","vsp5","cp17","cp23","leca","rotavirus","etec","cholera","salb","sald","p18","p39")
 
-mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Rotavirus","Salmonella LPS B","Salmonella LPS D","Campylobacter p18","Campylobacter p39","ETEC toxin beta subunit","Cholera toxin beta subunit")
+mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Rotavirus","ETEC toxin beta subunit","Cholera toxin beta subunit","Salmonella LPS B","Salmonella LPS D","Campylobacter p18","Campylobacter p39")
 ```
 
 #Distribution of antibody levels
@@ -70,7 +70,7 @@ mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptospori
 ```{r Ab distribution figure, fig.height=12, fig.width=6}
 
 # custom color blind color palette is in the preamble chunck
-pcols <- c(cred,corange,cchartr,cgreen,cteal,cblue,cmagent,cmagent)
+pcols <- c(cred,corange,cgreen,cgrey,cteal,cteal,cblue,cmagent)
 
 # custom log labels
 log10labs <- c( 
@@ -101,7 +101,7 @@ ggsave("~/enterics-immuno-epi/figs/asembo-ab-distributions.pdf",plot=p,device="p
 
 #Seropositivity cutoff values 
 
-```{r mixture densities, echo=TRUE, results="hide", message=FALSE, warning=FALSE}
+```{r mixture densities, echo=TRUE, message=FALSE, warning=FALSE}
 #-----------------------------
 # add cutoff values for
 # those with an ROC cutoff
@@ -118,11 +118,14 @@ dl$roccut[dl$antigen %in% "cp23"] <- 1336
 fitmix <- function(x,lambda,k) {
   mixfit <- normalmixEM(x,lambda=lambda,k=k)
   mixcut <- mixfit$mu[order(mixfit$mu)][1]+3*mixfit$sigma[order(mixfit$mu)][1]
-  cat(summary(mixfit),"\nCutoff value:",mixcut,"(log10 MFI), or:", round(10^mixcut),"(MFI)\n\n")
+  cat(summary(mixfit),"\nCutoff value:",mixcut,"(log10 MFI), or:",
+      round(10^mixcut),"(MFI)\n\n")
   # pull out fitted densities
   denmat <- matrix(NA,nrow=length(x),ncol=k)
+  denord <- order(mixfit$mu)
   for(i in 1:k) {
-    denmat[,i] <- mixfit$lambda[i] * dnorm(x,mean=mixfit$mu[i],sd=mixfit$sigma[i])
+    j <- denord[i]
+    denmat[,i] <- mixfit$lambda[j] * dnorm(x,mean=mixfit$mu[j],sd=mixfit$sigma[j])
   }
   denmat <- data.frame(denmat)
   colnames(denmat) <- paste("den",1:k,sep="")
@@ -136,6 +139,7 @@ fitmix <- function(x,lambda,k) {
 ## mixture model fits
 # store densities of mixture distributions
 # and estimated cutoffs
+set.seed(1234)
 mixdens <- foreach(ab=mbavars,.combine=rbind) %do% {
   cat("\n\n Mixture model fit for ",ab,"\n\n")
   mixf <- fitmix(x=dl$logmfi[dl$antigen==ab],lambda=0.5,k=2)
@@ -183,9 +187,8 @@ plotmixdens <- mixdens %>%
 
 pmix <- ggplot(data=dl,aes(x=logmfi,group=pathogen,color=pathogen,fill=pathogen)) +
   facet_wrap(~antigenf,nrow=6,ncol=2,scales="free_y") +
-  # plot empirical distribution and smooth
-  geom_histogram(aes(y=..density..),bins=50,alpha=0.7) +
-  geom_density(aes(fill=NULL),color=cgrey) +
+  # plot empirical smoothed distribution
+  geom_density(aes(y=..density..),color=NA,alpha=0.7)+
   # plot fitted mixture distributions
   geom_line(data=plotmixdens,aes(x=x,y=den1p),color=cblack) +
   # geom_line(data=plotmixdens,aes(x=x,y=den2p),color=cblack) +
@@ -229,10 +232,13 @@ dclass <- foreach(ab=levels(dcomp$antigen),.combine=rbind) %do% {
   dcompi <- dcomp %>% filter(antigen==ab)
   tabi <- as.vector(table(dcompi$posroc,dcompi$posmix))
   names(tabi) <- c("roc0mix0","roc1mix0","roc0mix1","roc1mix1")
+  kappai <- psych::cohen.kappa(table(dcompi$posroc,dcompi$posmix))$kappa
   tabi <- data.frame(t(tabi))
   tabi <- tabi %>%
     mutate(Nobs=roc0mix0+roc1mix0+roc0mix1+roc1mix1,
            discordance=(roc1mix0+roc0mix1)/Nobs,
+           agreement=(roc0mix0+roc1mix1)/Nobs,
+           kappa=kappai,
            antigen=ab) %>%
     select(antigen,Nobs,everything())
   tabi

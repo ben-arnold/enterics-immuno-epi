@@ -172,7 +172,7 @@ log10labs <- c(
 )
 
 # bright color-blind palette defined in an earlier code chunk
-pcols <- c(cred,corange,cchartr,cgreen,cteal,cblue,cmagent,cmagent)
+pcols <- c(cred,corange,cgreen,cgrey,cteal,cteal,cblue,cmagent)
 
 pcurve <- ggplot(data=gamfits,aes(x=age,group=pathogen,color=pathogen,fill=pathogen)) +
   # approximate simultaneous CI from spline fit
@@ -286,7 +286,8 @@ The spline fits are colored and the highly adaptive ensemble fits are grey. The 
 
 
 # bright color-blind palette defined in an earlier code chunk
-pcols <- c(cred,corange,cchartr,cgreen,cteal,cblue,cmagent)
+# (remove cteal since there are no curves for ETEC or cholera)
+pcols <- c(cred,corange,cgreen,cgrey,cblue,cmagent)
 
 ppcurve <- ggplot(data=pgamfits,aes(x=age,group=pathogen,color=pathogen,fill=pathogen)) +
   # approximate simultaneous CI from spline fit
