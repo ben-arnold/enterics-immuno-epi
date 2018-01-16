@@ -70,7 +70,7 @@ mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptospori
 ```{r Ab distribution figure, fig.height=12, fig.width=6}
 
 # custom color blind color palette is in the preamble chunck
-pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+pcols <- c(cred,corange,cgreen,cteal,cblue,cgrey)
 
 # custom log labels
 log10labs <- c( 
@@ -228,7 +228,7 @@ dl <- dl %>%
          )
 
 # custom color blind color palette is in the preamble chunck
-pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+pcols <- c(cred,corange,cgreen,cteal,cblue,cgrey)
 
 # custom log labels
 log10labs <- c( 
@@ -339,10 +339,13 @@ dclass <- foreach(ab=levels(dcomp$antigen),.combine=rbind) %do% {
   dcompi <- dcomp %>% filter(antigen==ab)
   tabi <- as.vector(table(dcompi$posroc,dcompi$posmix))
   names(tabi) <- c("roc0mix0","roc1mix0","roc0mix1","roc1mix1")
+  kappai <- psych::cohen.kappa(table(dcompi$posroc,dcompi$posmix))$kappa
   tabi <- data.frame(t(tabi))
   tabi <- tabi %>%
     mutate(Nobs=roc0mix0+roc1mix0+roc0mix1+roc1mix1,
            discordance=(roc1mix0+roc0mix1)/Nobs,
+           agreement=(roc0mix0+roc1mix1)/Nobs,
+           kappa=kappai,
            antigen=ab) %>%
     select(antigen,Nobs,everything())
   tabi
