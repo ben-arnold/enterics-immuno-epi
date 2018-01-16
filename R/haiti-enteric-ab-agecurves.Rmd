@@ -191,7 +191,7 @@ log10labs <- c(
 )
 
 # custom color blind color palette is in the preamble chunck
-pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+pcols <- c(cred,corange,cgreen,cteal,cblue,cgrey)
 
 pcurveall <- ggplot(data=gamfits,aes(x=age,group=pathogen,color=pathogen,fill=pathogen)) +
   # approximate simultaneous CI from spline fit
@@ -235,7 +235,7 @@ log10labs <- c(
 )
 
 # custom color blind color palette is in the preamble chunck
-pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+pcols <- c(cred,corange,cgreen,cteal,cblue,cgrey)
 
 pcurve <- ggplot(data=gamfits,aes(x=age,group=pathogen,color=pathogen,fill=pathogen)) +
   # approximate simultaneous CI from spline fit
@@ -394,7 +394,8 @@ pgamfits <- pgamfits %>%
   mutate(antigenf = factor(antigenf,levels=levels(antigenf)[c(1:4,6:9,5)]))
 
 # bright color-blind palette defined in an earlier code chunk
-pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+# exclude teal because ETEC does not have seropositive cutoff
+pcols <- c(cred,corange,cgreen,cblue,cgrey)
 
 ppcurve <- ggplot(data=pgamfits,aes(x=age,group=pathogen,color=pathogen,fill=pathogen)) +
   # approximate simultaneous CI from spline fit
@@ -431,7 +432,8 @@ Create a more parsimonius plot, that only includes the spline fits but also incl
 
 
 # bright color-blind palette defined in an earlier code chunk
-pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+# exclude cteal because ETEC doesn't have a seropositive cutoff
+pcols <- c(cred,corange,cgreen,cblue,cgrey)
 
 ppcurve2 <- ggplot(data=pgamfits,aes(x=age,group=pathogen,color=pathogen,fill=pathogen)) +
   # approximate simultaneous CI from spline fit
