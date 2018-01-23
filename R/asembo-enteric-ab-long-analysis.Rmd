@@ -62,7 +62,7 @@ mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptospori
 ```
 
 # Identify incident changes
-Among children, identify those that changed status between enrollment and follow-up. Those who changed from negative to positive are seroconverters (`seroi` below), and those who changed from positive to negative are seroreverters (`seror` below).
+Identify children whose status changed  between enrollment and follow-up. Those who changed from negative to positive are seroconverters (`seroi` below), and those who changed from positive to negative are seroreverters (`seror` below).
 
 
 ```{r long incidence}
@@ -70,9 +70,20 @@ Among children, identify those that changed status between enrollment and follow
 #-----------------------------
 # subset the data to antigens
 # with seropositivity estimates
+# hierarchy of information for 
+# cutoffs:
+# 1. ROC
+# 2. mixture model based
+# 3. estimated among presumed unexposed
+#
+# store the used cutoff value
+# right for use in plotting
 #-----------------------------
 dlp <- dl %>%
-  mutate(seropos=ifelse(!is.na(posroc),posroc,posmix)) %>%
+  mutate(seropos=ifelse(!is.na(posroc),posroc,posmix),
+         serocut=ifelse(!is.na(posroc),log10(roccut),mixcut)) %>%
+  mutate(seropos=ifelse(!is.na(seropos),seropos,posunex),
+         serocut=ifelse(!is.na(serocut),serocut,unexpcut)) %>%
   filter(!is.na(seropos)) %>%
   mutate(antigenf=factor(antigenf))
 
@@ -82,10 +93,9 @@ dlp <- dl %>%
 #-----------------------------
 # spread the data to wide format to 
 # identify incident sero-conversions and sero-reversions
-# based on seropositives identified through the mixture model
 # subset to the individuals measured at both timepoints
 dlpw <- dlp %>%
-  select(childid,antigen,time,seropos) %>%
+  select(childid,antigen,time,serocut,seropos) %>%
   spread(time,seropos) %>% 
   filter(!is.na(A) & !is.na(B)) %>%
   mutate(seroi=ifelse(B==1 & A==0,1,0),
@@ -160,7 +170,7 @@ Create the same figure of individual antibody trajectories between measurements,
 # to the full longidudinal data
 #-----------------------------
 
-dlp2 <- dlp %>% select(childid,time,antigen,seroi,seror)
+dlp2 <- dlp %>% select(childid,time,antigen,serocut,seroi,seror)
 dl2 <- left_join(dl,dlp2,by=c("childid","time","antigen")) %>%
   mutate(seropos=ifelse(!is.na(posroc),posroc,posmix))
 
@@ -174,8 +184,8 @@ dl2$icat[dl2$seroi==0 & dl2$seror==0] <- "No change"
 
 pp <- ggplot(data=filter(dl2,!is.na(icat)),aes(x=svy,y=logmfi,group=factor(childid),color=icat)) +
   # geom_point(alpha=0.2) +
+  geom_hline(aes(yintercept=serocut),linetype="dashed",size=0.3) +
   geom_line(alpha=0.2) +
-  # geom_hline(aes(yintercept=mixcut),linetype="dashed") +
   
   scale_x_continuous(limits=c(-0.25,1.25),breaks=c(0,1),labels=c("Enrollment","Follow-up"))+
   scale_y_continuous(breaks=0:4,labels=log10labs) +
@@ -204,15 +214,14 @@ ggsave("~/enterics-immuno-epi/figs/asembo-ab-long-seroincidence.pdf",plot=pp,dev
 Taking advantage of the longitudinal measurements within individual children, examine the distributions of antibody response among those who seroconverted.
 
 ```{r ab ditributions among sero-converters, fig.height=9, fig.width=6}
-dl2 <- dl2 %>% 
-  mutate(seroposf=ifelse(seropos==1,"Seropositive","Seronegative"),
-         poscut=ifelse(!is.na(posroc),log10(roccut),mixcut))
+dlp3 <- dlp %>% 
+  mutate(seroposf=ifelse(seropos==1,"Seropositive","Seronegative"))
 
-pdist <- ggplot(data=filter(dl2,seroi==1),aes(x=logmfi,group=seroposf,color=seroposf,fill=seroposf))+
+pdist <- ggplot(data=filter(dlp3,seroi==1),aes(x=logmfi,group=seroposf,color=seroposf,fill=seroposf))+
   facet_wrap(~antigenf,nrow=6,ncol=2,scales="free_y") +
   geom_histogram(aes(y=..density..),color=NA,position="identity",bins=50,alpha=0.2) +
   geom_density(alpha=0.4) +
-  geom_vline(aes(xintercept=poscut))+
+  geom_vline(aes(xintercept=serocut))+
   scale_x_continuous(limits = c(0,4.5),breaks = 0:4,labels=log10labs) +
   scale_fill_manual(values=c(cteal,corange),guide=guide_legend(title="Status:")) +
   scale_color_manual(values=c(cteal,corange),guide=FALSE) +
@@ -303,7 +312,10 @@ exactprev <- function(x) {
 #-----------------------------
 est_seroi <- foreach(ab=levels(dp$antigenf),.combine=rbind) %do% {
   res <- exactprev(dp$seroi[dp$antigenf==ab & dp$seropos==0])
-  res <- data.frame(antigenf=ab,N=res[1],n=res[2],mean=res[3],min95=res[4],max95=res[5])
+  res <- data.frame(pathogen=dp$pathogen[dp$antigenf==ab][1],
+                    antigenf=ab,
+                    N=res[1],n=res[2],
+                    mean=res[3],min95=res[4],max95=res[5])
   res
 }
 #-----------------------------
@@ -314,24 +326,80 @@ est_seroi <- foreach(ab=levels(dp$antigenf),.combine=rbind) %do% {
 #-----------------------------
 est_seror <- foreach(ab=levels(dp$antigenf),.combine=rbind) %do% {
   res <- exactprev(dp$seror[dp$antigenf==ab & dp$seropos==1])
-  res <- data.frame(antigenf=ab,N=res[1],n=res[2],mean=res[3],min95=res[4],max95=res[5])
+  res <- data.frame(pathogen=dp$pathogen[dp$antigenf==ab][1],
+                    antigenf=ab,
+                    N=res[1],n=res[2],
+                    mean=res[3],min95=res[4],max95=res[5])
   res
 }
 ```
 Table of results
 ```{r long incidence tables}
-knitr::kable(est_seroi,digits=3,
+knitr::kable(select(est_seroi,-pathogen),digits=3,
              caption="Incidence proportion of seroconversion over a 6-month period",
              col.names = c("Antigen","N at risk","n events","Incidence per 100","min95","max95"),
              row.names = FALSE)
 
 
-knitr::kable(est_seror,digits=3,
+knitr::kable(select(est_seror,-pathogen),digits=3,
              caption="Incidence proportion of seroreversion over a 6-month period",
              col.names = c("Antigen","N at risk","n events","Incidence per 100","min95","max95"),
              row.names = FALSE)
 
 ```
+
+```{r seroincidence figure}
+
+# code to plot conversion and reversion in a single panel (not used)
+# seroip <- ggplot(data=est_seroi,aes(x=antigenf,y=mean,color=pathogen,fill=pathogen)) +
+#   geom_pointrange(aes(ymin=min95,ymax=max95),
+#                   position=position_nudge(x=-0.1)) +
+#   geom_pointrange(data=est_seror,aes(ymin=min95,ymax=max95),
+#                   pch=17,position=position_nudge(x=+0.1)
+#                   )  +
+#   labs(x="Antigen",y="Incidence proportion") +
+#   scale_fill_manual(values=pcols) +
+#   scale_color_manual(values=pcols) +
+#   # scale_color_identity(name = 'xxx', guide = 'legend',labels = c('m1',"m2")) +
+#   theme_minimal() +
+#   theme(legend.position = "none",
+#         axis.text.x=element_text(angle=45,hjust = 1))
+# 
+# seroip
+
+
+# bind the incidence estimates together for plot aesthetics
+# (not used)
+est_sero <- est_seroi %>%
+  mutate(outcome="Seroconversion Rate") %>%
+  bind_rows(est_seror) %>%
+  mutate(outcome=ifelse(is.na(outcome),"Seroreversion Rate",outcome))
+
+
+# bright color-blind palette defined in an earlier code chunk
+pcols <- c(cred,corange,cgreen,cchartr,cteal,cteal,cblue,cgrey)
+
+seroip <- ggplot(data=est_sero,aes(x=antigenf,y=mean*100,color=pathogen,fill=pathogen)) +
+  geom_pointrange(aes(ymin=min95*100,ymax=max95*100)) +
+  
+  facet_wrap(~factor(outcome),nrow=2,ncol=1)+
+  labs(x="",y="Incidence proportion per 100 children") +
+  scale_fill_manual(values=pcols) +
+  scale_color_manual(values=pcols) +
+  # scale_color_identity(name = 'xxx', guide = 'legend',labels = c('m1',"m2")) +
+  theme_minimal() +
+  theme(legend.position = "none",
+        axis.text.x=element_text(angle=45,hjust = 1),
+        strip.text = element_text(size=12))
+
+seroip
+
+# save a PDF version
+ggsave("~/enterics-immuno-epi/figs/asembo-ab-long-seroincidence-ests.pdf",plot=seroip,device="pdf",width=5,height=5)
+
+
+```
+
 
 Summary observations from the above figures and tables:
 
