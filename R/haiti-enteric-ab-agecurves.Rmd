@@ -21,7 +21,10 @@ This script estimates age-dependent mean antibody curves using cubic splines (in
 #-----------------------------
 rm(list=ls())
 library(tidyverse)
+library(kableExtra) # devtools::install_github("haozhu233/kableExtra")
 library(mixtools)
+
+options(knitr.table.format = "html") 
 
 # set up for parallel computing
 # configure for a laptop (use only 3 cores)
@@ -191,7 +194,7 @@ log10labs <- c(
 )
 
 # custom color blind color palette is in the preamble chunck
-pcols <- c(cred,corange,cgreen,cteal,cblue,cgrey)
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
 
 pcurveall <- ggplot(data=gamfits,aes(x=age,group=pathogen,color=pathogen,fill=pathogen)) +
   # approximate simultaneous CI from spline fit
@@ -235,7 +238,7 @@ log10labs <- c(
 )
 
 # custom color blind color palette is in the preamble chunck
-pcols <- c(cred,corange,cgreen,cteal,cblue,cgrey)
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
 
 pcurve <- ggplot(data=gamfits,aes(x=age,group=pathogen,color=pathogen,fill=pathogen)) +
   # approximate simultaneous CI from spline fit
@@ -274,22 +277,28 @@ ggsave("~/enterics-immuno-epi/figs/haiti-ab-agecurves-mean.pdf",plot=pcurve,devi
 #-----------------------------
 # subset the data to antigens
 # with seropositivity estimates
-# use ROC-based cutoffs if 
-# available, or mixture-model
-# based cutoffs if necessary
+# hierarchy of information for 
+# cutoffs:
+# 1. ROC
+# 2. mixture model based
+# 3. estimated among presumed unexposed
+#
+# store the cutoff value used
+# for figures
 #-----------------------------
-
 dlp <- dl %>%
-  mutate(seropos=ifelse(!is.na(posroc),posroc,posmix) ) %>%
-  filter(!is.na(seropos)) %>%
-  mutate(antigenf=factor(antigenf))
-
+  mutate(seropos=ifelse(!is.na(posroc),posroc,posmix),
+         serocut=ifelse(!is.na(posroc),log10(roccut),mixcut),
+         serocut_desc=ifelse(!is.na(posroc),"ROC","Mixture Model")) %>%
+  mutate(seropos=ifelse(!is.na(seropos),seropos,posunex),
+         serocut_desc=ifelse(!is.na(serocut),serocut_desc,"Unexp dist"),
+         serocut=ifelse(!is.na(serocut),serocut,unexpcut)) %>%
+  filter(!is.na(seropos))
 
 #-----------------------------
 # estimate seroprevalence curves with 
 # splines
 #-----------------------------
-
 
 # fit cubic spline over age, separately for each antigen
 # estimate approximate simultaneous confidence intervals
@@ -389,13 +398,8 @@ Plot all of the estimates together. The spline fits are colored and the highly a
 
 ```{r age-curve seroprevalence figure all, fig.height=9, fig.width=6}
 
-# re-arrange the antibody factor to group pathogens on the same row
-pgamfits <- pgamfits %>%
-  mutate(antigenf = factor(antigenf,levels=levels(antigenf)[c(1:4,6:9,5)]))
-
 # bright color-blind palette defined in an earlier code chunk
-# exclude teal because ETEC does not have seropositive cutoff
-pcols <- c(cred,corange,cgreen,cblue,cgrey)
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
 
 ppcurve <- ggplot(data=pgamfits,aes(x=age,group=pathogen,color=pathogen,fill=pathogen)) +
   # approximate simultaneous CI from spline fit
@@ -413,7 +417,7 @@ ppcurve <- ggplot(data=pgamfits,aes(x=age,group=pathogen,color=pathogen,fill=pat
   scale_x_continuous(limits=c(0,10),breaks=seq(0,10,by=2))+
   scale_y_continuous(breaks=seq(0,1,by=0.2),labels=sprintf("%1.0f",seq(0,1,by=0.2)*100))+
   coord_cartesian(ylim=c(0,1))+
-  labs(x="Age in months",y="Seroprevalence (%)") +
+  labs(x="Age in years",y="Seroprevalence (%)") +
   scale_fill_manual(values=pcols) +
   scale_color_manual(values=pcols) +
   theme_minimal() +
@@ -432,16 +436,13 @@ Create a more parsimonius plot, that only includes the spline fits but also incl
 
 
 # bright color-blind palette defined in an earlier code chunk
-# exclude cteal because ETEC doesn't have a seropositive cutoff
-pcols <- c(cred,corange,cgreen,cblue,cgrey)
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
 
 ppcurve2 <- ggplot(data=pgamfits,aes(x=age,group=pathogen,color=pathogen,fill=pathogen)) +
   # approximate simultaneous CI from spline fit
   geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA,fill=cgrey) +
   # actual measurements
-  geom_jitter(aes(y=posmix),width=0.2,height=0,color="black",alpha=0.4,size=0.3) +
-   # ensemble fit
-  # geom_line(data=pslfits,aes(x=age,y=fit),color=cgrey) +
+  geom_point(aes(y=seropos),color="black",alpha=0.4,size=0.3) +
   # spline fit
   geom_line(aes(y=fit)) +
   # plot aesthetics
@@ -449,7 +450,7 @@ ppcurve2 <- ggplot(data=pgamfits,aes(x=age,group=pathogen,color=pathogen,fill=pa
   scale_x_continuous(limits=c(0,10),breaks=seq(0,10,by=2))+
   scale_y_continuous(breaks=seq(0,1,by=0.2),labels=sprintf("%1.0f",seq(0,1,by=0.2)*100))+
   coord_cartesian(ylim=c(0,1))+
-  labs(x="Age in months",y="Seroprevalence (%)") +
+  labs(x="Age in years",y="Seroprevalence (%)") +
   scale_fill_manual(values=pcols) +
   scale_color_manual(values=pcols) +
   theme_minimal() +
@@ -459,6 +460,24 @@ ppcurve2
 
 # save a PDF version
 ggsave("~/enterics-immuno-epi/figs/haiti-ab-agecurves-seroprev.pdf",plot=ppcurve2,device="pdf",width=7,height=14)
+
+```
+
+## Numerical seroprevalence estimates to report in the manuscript. 
+
+
+```{r seroprev numerical estimates}
+# grab predicted means from cubic splines very close to each year of age
+pests <- pgamfits %>%
+  mutate(agey = floor(age)) %>%
+  filter(age+0.02 > agey & age-0.02 < agey) %>%
+  group_by(antigenf) %>%
+  filter(!duplicated(agey)) %>%
+  arrange(antigenf,agey) %>%
+  select(antigenf,agey,prev=fit,prev_min95=lwrS,prev_max95=uprS)
+
+pests
+
 
 ```
 
