@@ -70,7 +70,7 @@ mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptospori
 ```{r Ab distribution figure, fig.height=12, fig.width=6}
 
 # custom color blind color palette is in the preamble chunck
-pcols <- c(cred,corange,cgreen,cteal,cblue,cgrey)
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
 
 # custom log labels
 log10labs <- c( 
@@ -101,7 +101,9 @@ ggsave("~/enterics-immuno-epi/figs/haiti-ab-distributions.pdf",plot=p,device="pd
 
 #Seropositivity cutoff values 
 
-```{r mixture densities, echo=TRUE, message=FALSE, warning=FALSE}
+## ROC cutoff values
+Add ROC cutoffs from out-of-sample analysis of known positive and negative specimens. Previously published in Moss et al. 2014 AJTMH.
+```{r roc cutoffs, echo=TRUE, message=FALSE, warning=FALSE}
 #----------------------------
 # Add ROC cutoffs 
 # Estimated by Jeff Priest
@@ -116,6 +118,11 @@ dl$roccut[dl$antigen %in% 'vsp2'] <- 270
 dl$roccut[dl$antigen %in% 'vsp3'] <- 262
 dl$roccut[dl$antigen %in% 'vsp4'] <- 209
 dl$roccut[dl$antigen %in% 'vsp5'] <- 206 
+```
+
+## Mixture model cutoff estimation
+Estimate cutoffs using 2-component Gaussian mixture models, fit with maximum likelihood.
+```{r mixture densities, echo=TRUE, message=FALSE, warning=FALSE}
 
 #-----------------------------
 # mixture models
@@ -146,9 +153,11 @@ fitmix <- function(x,lambda,k) {
 ## mixture model fits
 # store densities of mixture distributions
 # and estimated cutoffs
-set.seed(123)
+# set seed for perfect reproducibility due to
+# some unstable estimates in  mixture fits
 mixdens <- foreach(ab=mbavars,.combine=rbind) %do% {
   cat("\n\n Mixture model fit for ",ab,"\n\n")
+  set.seed(2)
   mixf <- fitmix(x=dl$logmfi[dl$antigen==ab & dl$age<=1],lambda=0.5,k=2)
   di <- mixf$xden
   di$mixcut <- mixf$mixcut
@@ -170,20 +179,14 @@ mixcuts$mixcut[mixcuts$antigen %in% c("etec")] <- NA
 dl <- left_join(dl,mixcuts,by=c("antigen"))
 
 ```
-
-## Figure of antibody mixture distributions
+Figure of antibody mixture distributions
 
 ```{r Ab mixture distribution figure, fig.height=12, fig.width=6}
 
 # Get the mixture density distributions
-# Distributions for ETEC did not have reasonable
-# fits to set them to missing (actually, include for completeness!)
 # set the pathogen field to an arbitrary value (Giardia) to 
 # mesh with the global ggplot aesthetics
 plotmixdens <- mixdens %>%
-  # mutate(den1p = ifelse(antigen %in% c("etec"),NA,den1),
-  #        den2p = ifelse(antigen %in% c("etec"),NA,den2)
-  #        ) %>%
   mutate(antigenf=factor(antigen,levels=mbavars,labels=mbalabs),
          pathogen="Giardia"
          )
@@ -219,6 +222,93 @@ ggsave("~/enterics-immuno-epi/figs/haiti-ab-mixture-distributions.pdf",plot=pmix
 
 ```
 
+## Cutoffs derived from presumed unexposed
+Children under age 2 years whose antibody levels increased by at least 2 on the log10 scale were presumably unexposed at their first measurement. Use them to identify an unexposed distribution.
+
+```{r distribution among unexposed}
+#-----------------------------
+# calculate the change in
+# log10 MFI values between
+# measurements
+#-----------------------------
+dl <- dl %>%
+  group_by(id,antigen) %>%
+  mutate(logmfidiff = lead(logmfi) - logmfi) %>%
+  mutate(unexp = ifelse(age<=1 & logmfidiff>=2,"Presumed unexposed","Possibly exposed"))
+
+#-----------------------------
+# subset the data to 
+# measurements where the child
+# was < 2 years old and the
+# change in MFI was >= 2
+#-----------------------------
+dlunexp <- dl %>%
+  filter(unexp=="Presumed unexposed")
+
+
+#-----------------------------
+# calculate the mean and SD
+# of each distribution
+#-----------------------------
+unexp_dists <- dlunexp %>%
+  group_by(pathogen,antigen,antigenf) %>%
+  summarize(n = n(),
+            unexp_mean = mean(logmfi),
+            unexp_sd = sd(logmfi),
+            unexpcut = unexp_mean + 3*unexp_sd) %>%
+  ungroup()
+#-----------------------------
+# print values
+#-----------------------------
+select(unexp_dists,antigenf,n,starts_with("unexp"))
+
+
+#-----------------------------
+# merge the cutoff values
+# based on presumed unexposed
+# back to the main data
+#-----------------------------
+dlunexp2 <- unexp_dists %>%
+  ungroup() %>%
+  select(antigen,unexpcut)
+
+dl <- left_join(dl,dlunexp2,by="antigen")
+
+
+
+
+```
+## Figure of distributions and cutoffs from presumed unexposed
+```{r unexposed distribution figure, fig.height=12, fig.width=6}
+#-----------------------------
+# create a figure of the
+# unexposed distributions
+#-----------------------------
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+punexp <- ggplot(data=filter(dl,unexp=="Presumed unexposed" & !is.na(unexpcut)), aes(x=logmfi,group=pathogen,color=pathogen,fill=pathogen)) +
+  facet_wrap(~antigenf,nrow=6,ncol=2,scales="free_y") +
+  # plot empirical smoothed distribution
+  geom_density(aes(y=..density..),color=NA,alpha=0.7)+
+  # add vertical lines for the cutoff values
+  geom_vline(aes(xintercept=log10(roccut))) +
+  geom_vline(aes(xintercept=mixcut),linetype=2) +
+  geom_vline(aes(xintercept=unexpcut),linetype=3) + 
+  # labels and formatting
+  scale_x_continuous(limits = c(0,4.5),breaks = 0:4,labels=log10labs) +
+  coord_cartesian(ylim=c(0,2)) +
+  labs(x="Luminex Response (MFI-bg)") +
+  scale_fill_manual(values=pcols) +
+  scale_color_manual(values=pcols) +
+  theme_minimal(base_size = 16) +
+  theme(legend.position = "none")
+
+punexp
+
+# save a PDF version
+ggsave("~/enterics-immuno-epi/figs/haiti-ab-unexposed-distributions.pdf",plot=punexp,device="pdf",width=7,height=14)
+
+```
+
 ## Figure of age-stratified antibody distributions, with cutoffs
 
 ```{r age stratified distribution figure, fig.width=12,fig.height=6}
@@ -228,7 +318,7 @@ dl <- dl %>%
          )
 
 # custom color blind color palette is in the preamble chunck
-pcols <- c(cred,corange,cgreen,cteal,cblue,cgrey)
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
 
 # custom log labels
 log10labs <- c( 
@@ -244,7 +334,8 @@ p2 <- ggplot(data=dl,aes(x=logmfi,fill=pathogen,color=pathogen)) +
   facet_grid(agecat~antigenf,scales='free')+
   geom_density(aes(y=..density..),color=NA,alpha=0.7)+
   geom_vline(aes(xintercept = log10(roccut))) +
-  geom_vline(aes(xintercept = mixcut),linetype="dashed") +
+  geom_vline(aes(xintercept = mixcut),linetype=2) +
+  geom_vline(aes(xintercept=unexpcut),linetype=3) + 
   # scale_y_continuous(expand=c(0,0),breaks=seq(0,40,by=10)) +
   coord_cartesian(ylim=c(0, 1.25))+
   scale_x_continuous(expand=c(0,0),limits=c(0,5),breaks=0:4,labels=log10labs) +
@@ -292,7 +383,8 @@ p2den <- ggplot(data=dl,aes(x=logmfi,fill=agecat,color=agecat,group=agecat)) +
   geom_density(aes(y=..density..),fill=NA)+
   # stat_density(geom="line") +
   geom_vline(aes(xintercept = log10(roccut))) +
-  geom_vline(aes(xintercept = mixcut),linetype="dashed") +
+  geom_vline(aes(xintercept = mixcut),linetype=2) +
+  geom_vline(aes(xintercept=unexpcut),linetype=3) + 
   # scale_y_continuous(expand=c(0,0),breaks=seq(0,40,by=10)) +
   coord_cartesian(ylim=c(0, 1.25))+
   scale_x_continuous(expand=c(0,0),limits=c(0,5),breaks=0:4,labels=log10labs) +
@@ -323,13 +415,18 @@ This part of the analysis identifies seropositive individuals based on ROC cutof
 
 ```{r seropositivity}
 dl <- dl %>%
-  mutate(posroc = ifelse(logmfi > log10(roccut),1,0),
-         posmix = ifelse(logmfi > mixcut,1,0))
+  mutate(posroc  = ifelse(logmfi > log10(roccut),1,0),
+         posmix  = ifelse(logmfi > mixcut,1,0),
+         posunex = ifelse(logmfi > unexpcut,1,0))
+```
 
+
+```{r seropositivity roc vs mix}
 # compare classification by ROC and mixture models 
 # for Giardia and Cryptosporidium, the 2 pathogens
 # with both
 dcomp <- dl %>%
+  ungroup() %>%
   filter(age<=1) %>%
   filter(antigen %in% c("vsp3","vsp5","cp17","cp23","leca")) %>% 
   mutate(antigen=factor(antigen))
@@ -355,6 +452,68 @@ knitr::kable(dclass,digits=2,caption="Summary of seropositivity classifications 
 
 
 ```
+
+```{r seropositivity roc vs unexp}
+dcomp <- dl %>%
+  ungroup() %>%
+  filter(age<=1) %>%
+  filter(antigen %in% c("vsp3","vsp5","cp17","cp23","leca")) %>% 
+  mutate(antigen=factor(antigen))
+
+
+dclass2 <- foreach(ab=levels(dcomp$antigen),.combine=rbind) %do% {
+  dcompi <- dcomp %>% filter(antigen==ab)
+  tabi <- as.vector(table(dcompi$posroc,dcompi$posunex))
+  names(tabi) <- c("roc0unexp0","roc1unexp0","roc0unexp1","roc1unexp1")
+  kappai <- psych::cohen.kappa(table(dcompi$posroc,dcompi$posunex))$kappa
+  tabi <- data.frame(t(tabi))
+  tabi <- tabi %>%
+    mutate(Nobs=roc0unexp0+roc1unexp0+roc0unexp1+roc1unexp1,
+           discordance=(roc1unexp0+roc0unexp1)/Nobs,
+           agreement=(roc0unexp0+roc1unexp1)/Nobs,
+           kappa=kappai,
+           antigen=ab) %>%
+    select(antigen,Nobs,everything())
+  tabi
+}
+
+knitr::kable(dclass2,digits=3,caption="Summary of seropositivity classifications by ROC curve and distribution among unexposed for Giardia (VSP-3 and VSP-5), Cryptosporidium (Cp17, Cp23), and E. histolytica (LecA)")
+
+```
+```{r seropositivity mix vs unexp}
+#-----------------------------
+# compare classification by mixture
+# model and distribution among the unexposed
+# for Giardia, Crypto, E. hist,
+# Salmonella, Noro GI and GII
+# the pathogens with both
+#-----------------------------
+dcomp <- dl %>%
+  ungroup() %>%
+  filter(age<=1) %>%
+  filter(antigen %in% c("vsp3","vsp5","cp17","cp23","leca","salb","sald","norogi","norogii")) %>% 
+  mutate(antigen=factor(antigen))
+
+
+dclass3 <- foreach(ab=levels(dcomp$antigen),.combine=rbind) %do% {
+  dcompi <- dcomp %>% filter(antigen==ab)
+  tabi <- as.vector(table(dcompi$posmix,dcompi$posunex))
+  names(tabi) <- c("mix0unexp0","mix1unexp0","mix0unexp1","mix1unexp1")
+  kappai <- psych::cohen.kappa(table(dcompi$posmix,dcompi$posunex))$kappa
+  tabi <- data.frame(t(tabi))
+  tabi <- tabi %>%
+    mutate(Nobs=mix0unexp0+mix1unexp0+mix0unexp1+mix1unexp1,
+           discordance=(mix1unexp0+mix0unexp1)/Nobs,
+           agreement=(mix0unexp0+mix1unexp1)/Nobs,
+           kappa=kappai,
+           antigen=ab) %>%
+    select(antigen,Nobs,everything())
+  tabi
+}
+
+knitr::kable(dclass3,digits=3,caption="Summary of seropositivity classifications by Gaussian mixture model and distribution among unexposed for Giardia (VSP-3 and VSP-5), Cryptosporidium (Cp17, Cp23), E. histolytica (LecA), Salmonella (LPS D and LPS B), and Norovirus (Groups I and II)")
+```
+
 
 ```{r save data}
 #-----------------------------
