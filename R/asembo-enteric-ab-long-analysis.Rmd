@@ -233,7 +233,7 @@ pdist
 
 
 ```
-Examine the distributions of _change_ antibody response by whether they sero-converted, sero-reverted, or did not change sero-status
+Examine the distributions of _change_ in antibody response by whether they sero-converted, sero-reverted, or did not change sero-status
 
 ```{r ab distribution of change, fig.height=9, fig.width=6}
 pdiff <- ggplot(data=filter(dl2,!is.na(icat)),aes(x=logmfidiff,group=icat,color=icat,fill=icat))+
@@ -250,6 +250,52 @@ pdiff
 
 
 ```
+
+Alternate visualization
+```{r ab distribution of change2, fig.height=9, fig.width=6}
+
+# Reorder the incidence category to be reversion/no change/conversion
+dl2plot <- dl2 %>%
+  mutate(serostat=factor(icat,levels=c("Seroreversion","No change","Seroconversion"))
+  )
+
+# calculate Ns in each seroconversion category to print in the figure
+epiNs <- dl2plot %>%
+  group_by(pathogen,antigenf,serostat) %>%
+  summarize(n=n()) %>%
+  filter(!is.na(serostat)) %>%
+  mutate(nlab=paste("(n=",n,")",sep=""))
+
+
+pcols <- c(cred,corange,cgreen,cchartr,cteal,cteal,cblue,cgrey)
+set.seed(123)
+diffmfi_byserostat <- ggplot(data=filter(dl2plot,!is.na(serostat)),aes(x=serostat,y=logmfidiff,fill=pathogen,color=pathogen)) +
+  facet_wrap(~antigenf,nrow=6,ncol=2)+ 
+  geom_jitter(position = position_jitter(width = 0.2), alpha = 0.2,pch=19) +
+  geom_boxplot(notch=FALSE,outlier.color=NA,width=0.5,alpha=0.5,fill=NA,color="grey20")+
+  geom_hline(aes(yintercept = 0)) +
+  # add Ns
+  geom_text(data=epiNs,aes(x=serostat,y=-3.25,label=nlab),col="gray40",size=2) +
+  scale_y_continuous(expand=c(0,0),limits=c(-3.5,4.5),breaks=-3:4) +
+  scale_fill_manual(values=pcols)+
+  scale_color_manual(values=pcols)+
+  labs(title="",x="Seroconversion status",y="Change in log10 Luminex Response (MFI-bg), follow-up minus enrollment") +
+  theme_minimal(base_size=12)+
+  theme(
+    panel.grid.minor.x = element_blank(),
+    axis.text.x=element_text(angle=45,hjust=1),
+    legend.position="none"
+  )
+
+diffmfi_byserostat
+
+# save a PDF version
+ggsave("~/enterics-immuno-epi/figs/asembo-ab-mfidiff-byserostat.pdf",plot=diffmfi_byserostat,device="pdf",width=5,height=14)
+
+
+```
+
+
 
 # Seroincidence estimates
 Estimates of the incidence proportion over a 6-7 month risk period for sero-conversion and sero-reversion, by antigen
