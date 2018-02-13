@@ -155,13 +155,32 @@ slfits <-  foreach(ab=levels(dl$antigenf),.combine=rbind) %dopar% {
 }
 
 
+#-----------------------------
+# estimate means by age in 
+# months (4-17)
+# to get 95% CIs through the
+# influence curve
+# there is 1 measurement
+# at age 18 months that is
+# excluded from this calculation
+#-----------------------------
+
+tmlemeans <- foreach(ab=levels(dl$antigenf),.combine=rbind) %:%
+  foreach(agei=4:17,.combine=rbind) %dopar% {
+    pd <- filter(dl,antigenf==ab & floor(age)==agei)
+    mu <- tmleAb(Y=pd$logmfi,id=pd$id,SL.library="SL.mean")
+    di <- data.frame(pathogen=pd$pathogen[1],antigenf=ab,age=agei,mean=mu$psi,se=mu$se,lb=mu$lb,ub=mu$ub)
+    di
+  }
+
+
 ```
 
 ##Plot age-dependent mean antibody curves
 
 The spline fits are colored and the highly adaptive ensemble fits are grey. The approximate simultaneous confidence bands for the spline fit are shaded.
 
-```{r age-curve mean figure, fig.height=12, fig.width=6}
+```{r age-curve mean figure all, fig.height=12, fig.width=6}
 
 log10labs <- c( 
   expression(10^0),
@@ -177,12 +196,12 @@ pcols <- c(cred,corange,cgreen,cchartr,cteal,cteal,cblue,cgrey)
 pcurve <- ggplot(data=gamfits,aes(x=age,group=pathogen,color=pathogen,fill=pathogen)) +
   # approximate simultaneous CI from spline fit
   geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA,fill=cgrey) +
-  # actual measurements
-  geom_jitter(aes(y=logmfi),width=0.2,height=0,color="black",alpha=0.4,size=0.3) +
-  # spline fit
-  geom_line(aes(y=fit),color=cgrey) +
   # ensemble fit
-  geom_line(data=slfits,aes(x=age,y=fit)) +
+  geom_line(data=slfits,aes(x=age,y=fit),color=cgrey) +
+  # spline fit
+  geom_line(aes(y=fit)) +
+  # empirical means 95% CI from the influence curve (averaged for each age)
+  geom_pointrange(data=tmlemeans,aes(x=age,y=mean,ymin=lb,ymax=ub),size=0.2,color=cblack)+
   # plot aesthetics
   facet_wrap(~antigenf,nrow=6,ncol=2) +
   scale_x_continuous(breaks=seq(4,18,by=2))+
@@ -197,39 +216,115 @@ pcurve <- ggplot(data=gamfits,aes(x=age,group=pathogen,color=pathogen,fill=patho
 pcurve
 
 # save a PDF version 
-ggsave("~/enterics-immuno-epi/figs/asembo-ab-agecurves-mean.pdf",plot=pcurve,device="pdf",width=7,height=14)
+ggsave("~/enterics-immuno-epi/figs/asembo-ab-agecurves-mean-allestimates.pdf",plot=pcurve,device="pdf",width=7,height=14)
 
+```
+Create a more parsimonius plot, that only includes the spline fits but also includes the actual points. Only plot through age 17 months (since n=1 at 18 months)
+
+```{r age-curve mean figure, fig.height=12, fig.width=6}
+
+log10labs <- c( 
+  expression(10^0),
+  expression(10^1),
+  expression(10^2),
+  expression(10^3),
+  expression(10^4)
+)
+
+# bright color-blind palette defined in an earlier code chunk
+pcols <- c(cred,corange,cgreen,cchartr,cteal,cteal,cblue,cgrey)
+
+pcurve <- ggplot(data=filter(gamfits,age<=17),aes(x=age,group=pathogen,color=pathogen,fill=pathogen)) +
+  # approximate simultaneous CI from spline fit
+  geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA,fill=cgrey) +
+  # actual measurements
+  geom_jitter(aes(y=logmfi),width=0.2,height=0,color="black",alpha=0.4,size=0.3) +
+  # spline fit
+  geom_line(aes(y=fit),color="black") +
+  # plot aesthetics
+  facet_wrap(~antigenf,nrow=6,ncol=2) +
+  scale_x_continuous(breaks=seq(4,18,by=2))+
+  scale_y_continuous(breaks=0:4,labels=log10labs)+
+  coord_cartesian(ylim=c(0,4.5))+
+  labs(x="Age in months",y="Luminex Response (MFI-bg)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+pcurve
+
+# save a PDF version 
+ggsave("~/enterics-immuno-epi/figs/asembo-ab-agecurves-mean.pdf",plot=pcurve,device="pdf",width=7,height=14)
 ```
 
 #Estimate age-dependent seroprevalence
 
 ##Estimate seroprevalence curves using splines in a generalized additive model (GAM)
 
+
+```{r composite antigens}
+#-----------------------------
+# create composite 
+# seropositivity indicators
+# that use information from
+# multiple antigens
+#-----------------------------
+
+dgi <- dl %>% 
+  filter(antigen %in% c("vsp3","vsp5")) %>%
+  select(childid,time,tr,sex,age,agediff,pathogen,antigen,seropos) %>%
+  spread(antigen,seropos) %>%
+  mutate(seropos=ifelse(vsp3==1|vsp5==1,1,0),
+         antigen="vsp3vsp5",
+         antigenf="Giardia VSP-3 or VSP-5") %>%
+  select(-vsp3,-vsp5)
+
+dcr <- dl %>% 
+  filter(antigen %in% c("cp17","cp23")) %>%
+  select(childid,time,tr,sex,age,agediff,pathogen,antigen,seropos) %>%
+  spread(antigen,seropos) %>%
+  mutate(seropos=ifelse(cp17==1|cp23==1,1,0),
+         antigen="cp17cp23",
+         antigenf="Cryptosporidium Cp17 or Cp23") %>%
+  select(-cp17,-cp23)
+
+dcp <- dl %>% 
+  filter(antigen %in% c("p18","p39")) %>%
+  select(childid,time,tr,sex,age,agediff,pathogen,antigen,seropos) %>%
+  spread(antigen,seropos) %>%
+  mutate(seropos=ifelse(p18==1|p39==1,1,0),
+         antigen="p18p39",
+         antigenf="Campylobacter p18 or p39") %>%
+  select(-p18,-p39)
+
+ds <- dl %>% 
+  filter(antigen %in% c("salb","sald")) %>%
+  select(childid,time,tr,sex,age,agediff,pathogen,antigen,seropos) %>%
+  spread(antigen,seropos) %>%
+  mutate(seropos=ifelse(salb==1|sald==1,1,0),
+         antigen="salbsald",
+         antigenf="Salmonella LPS B or D") %>%
+  select(-salb,-sald)
+
+dlp <- bind_rows(dl,dgi,dcr,dcp,ds) %>%
+  mutate(antigenf=factor(antigenf,
+                         levels=c("Giardia VSP-3 or VSP-5",
+                                  "Cryptosporidium Cp17 or Cp23",
+                                  "E. histolytica LecA",
+                                  "Rotavirus",
+                                  "ETEC toxin beta subunit",
+                                  "Cholera toxin beta subunit",
+                                  "Salmonella LPS B or D",
+                                  "Campylobacter p18 or p39")) ) %>%
+  filter(!is.na(antigenf)) %>%
+  select(pathogen,antigen,antigenf,
+         childid,time,tr,sex,age,agediff,
+         mfi,logmfi,logmfidiff,
+         roccut,mixcut,unexp,unexpcut,serocut,serocut_desc,
+         posroc,posmix,posunex,seropos) %>%
+  arrange(pathogen,antigenf,childid,time)
+```
+
 ```{r age-curve seroprevalence gam }
-
-#-----------------------------
-# subset the data to antigens
-# with seropositivity estimates
-# hierarchy of information for 
-# cutoffs:
-# 1. ROC
-# 2. mixture model based
-# 3. estimated among presumed unexposed
-#
-# store the cutoff value used
-# for figures
-#-----------------------------
-dlp <- dl %>%
-  mutate(seropos=ifelse(!is.na(posroc),posroc,posmix),
-         serocut=ifelse(!is.na(posroc),log10(roccut),mixcut),
-         serocut_desc=ifelse(!is.na(posroc),"ROC","Mixture Model")) %>%
-  mutate(seropos=ifelse(!is.na(seropos),seropos,posunex),
-         serocut_desc=ifelse(!is.na(serocut),serocut_desc,"Unexp dist"),
-         serocut=ifelse(!is.na(serocut),serocut,unexpcut)) %>%
-  filter(!is.na(seropos)) %>%
-  mutate(antigenf=factor(antigenf))
-
-
 #-----------------------------
 # estimate seroprevalence curves with 
 # splines
@@ -288,13 +383,50 @@ pslfits <-  foreach(ab=levels(dlp$antigenf),.combine=rbind) %dopar% {
   return(slres)
 }
 
+#-----------------------------
+# estimate prevalence by age in 
+# years (0-9)
+# since prevalence is very sparse
+# in some strata, cannot use the 
+# tmleAb() function above for
+# influence-curve based SEs
+# because it uses cross-validation
+# and sometimes there are folds
+# with no events. So, instead
+# use an exact binomial approach
+#-----------------------------
+exactprev <- function(x) {
+  # x : a binary indicator of the outcome (1/0)
+  tabx <- table(x)
+  if(length(tabx)<2) {
+    if(names(tabx)=="1") {
+      tabx <- c(0,tabx)
+    } else{
+      tabx <- c(tabx,0)
+    }
+  } 
+  estx <- binom.test(x=tabx[2],n=sum(tabx))
+  res <- c(estx$parameter,estx$statistic,estx$estimate,estx$conf.int)
+  names(res) <- c("N","n","mean","min95","max95")
+  return(res)
+}
+
+prevests <- foreach(ab=levels(dlp$antigenf),.combine=rbind) %:%
+  foreach(agei=4:17,.combine=rbind) %dopar% {
+      pd <- filter(dlp,antigenf==ab & floor(age)==agei)
+      mus <- exactprev(pd$seropos)
+      res <- data.frame(pathogen=pd$pathogen[1],antigenf=ab,age=agei,N=mus[1],n=mus[2],mean=mus[3],lb=mus[4],ub=mus[5])
+      res
+    }
+   
+
 ```
 
 ##Plot age-dependent seroprevalence  curves
 
 The spline fits are colored and the highly adaptive ensemble fits are grey. The approximate simultaneous confidence bands for the spline fit are shaded.
 
-```{r age-curve seroprevalence figure, fig.height=9, fig.width=6}
+```{r age-curve seroprevalence figure all, fig.height=9, fig.width=6}
 
 
 # bright color-blind palette defined in an earlier code chunk
@@ -304,11 +436,13 @@ ppcurve <- ggplot(data=pgamfits,aes(x=age,group=pathogen,color=pathogen,fill=pat
   # approximate simultaneous CI from spline fit
   geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA,fill=cgrey) +
   # actual measurements
-  geom_jitter(aes(y=seropos),width=0.2,height=0,color="black",alpha=0.4,size=0.3) +
+  # geom_jitter(aes(y=seropos),width=0.2,height=0,color="black",alpha=0.4,size=0.3) +
   # spline fit
-  geom_line(aes(y=fit),color=cgrey) +
+  geom_line(aes(y=fit)) +
   # ensemble fit
-  geom_line(data=pslfits,aes(x=age,y=fit)) +
+  geom_line(data=pslfits,aes(x=age,y=fit),col=cgrey) +
+  # empirical means 95% CI from the influence curve (averaged for each age)
+  geom_pointrange(data=prevests,aes(x=age,y=mean,ymin=lb,ymax=ub),size=0.2,color=cblack)+
   # plot aesthetics
   facet_wrap(~antigenf,nrow=6,ncol=2) +
   scale_x_continuous(breaks=seq(4,18,by=2))+
@@ -323,10 +457,39 @@ ppcurve <- ggplot(data=pgamfits,aes(x=age,group=pathogen,color=pathogen,fill=pat
 ppcurve
 
 # save a PDF version
+ggsave("~/enterics-immuno-epi/figs/asembo-ab-agecurves-seroprev-allests.pdf",plot=ppcurve,device="pdf",width=7,height=14)
+
+```
+Create a more parsimonius figure restricted to spline fits. Plot through age 17 months (since n=1 at 18 months).
+
+```{r age-curve seroprevalence figure, fig.height=9, fig.width=6}
+
+
+# bright color-blind palette defined in an earlier code chunk
+pcols <- c(cred,corange,cgreen,cchartr,cteal,cteal,cblue,cgrey)
+
+ppcurve <- ggplot(data=filter(pgamfits,age<=17),aes(x=age,group=pathogen,color=pathogen,fill=pathogen)) +
+  # approximate simultaneous CI from spline fit
+  geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA,fill=cgrey) +
+  # actual measurements
+  geom_jitter(aes(y=seropos),width=0.2,height=0,color="black",alpha=0.4,size=0.3) +
+  # spline fit
+  geom_line(aes(y=fit),color="black") +
+  # plot aesthetics
+  facet_wrap(~antigenf,nrow=6,ncol=2) +
+  scale_x_continuous(breaks=seq(4,18,by=2))+
+  scale_y_continuous(breaks=seq(0,1,by=0.2),labels=sprintf("%1.0f",seq(0,1,by=0.2)*100))+
+  coord_cartesian(ylim=c(0,1))+
+  labs(x="Age in months",y="Seroprevalence (%)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+ppcurve
+
+# save a PDF version
 ggsave("~/enterics-immuno-epi/figs/asembo-ab-agecurves-seroprev.pdf",plot=ppcurve,device="pdf",width=7,height=14)
 
 ```
-
 # Save fitted estimates for later use
 ```{r save estimates}
 # spline fits of geometric means
