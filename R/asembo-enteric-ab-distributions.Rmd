@@ -325,13 +325,8 @@ pall <- ggplot(data=dl,aes(x=logmfi,group=pathogen,color=pathogen,fill=pathogen)
   facet_wrap(~antigenf,nrow=6,ncol=2,scales="free_y") +
   # plot empirical smoothed distribution
   geom_density(aes(y=..density..),color=NA,alpha=0.7)+
-  # plot empirical distribution among the unexposed
-  # geom_density(data=filter(dl,unexp=="Presumed unexposed" & !is.na(unexpcut)),
-  #              aes(y=..density..),color=cgrey,fill=NA) +
-  # geom_histogram(data=filter(dl,unexp=="Presumed unexposed" & !is.na(unexpcut)),
-  #              aes(y=..density..),color=cgrey,fill=NA) +
   # plot fitted mixture distributions
-  geom_line(data=plotmixdens,aes(x=x,y=den1p),color=cblack) +
+  # geom_line(data=plotmixdens,aes(x=x,y=den1p),color=cblack) +
   # geom_line(data=plotmixdens,aes(x=x,y=den2p),color=cblack) +
   # add vertical lines for the cutoff values
   geom_vline(aes(xintercept=log10(roccut))) +
@@ -460,6 +455,30 @@ dclass3 <- foreach(ab=levels(dcomp$antigen),.combine=rbind) %do% {
 knitr::kable(dclass3,digits=3,caption="Summary of seropositivity classifications by Gaussian mixture model and distribution among unexposed for Giardia (VSP-3 and VSP-5), Cryptosporidium (Cp17, Cp23), and Campylobacter (p39)")
 ```
 
+```{r composite seropositive indicators}
+#-----------------------------
+# create composite measures of 
+# seropositivity
+#-----------------------------
+#-----------------------------
+# hierarchy of information for 
+# cutoffs:
+# 1. ROC
+# 2. mixture model based
+# 3. estimated among presumed unexposed
+# store the cutoff value used
+#-----------------------------
+dl <- dl %>%
+  mutate(seropos=ifelse(!is.na(posroc),posroc,posmix),
+         serocut=ifelse(!is.na(posroc),log10(roccut),mixcut),
+         serocut_desc=ifelse(!is.na(posroc),"ROC","Mixture Model")) %>%
+  mutate(seropos=ifelse(!is.na(seropos),seropos,posunex),
+         serocut_desc=ifelse(!is.na(serocut),serocut_desc,"Unexp dist"),
+         serocut=ifelse(!is.na(serocut),serocut,unexpcut)) %>%
+  filter(!is.na(seropos)) %>%
+  mutate(antigenf=factor(antigenf))
+
+```
 
 ```{r save data}
 #-----------------------------
