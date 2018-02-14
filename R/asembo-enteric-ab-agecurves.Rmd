@@ -490,6 +490,46 @@ ppcurve
 ggsave("~/enterics-immuno-epi/figs/asembo-ab-agecurves-seroprev.pdf",plot=ppcurve,device="pdf",width=7,height=14)
 
 ```
+
+Compressed figure (1 panel)
+
+```{r age-curve seroprevalence figure small, fig.height=5, fig.width=5}
+
+plabs <- pgamfits %>%
+  filter(age==17) %>% select(antigenf,age,fit) %>% 
+  group_by(antigenf) %>% summarize_all(mean) %>%
+  mutate(fit=ifelse(antigenf=="Campylobacter p18 or p39",fit+0.02,fit),
+         fit=ifelse(antigenf=="Cholera toxin beta subunit",fit-0.02,fit))
+
+# bright color-blind palette defined in an earlier code chunk
+pcols <- c(cred,corange,cgreen,cchartr,cteal,cmagent,cblue,cgrey)
+
+ppcurve3 <- ggplot(data=filter(pgamfits,age<=17),aes(x=age,group=antigenf,color=antigenf,fill=antigenf)) +
+  # approximate simultaneous CI from spline fit
+  # geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA) +
+  # spline fit
+  geom_line(aes(y=fit)) +
+  # pathogen labels
+  geom_text(data=plabs,aes(x=age+0.5,y=fit,label=antigenf),
+            hjust=0)+
+  # plot aesthetics
+  # facet_wrap(~antigenf,nrow=6,ncol=2) +
+  scale_x_continuous(breaks=seq(0,16,by=2),limits=c(0,22))+
+  scale_y_continuous(breaks=seq(0,1,by=0.2),labels=sprintf("%1.0f",seq(0,1,by=0.2)*100))+
+  scale_fill_manual(values=pcols) +
+  scale_color_manual(values=pcols,guide=guide_legend(title="")) +
+  coord_cartesian(ylim=c(0,1))+
+  labs(x="Age in months",y="Seroprevalence (%)") +
+  theme_minimal(base_size=14) +
+  theme(legend.position = "none")
+
+ppcurve3
+
+# save a PDF version
+ggsave("~/enterics-immuno-epi/figs/asembo-ab-agecurves-seroprev-small.pdf",plot=ppcurve3,device="pdf",width=9,height=7)
+
+```
+
 # Save fitted estimates for later use
 ```{r save estimates}
 # spline fits of geometric means
