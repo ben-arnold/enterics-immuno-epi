@@ -60,9 +60,10 @@ cgrey <- "#777777"
 dl <- readRDS("~/enterics-immuno-epi/data/asembo_analysis.rds")
 
 # list the enteric antigens and make formatted labels for them
-mbavars <- c("vsp3","vsp5","cp17","cp23","leca","rotavirus","etec","cholera","salb","sald","p18","p39")
+mbavars <- c("vsp3","vsp5","cp17","cp23","leca","rotavirus","salb","sald","etec","cholera","p18","p39")
 
-mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Rotavirus","ETEC toxin beta subunit","Cholera toxin beta subunit","Salmonella LPS B","Salmonella LPS D","Campylobacter p18","Campylobacter p39")
+mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Rotavirus","Salmonella LPS B","Salmonella LPS D","ETEC toxin beta subunit","Cholera toxin beta subunit","Campylobacter p18","Campylobacter p39")
+
 ```
 
 #Distribution of antibody levels
@@ -70,7 +71,7 @@ mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptospori
 ```{r Ab distribution figure, fig.height=12, fig.width=6}
 
 # custom color blind color palette is in the preamble chunck
-pcols <- c(cred,corange,cgreen,cchartr,cteal,cteal,cblue,cgrey)
+pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
 
 # custom log labels
 log10labs <- c( 
@@ -194,7 +195,7 @@ plotmixdens <- mixdens %>%
 # and custom log10 labels (log10labs)
 # defined in a previous code chunk
 #-----------------------------
-pcols <- c(cred,corange,cgreen,cchartr,cteal,cteal,cblue,cgrey)
+pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
 pmix <- ggplot(data=dl,aes(x=logmfi,group=pathogen,color=pathogen,fill=pathogen)) +
   facet_wrap(~antigenf,nrow=6,ncol=2,scales="free_y") +
   # plot empirical smoothed distribution
@@ -277,7 +278,7 @@ dl <- left_join(dl,dlunexp2,by="antigen")
 # create a figure of the
 # unexposed distributions
 #-----------------------------
-pcols <- c(cred,corange,cteal,cteal,cgrey)
+pcols <- c(cred,corange,cblue,cmagent,cgrey)
 punexp <- ggplot(data=filter(dl,unexp=="Presumed unexposed" & !is.na(unexpcut)), aes(x=logmfi,group=pathogen,color=pathogen,fill=pathogen)) +
   facet_wrap(~antigenf,nrow=6,ncol=2,scales="free_y") +
   # plot empirical smoothed distribution
@@ -320,7 +321,7 @@ plotmixdens <- plotmixdens %>%
 # create a figure of the
 # unexposed distributions
 #-----------------------------
-pcols <- c(cred,corange,cgreen,cchartr,cteal,cteal,cblue,cgrey)
+pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
 pall <- ggplot(data=dl,aes(x=logmfi,group=pathogen,color=pathogen,fill=pathogen)) +
   facet_wrap(~antigenf,nrow=6,ncol=2,scales="free_y") +
   # plot empirical smoothed distribution
