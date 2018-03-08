@@ -1,0 +1,321 @@
+---
+title: "Joint distribution of antibody responses"
+output: 
+  html_notebook:
+    theme: default
+    highlight: haddock
+    toc: true
+    toc_depth: 3
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+---
+
+# Summary
+
+This script summarizes the joint distribution of antibody responses in each cohort. In the main figure, the comparisons are between different antigens for the same pathogen except for ETEC and cholera, where the beta toxin subunit is very similar (so likely have cross-reactivity).  Each scatter plot also includes the spearman's rank correlation coefficient ($\rho$).  After the main summary figure, supplemental figures include pairs plots for the joint distribution of every combination of enteric antibody responses in each cohort.
+
+# Script preamble
+```{r preamble}
+#-----------------------------
+# preamble
+#-----------------------------
+rm(list=ls())
+library(tidyverse)
+library(scales)
+library(ellipse)
+library(RColorBrewer)
+
+# bright color blind palette:  https://personal.sron.nl/~pault/ 
+cblack <- "#000004FF"
+cblue <- "#3366AA"
+cteal <- "#11AA99"
+cgreen <- "#66AA55"
+cchartr <- "#CCCC55"
+cmagent <- "#992288"
+cred <- "#EE3333"
+corange <- "#EEA722"
+cyellow <- "#FFEE33"
+cgrey <- "#777777"
+
+# custom log labels
+log10labs <- c( 
+  expression(10^0),
+  expression(10^1),
+  expression(10^2),
+  expression(10^3),
+  expression(10^4)
+)
+
+```
+
+
+
+# Load and format data
+```{r load and format data}
+
+#--------------------------------
+# load the various datasets
+#--------------------------------
+dh <- readRDS("~/enterics-immuno-epi/data/haiti_analysis.rds")
+dk <- readRDS("~/enterics-immuno-epi/data/asembo_analysis.rds")
+dt <- readRDS("~/enterics-immuno-epi/data/kongwa_analysis.rds")
+
+#--------------------------------
+# subset to common variables
+# and append
+#--------------------------------
+dh <- dh %>% 
+  mutate(country="Haiti") %>%
+  select(country,id,sid=sampleid,antigen,antigenf,logmfi)
+dk <- dk %>% 
+  mutate(country="Kenya",sid = ifelse(time=="A","1","2")) %>%
+  select(country,id=childid,sid,antigen,antigenf,logmfi)
+  
+dt <- dt %>% 
+  mutate(country="Tanzania",sid="1") %>%
+  select(country,id,sid,antigen,antigenf,logmfi)
+
+dall <- bind_rows(dh,dk,dt)
+
+#--------------------------------
+# create antigen groupings for
+# comparisons
+# drop obs not contributing
+#--------------------------------
+d <- dall %>%
+  mutate(comp= ifelse(antigen %in% c("vsp3","vsp5"),"Giardia\nVSP-3 v VSP-5",NA),
+         comp= ifelse(antigen %in% c("cp17","cp23"),"Cryptosporidium\nCp17 v Cp23",comp),
+         comp= ifelse(antigen %in% c("p18","p39"),"Campylobacter\np18 v p39",comp),
+         comp= ifelse(antigen %in% c("sald","salb"),"Salmonella\nLPS Group B v LPS Group D",comp),
+         comp= ifelse(antigen %in% c("cholera","etec"),"ETEC toxin beta subunit v\nV. cholerae toxin beta subunit",comp),
+         comp= ifelse(antigen %in% c("norogi","norogii"),"Norovirus\nGI v GII",comp),
+         comp= ifelse(country=="Haiti" & antigen =="etec",NA,comp),
+         comp= factor(comp,levels=c("Giardia\nVSP-3 v VSP-5","Cryptosporidium\nCp17 v Cp23","Campylobacter\np18 v p39","Salmonella\nLPS Group B v LPS Group D","ETEC toxin beta subunit v\nV. cholerae toxin beta subunit","Norovirus\nGI v GII"))
+         ) %>%
+  filter(!is.na(comp))
+
+#--------------------------------
+# for antigen each pair, 
+# label it as "x" or "y" to 
+# spread it to wide format
+#--------------------------------
+dw <- d %>%
+  mutate(xy=ifelse(antigen %in% c("vsp3","cp17","sald","p18","cholera","norogii"),"x","y")) %>%
+  select(country,comp,id,sid,xy,logmfi) %>%
+  spread(xy,logmfi) %>%
+  mutate(country=factor(country,levels=c("Haiti","Kenya","Tanzania")))
+
+```
+# Estimate correlations and smooths
+
+```{r est correlations}
+#--------------------------------
+# estimate spearman's correlation
+# within each country, comparison
+#--------------------------------
+dcorr <- dw %>%
+  group_by(country,comp) %>%
+  mutate(corxy=cor(x,y,method="spearman",use="pairwise.complete.obs") ) %>%
+  summarize(corxy=max(corxy,na.rm=T))
+```
+
+```{r est trimmed smooths}
+#--------------------------------
+# estimate smooths, trimmed to
+# drop the bottom and top 1% of
+# data in each comparison
+# to avoid edge effects
+#--------------------------------
+dsmooths <- foreach(countryi=levels(dw$country),.combine=rbind) %:%
+                      foreach(compi=levels(dw$comp),.combine=rbind) %do% {
+                        pd <- filter(dw,country==countryi & comp==compi)
+                        if(nrow(pd)>0) {
+                          xqs <- quantile(pd$x,probs=c(0.01,0.99),na.rm=TRUE)
+                          newd <- data.frame(x=seq(xqs[1],xqs[2],by=0.01))
+                          lfit <- loess(y~x,data=pd)
+                          return(data.frame(country=countryi,comp=compi,x=newd,y=predict(lfit,newdata=newd)))
+                        }
+                        
+  
+}
+
+```
+
+
+# Summary Figure
+```{r composite figure,fig.width=7,fig.height=9 }
+
+complot <- ggplot(data=dw,aes(x=x,y=y)) +
+  facet_grid(comp~country) +
+  geom_point(pch=19,color="black",alpha=0.1) +
+  geom_line(data=dsmooths,aes(x=x,y=y),col=cblue,size=1.2)+
+  geom_text(data=dcorr,
+            aes(x=0.5,y=4,label=paste("rho ==",sprintf("%1.2f",corxy)) ),
+            parse=TRUE, col=cblue)   +
+  scale_x_continuous(limits=c(0,4.6),breaks=0:4,labels = log10labs)+
+  scale_y_continuous(limits=c(0,4.6),breaks=0:4,labels = log10labs)+
+  coord_equal() +
+  labs(x="Luminex Response (MFI-bg)",y="Luminex Response (MFI-bg)") +
+  theme_minimal() +
+  theme(
+    strip.text.x=element_text(face="bold",size=12),
+    strip.text.y=element_text(face="bold",size=10),
+    legend.position="none"
+  )
+
+
+complot
+
+# save a PDF version
+ggsave("~/enterics-immuno-epi/figs/all-ab-scatter-composite.pdf",plot=complot,device="pdf",width=9,height=15)
+
+```
+
+# Individual country pairs plots
+The above figure was created as a synthesis across individual country pairs plots. Below, the script creates each pairs plot that shows the joint relationship between every combination of antigens in each cohort.
+
+```{r pairs functions}
+#----------------------------------
+# correlation ellipse
+#----------------------------------
+myellipse<-function(x,y,...){
+  maxx <- max(x,na.rm=TRUE)
+  minx <- min(x,na.rm=TRUE)
+  maxy <- max(y,na.rm=TRUE)
+  miny <- min(y,na.rm=TRUE)
+  midx <- (maxx+minx)/2
+  midy <- (maxy+miny)/2
+  corxy <- cor(x,y,method="spearman",use="pairwise.complete.obs")
+  colgroup<-cut(corxy,breaks=seq(-1,1,length=11),labels=F)
+  brewcols <- brewer.pal(11,"RdYlGn")
+  cols<-brewcols[colgroup]
+  xyc <-sprintf("%1.2f",corxy)
+  xyc[grep("NA",xyc)]<-""
+  exy <- ellipse(corxy,centre=c(midx,midy),scale=c((maxx-minx)/6,(maxy-miny)/6))
+  polygon(exy,col=alpha(cols,alpha=0.5))
+  lines(exy)
+  if(!is.na(corxy)) {
+    if(corxy<0.8) {
+      text(midx,midy,xyc,cex=0.8)
+    } else{
+      text(maxx,midy-((maxy-miny)/3),xyc,cex=0.8,adj=1)
+    }
+  }
+  
+}
+
+
+#----------------------------------
+# scatter plot with loess fit
+# (trimmed to reduce edge effects)
+#----------------------------------
+scatterloess<-function(x,y,cex=0.4,...){
+  ld <- data.frame(x,y)
+  ld <- ld[complete.cases(ld),]
+  if(nrow(ld)>0) {
+    points(ld$x,ld$y,pch=19,cex=cex,col=alpha('black',alpha=0.2))
+    brewcols <- brewer.pal(11,"RdYlGn")
+    lfit <- loess(y~x,data=ld)
+    xqs <- quantile(x,probs=c(0.01,0.99),na.rm=TRUE)
+    px <- seq(xqs[1],xqs[2],by=0.01)
+    py <- predict(lfit,newdata=data.frame(x=px))
+    lines(px,py,col=brewcols[10],lwd=1.5)
+  }
+  
+}
+
+
+```
+
+## Haiti
+```{r haiti pairs plot,fig.width=7,fig.height=7}
+
+# list the enteric antigens in Haiti and formatted labels for them
+mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","etec","norogi","norogii")
+mbalabs <- c("Giardia\nVSP-3","Giardia\nVSP-5","Cryptosporidium\nCp17","Cryptosporidium\nCp23","E. histolytica\nLecA","Salmonella\nLPS B","Salmonella\nLPS D","ETEC\ntoxin beta subunit","Norovirus\nGI", "Norovirus\nGII")
+
+hmat <- dall %>%
+  filter(country=="Haiti") %>%
+  select(id,sid,antigen,logmfi) %>%
+  spread(antigen,logmfi) 
+
+pairs(hmat[mbavars],labels=mbalabs,cex=0.1,las=1, 
+      upper.panel=scatterloess,
+      lower.panel=myellipse
+)
+
+# save a PDF version
+pdf("~/enterics-immuno-epi/figs/haiti-pairs-plot.pdf",width=10,height=10)
+pairs(hmat[mbavars],labels=mbalabs,cex=0.1,las=1,
+      upper.panel=scatterloess,
+      lower.panel=myellipse
+)
+mtext(expression(paste(log[10],"  Luminex response (MFI-bg)")),side=4,line=0.9)
+mtext(expression(paste(log[10],"  Luminex response (MFI-bg)")),side=3,line=2.5)
+
+dev.off()
+```
+## Kenya
+```{r kenya pairs plot,fig.width=7,fig.height=7}
+# list the enteric antigens in Asembo Kenya and formatted labels for them
+mbavars <- c("vsp3","vsp5","cp17","cp23","leca","rotavirus","salb","sald","etec","cholera","p18","p39")
+
+mbalabs <- c("Giardia\nVSP-3","Giardia\nVSP-5","Cryptosporidium\nCp17","Cryptosporidium\nCp23","E. histolytica\nLecA","Rotavirus","Salmonella\nLPS B","Salmonella\nLPS D","ETEC\ntoxin beta subunit","Cholera\ntoxin beta subunit","Campylobacter\np18","Campylobacter\np39")
+
+kmat <- dall %>%
+  filter(country=="Kenya") %>%
+  select(id,sid,antigen,logmfi) %>%
+  spread(antigen,logmfi)
+
+pairs(kmat[mbavars],labels=mbalabs,cex=0.1,las=1,
+      upper.panel=scatterloess,
+      lower.panel=myellipse
+)
+
+# save a PDF version
+pdf("~/enterics-immuno-epi/figs/asembo-pairs-plot.pdf",width=11,height=11)
+pairs(kmat[mbavars],labels=mbalabs,cex=0.1,las=1,
+      upper.panel=scatterloess,
+      lower.panel=myellipse
+)
+mtext(expression(paste(log[10],"  Luminex response (MFI-bg)")),side=4,line=0.9)
+mtext(expression(paste(log[10],"  Luminex response (MFI-bg)")),side=3,line=2.5)
+
+dev.off()
+```
+## Tanzania
+```{r tanzania pairs plot,fig.width=7,fig.height=7}
+
+# list the enteric antigens in Kongwa, Tanzania and formatted labels for them
+mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","etec","cholera","p18","p39")
+
+mbalabs <- c("Giardia\nVSP-3","Giardia\nVSP-5","Cryptosporidium\nCp17","Cryptosporidium\nCp23",
+             "E. histolytica\nLecA","Salmonella\nLPS B","Salmonella\nLPS D","ETEC\ntoxin beta subunit","Cholera\ntoxin beta subunit","Campylobacter\np18","Campylobacter\np39")
+
+tmat <- dall %>%
+  filter(country=="Tanzania") %>%
+  select(id,sid,antigen,logmfi) %>%
+  spread(antigen,logmfi)
+pairs(tmat[mbavars],labels=mbalabs,cex=0.1,las=1,
+      upper.panel=scatterloess,
+      lower.panel=myellipse
+)
+
+# save a PDF version
+pdf("~/enterics-immuno-epi/figs/kongwa-pairs-plot.pdf",width=11,height=11)
+pairs(tmat[mbavars],labels=mbalabs,cex=0.1,las=1,
+      upper.panel=scatterloess,
+      lower.panel=myellipse
+)
+mtext(expression(paste(log[10],"  Luminex response (MFI-bg)")),side=4,line=0.9)
+mtext(expression(paste(log[10],"  Luminex response (MFI-bg)")),side=3,line=2.5)
+
+dev.off()
+```
+
+# Session Info
+```{r session info}
+sessionInfo()
+```
+
