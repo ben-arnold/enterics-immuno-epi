@@ -37,33 +37,33 @@ library(tidyverse)
 d <- readRDS("~/dropbox/kongwa/data/final/kongwa-mba-kids.rds")
 
 # list the enteric antigens and make formatted labels for them
-mbavars <- c("vsp3","vsp5","cp17","cp23","etec","cholera","salb","sald","p18","p39","leca")
+mbavars <- c("vsp3","vsp5","cp17","cp23","salb","sald","etec","cholera","p18","p39","leca")
 
 mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23",
-             "ETEC toxin beta subunit","Cholera toxin beta subunit","Salmonella LPS B","Salmonella LPS D","Campylobacter p18","Campylobacter p39","E. histolytica LecA")
+             "Salmonella LPS B","Salmonella LPS D","ETEC toxin beta subunit","Cholera toxin beta subunit","Campylobacter p18","Campylobacter p39","E. histolytica LecA")
 
 #-----------------------------
 # filter to just the relevant
 # variables
 #-----------------------------
 d2 <- d %>% 
-  select(svy,year,vilid,clusterid,hhid,seroid,age,mbavars)
+  select(svy,year,vilid,clusterid,hhid,seroid,aztr,age,mbavars)
 
 #-----------------------------
 # create a unique individual
 # observation id
 #-----------------------------
 d2 <- d2 %>%
-  arrange(svy,vilid,clusterid,hhid) %>%
+  arrange(svy,vilid,clusterid,hhid,aztr) %>%
   mutate(id = row_number()) %>%
-  select(svy,year,vilid,clusterid,hhid,seroid,id,age,mbavars)
+  select(svy,year,vilid,clusterid,hhid,seroid,id,aztr,age,mbavars)
 
 #-----------------------------
 # reshape long and convert
 # to log10 values
 #-----------------------------
 dl <- d2 %>%
-  gather(antigen,mfi,-svy,-year,-vilid,-clusterid,-hhid,-seroid,-id,-age)
+  gather(antigen,mfi,-svy,-year,-vilid,-clusterid,-hhid,-seroid,-id,-aztr,-age)
 
 # set negative and zero values to 1 before the log10 transform
 dl <- dl %>%
@@ -82,12 +82,13 @@ dl$pathogen[dl$antigen %in% c("vsp3","vsp5")] <- "Giardia"
 dl$pathogen[dl$antigen %in% c("cp17","cp23")] <- "Cryptosporidium"
 dl$pathogen[dl$antigen %in% c("leca")] <- "E. histolytica"
 dl$pathogen[dl$antigen %in% c("p18","p39")] <- "Campylobacter"
+dl$pathogen[dl$antigen %in% c("salb","sald")] <- "Salmonella"
 dl$pathogen[dl$antigen %in% c("etec")] <- "ETEC"
 dl$pathogen[dl$antigen %in% c("cholera")] <- "V. cholerae"
-dl$pathogen[dl$antigen %in% c("salb","sald")] <- "Salmonella"
+
 
 dl <- dl %>%
-  mutate(pathogen = factor(pathogen,levels=c("Giardia","Cryptosporidium","E. histolytica","ETEC","V. cholerae","Salmonella","Campylobacter")),
+  mutate(pathogen = factor(pathogen,levels=c("Giardia","Cryptosporidium","E. histolytica","Salmonella","ETEC","V. cholerae","Campylobacter")),
          antigenf=factor(antigen,levels=mbavars,labels=mbalabs))
      
 #-----------------------------
