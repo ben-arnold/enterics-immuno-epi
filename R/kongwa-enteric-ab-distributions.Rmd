@@ -27,6 +27,9 @@ For Giardia and Cryptosporidium antigens, the CDC lab estimated cutoff values us
 rm(list=ls())
 library(tidyverse)
 library(mixtools)
+library(ellipse)
+library(RColorBrewer)
+
 
 # set up for parallel computing
 # configure for a laptop (use only 3 cores)
@@ -63,10 +66,13 @@ cgrey <- "#777777"
 dl <- readRDS("~/enterics-immuno-epi/data/kongwa_analysis.rds")
 
 # list the enteric antigens and formatted labels for them
-mbavars <- c("vsp3","vsp5","cp17","cp23","leca","etec","cholera","salb","sald","p18","p39")
+mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","etec","cholera","p18","p39")
 
 mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23",
-             "E. histolytica LecA","ETEC toxin beta subunit","Cholera toxin beta subunit","Salmonella LPS B","Salmonella LPS D","Campylobacter p18","Campylobacter p39")
+             "E. histolytica LecA","Salmonella LPS B","Salmonella LPS D","ETEC toxin beta subunit","Cholera toxin beta subunit","Campylobacter p18","Campylobacter p39")
+
+dl <- dl %>%
+  mutate(antigen=as.character(antigen))
 ```
 
 #Distribution of antibody levels
@@ -75,7 +81,7 @@ mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptospori
 ```{r Ab distribution figure, fig.height=12, fig.width=6}
 
 # custom color blind color palette is in the preamble chunck
-pcols <- c(cred,corange,cgreen,cteal,cteal,cblue,cgrey)
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cgrey)
 
 # custom log labels
 log10labs <- c( 
@@ -148,18 +154,18 @@ Fit mixture models among children age 1
 # "Key for Ben Arnold.xlsx"
 #----------------------------
 dl$roccut <- NA
-dl$roccut[dl$antigen %in% "vsp3"] <- 116 
-dl$roccut[dl$antigen %in% "vsp5"] <- 109 
-dl$roccut[dl$antigen %in% "cp23"] <- 1185
-dl$roccut[dl$antigen %in% "cp17"] <- 321
-dl$roccut[dl$antigen %in% "leca"] <- 153
+dl$roccut[dl$antigen %in% "vsp3"] <- log10(116) 
+dl$roccut[dl$antigen %in% "vsp5"] <- log10(109) 
+dl$roccut[dl$antigen %in% "cp23"] <- log10(1185)
+dl$roccut[dl$antigen %in% "cp17"] <- log10(321)
+dl$roccut[dl$antigen %in% "leca"] <- log10(153)
 
 # different cutoffs for bead set used in years 2-4
-dl$roccut[dl$antigen %in% "vsp3"  & dl$svy >1] <- 170
-dl$roccut[dl$antigen %in% "vsp5"  & dl$svy >1] <- 141
-dl$roccut[dl$antigen %in% "cp23"  & dl$svy >1] <- 378 
-dl$roccut[dl$antigen %in% "cp17"  & dl$svy >1] <- 180 
-dl$roccut[dl$antigen %in% "leca"  & dl$svy >1] <- 94
+dl$roccut[dl$antigen %in% "vsp3"  & dl$svy >1] <- log10(170)
+dl$roccut[dl$antigen %in% "vsp5"  & dl$svy >1] <- log10(141)
+dl$roccut[dl$antigen %in% "cp23"  & dl$svy >1] <- log10(378) 
+dl$roccut[dl$antigen %in% "cp17"  & dl$svy >1] <- log10(180) 
+dl$roccut[dl$antigen %in% "leca"  & dl$svy >1] <- log10(94)
 
 ```
 
@@ -190,7 +196,7 @@ fitmix <- function(x,lambda,k) {
 # store densities of mixture distributions
 # and estimated cutoffs
 # mixdens <- foreach(ab=c("vsp3","vsp5","cp17","cp23","etec","cholera","leca"),.combine=rbind) %do% {
-
+set.seed(123)
 mixdens <- foreach(ab=unique(dl$antigen),.combine=rbind) %do% {
   cat("\n\n Mixture model fit for ",ab,"\n\n")
   mixf <- fitmix(x=dl$logmfi[dl$antigen==ab & dl$age==1 & !is.na(dl$logmfi)],lambda=0.5,k=2)
@@ -201,24 +207,13 @@ mixdens <- foreach(ab=unique(dl$antigen),.combine=rbind) %do% {
   di
 }
 
-# for vsp5, there is appears to be a negative distribution
-# so try to estimate it with a 3-component mixture
-# (commented out: inconsistent methodology)
-# vsp5mix <- fitmix(x=dl$logmfi[dl$antigen=="vsp5" & dl$age==1 & !is.na(dl$logmfi)],lambda=0.5,k=3)
-# vsp5dens <- vsp5mix$xden %>%
-#   mutate(antigen="vsp5",
-#          mixcut=vsp5mix$mixcut)
-# mixdens <- mixdens %>%
-#   filter(antigen!="vsp5")
-# mixdens <- bind_rows(mixdens,vsp5dens)
-
 
 # The only realistic cutoff values using a 2-component mixture are 
-# for Giardia VSP-3 and for E. hist LecA
+# for Giardia VSP-3 and VSP-5 and for E. hist LecA
 # set all the others to missing
 mixcuts <- mixdens %>%
   group_by(antigen) %>% filter(row_number()==1) %>% select(antigen,mixcut) %>% ungroup()
-mixcuts$mixcut[ !mixcuts$antigen %in% c("vsp3","leca")] <- NA
+mixcuts$mixcut[ !mixcuts$antigen %in% c("vsp3","vsp5","leca")] <- NA
 
 #-----------------------------
 # merge in the mixture cutoffs
@@ -238,8 +233,8 @@ dl <- left_join(dl,mixcuts,by=c("antigen"))
 # set the pathogen field to an arbitrary value (Giardia) to 
 # mesh with the global ggplot aesthetics
 plotmixdens <- mixdens %>%
-  mutate(den1p = ifelse(!antigen %in% c("vsp3","leca"),NA,den1),
-         den2p = ifelse(!antigen %in% c("vsp3","leca"),NA,den2)) %>%
+  mutate(den1p = ifelse(!antigen %in% c("vsp3","vsp5","leca"),NA,den1),
+         den2p = ifelse(!antigen %in% c("vsp3","vsp5","leca"),NA,den2)) %>%
   mutate(antigenf=factor(antigen,levels=mbavars,labels=mbalabs),
          pathogen="Giardia"
          )
@@ -258,7 +253,7 @@ pmix <- ggplot(data=filter(dl,age==1),
   geom_line(data=plotmixdens,aes(x=x,y=den1p),color=cblack) +
   geom_line(data=plotmixdens,aes(x=x,y=den2p),color=cblack) +
   # add vertical lines for the cutoff values
-  geom_vline(aes(xintercept=log10(roccut))) +
+  geom_vline(aes(xintercept=roccut)) +
   geom_vline(aes(xintercept=mixcut),linetype=2) +
   # labels and formatting
   scale_x_continuous(limits = c(0,4.5),breaks = 0:4,labels=log10labs) +
@@ -291,7 +286,7 @@ dlplot <- dl %>%
 
 
 # custom color blind color palette is in the preamble chunck
-pcols <- c(cred,corange,cgreen,cteal,cteal,cblue,cgrey)
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cgrey)
 
 # custom log labels
 log10labs <- c( 
@@ -306,7 +301,7 @@ log10labs <- c(
 p2 <- ggplot(data=dlplot,aes(x=logmfi,fill=pathogen,color=pathogen)) +
   facet_grid(agecat~antigenf,scales='free')+
   geom_density(aes(y=..density..),color=NA,alpha=0.7)+
-  geom_vline(aes(xintercept = log10(plotroc))) +
+  geom_vline(aes(xintercept = plotroc)) +
   geom_vline(aes(xintercept = mixcut),linetype=2) +
   # scale_y_continuous(expand=c(0,0),breaks=seq(0,40,by=10)) +
   coord_cartesian(ylim=c(0, 1.25))+
@@ -318,8 +313,6 @@ p2 <- ggplot(data=dlplot,aes(x=logmfi,fill=pathogen,color=pathogen)) +
   theme(
     strip.text.x = element_text(size=9),
     strip.text.y=element_text(size=12,angle=0),
-    axis.title.y=element_text(color="gray40"),
-    axis.text.y=element_text(color="gray60"),
     # panel.grid.minor.y = element_blank(),
     legend.position="none"
   )
@@ -336,7 +329,7 @@ This part of the analysis identifies seropositive individuals based on ROC cutof
 
 ```{r seropositivity}
 dl <- dl %>%
-  mutate(posroc = ifelse(logmfi > log10(roccut),1,0),
+  mutate(posroc = ifelse(logmfi > roccut,1,0),
          posmix = ifelse(logmfi > mixcut,1,0))
 
 # compare classification by ROC and mixture models 
@@ -368,6 +361,7 @@ knitr::kable(dclass,digits=2,caption="Summary of seropositivity classifications 
 
 
 ```
+
 
 ```{r save data}
 #-----------------------------
