@@ -60,9 +60,16 @@ cgrey <- "#777777"
 dl <- readRDS("~/enterics-immuno-epi/data/haiti_analysis2.rds")
 
 # list the enteric antigens and formatted labels for them
+# re-arrange the order slightly compared to other figures 
+# just to acommodate plot aesthetics
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","etec","salb","sald","norogi","norogii")
 
-mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Salmonella LPS B","Salmonella LPS D","ETEC toxin beta subunit","Norovirus GI", "Norovirus GII")
+mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","ETEC toxin beta subunit","Salmonella LPS B","Salmonella LPS D","Norovirus GI", "Norovirus GII")
+
+dl <- dl %>%
+  mutate(antigenf=factor(antigenf,levels=mbalabs),
+         pathogen=factor(pathogen,levels=c("Giardia","Cryptosporidium","E. histolytica","ETEC","Salmonella","Norovirus")))
+
 ```
 
 #Estimate age-dependent mean antibody levels
@@ -194,7 +201,7 @@ log10labs <- c(
 )
 
 # custom color blind color palette is in the preamble chunck
-pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+pcols <- c(cred,corange,cgreen,cblue,cteal,cmagent)
 
 pcurveall <- ggplot(data=gamfits,aes(x=age,group=pathogen,color=pathogen,fill=pathogen)) +
   # approximate simultaneous CI from spline fit
@@ -238,17 +245,17 @@ log10labs <- c(
 )
 
 # custom color blind color palette is in the preamble chunck
-pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+pcols <- c(cred,corange,cgreen,cblue,cteal,cmagent)
 
 pcurve <- ggplot(data=gamfits,aes(x=age,group=pathogen,color=pathogen,fill=pathogen)) +
   # approximate simultaneous CI from spline fit
   geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA,fill=cgrey) +
   # actual measurements
-  geom_jitter(aes(y=logmfi),width=0.2,height=0,color="black",alpha=0.4,size=0.3) +
+  geom_jitter(aes(y=logmfi),width=0.2,height=0,alpha=0.4,size=0.3) +
   # ensemble fit
   # geom_line(data=slfits,aes(x=age,y=fit),color=cgrey) +
   # spline fit
-  geom_line(aes(y=fit)) +
+  geom_line(aes(y=fit),color="black") +
   # plot aesthetics
   facet_wrap(~antigenf,nrow=6,ncol=2) +
   scale_x_continuous(limits=c(0,10),breaks=seq(0,10,by=2))+
@@ -272,8 +279,7 @@ ggsave("~/enterics-immuno-epi/figs/haiti-ab-agecurves-mean.pdf",plot=pcurve,devi
 
 ##Estimate seroprevalence curves using splines in a generalized additive model (GAM)
 
-```{r age-curve seroprevalence gam }
-
+```{r seroprevalence and composite antigens, warning=FALSE}
 #-----------------------------
 # subset the data to antigens
 # with seropositivity estimates
@@ -295,6 +301,60 @@ dlp <- dl %>%
          serocut=ifelse(!is.na(serocut),serocut,unexpcut)) %>%
   filter(!is.na(seropos))
 
+#-----------------------------
+# create composite 
+# seropositivity indicators
+# that use information from
+# multiple antigens
+#-----------------------------
+
+dgi <- dlp %>% 
+  filter(antigen %in% c("vsp3","vsp5")) %>%
+  select(id,sampleid,sdate,age,pathogen,antigen,seropos) %>%
+  spread(antigen,seropos) %>%
+  mutate(seropos=ifelse(vsp3==1|vsp5==1,1,0),
+         antigen="vsp3vsp5",
+         antigenf="Giardia VSP-3 + VSP-5") %>%
+  select(-vsp3,-vsp5)
+
+dcr <- dlp %>% 
+  filter(antigen %in% c("cp17","cp23")) %>%
+  select(id,sampleid,sdate,age,pathogen,antigen,seropos) %>%
+  spread(antigen,seropos) %>%
+  mutate(seropos=ifelse(cp17==1|cp23==1,1,0),
+         antigen="cp17cp23",
+         antigenf="Cryptosporidium Cp17 + Cp23") %>%
+  select(-cp17,-cp23)
+
+ds <- dlp %>% 
+  filter(antigen %in% c("salb","sald")) %>%
+  select(id,sampleid,sdate,age,pathogen,antigen,seropos) %>%
+  spread(antigen,seropos) %>%
+  mutate(seropos=ifelse(salb==1|sald==1,1,0),
+         antigen="salbsald",
+         antigenf="Salmonella LPS groups B + D") %>%
+  select(-salb,-sald)
+
+
+
+dlp <- bind_rows(dlp,dgi,dcr,ds) %>%
+  mutate(antigenf=factor(antigenf,
+                         levels=c("Giardia VSP-3 + VSP-5",
+                                  "Cryptosporidium Cp17 + Cp23",
+                                  "E. histolytica LecA",
+                                  "ETEC toxin beta subunit",
+                                  "Salmonella LPS groups B + D",
+                                  "Norovirus GI", 
+                                  "Norovirus GII")) ) %>%
+  filter(!is.na(antigenf)) %>%
+  select(pathogen,antigen,antigenf,
+         id,sampleid,sdate,age,
+         seropos) %>%
+  arrange(pathogen,antigenf,id,sdate)
+```
+
+
+```{r age-curve seroprevalence gam }
 #-----------------------------
 # estimate seroprevalence curves with 
 # splines
@@ -392,7 +452,7 @@ prevests <- foreach(ab=levels(dlp$antigenf),.combine=rbind) %:%
 
 ```
 
-##Plot age-dependent seroprevalence  curves
+##Plot age-dependent seroprevalence curves
 
 Plot all of the estimates together. The spline fits are colored and the highly adaptive ensemble fits are grey. Empirical means with 95% CIs (averaged by year) are black. The approximate simultaneous confidence bands for the spline fit are shaded. The plots are trimed at age 10 years to reduce edge effects because there are only 19 measurements older than 10 years.
 
@@ -434,13 +494,17 @@ Create a more parsimonius plot, that only includes the spline fits but also incl
 
 ```{r age-curve seroprevalence figure, fig.height=9, fig.width=6}
 
+  # set ETEC confidence band to NA after it flatlines at 100%
+dplot <- pgamfits %>%
+  mutate(lwrS=ifelse(antigen=="etec" & fit==1,NA,lwrS))
+
 
 # bright color-blind palette defined in an earlier code chunk
 pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
 
-ppcurve2 <- ggplot(data=pgamfits,aes(x=age,group=pathogen,color=pathogen,fill=pathogen)) +
+ppcurve2 <- ggplot(data=dplot,aes(x=age,group=pathogen,color=pathogen,fill=pathogen)) +
   # approximate simultaneous CI from spline fit
-  geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA,fill=cgrey) +
+  geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA) +
   # actual measurements
   geom_point(aes(y=seropos),color="black",alpha=0.4,size=0.3) +
   # spline fit
