@@ -26,6 +26,12 @@ library(scales)
 library(ellipse)
 library(RColorBrewer)
 
+# set up for parallel computing
+# configure for a laptop (use only 3 cores)
+library(foreach)
+library(doParallel)
+registerDoParallel(cores=3)
+
 # bright color blind palette:  https://personal.sron.nl/~pault/ 
 cblack <- "#000004FF"
 cblue <- "#3366AA"
@@ -84,14 +90,14 @@ dall <- bind_rows(dh,dk,dt)
 # drop obs not contributing
 #--------------------------------
 d <- dall %>%
-  mutate(comp= ifelse(antigen %in% c("vsp3","vsp5"),"Giardia\nVSP-3 v VSP-5",NA),
-         comp= ifelse(antigen %in% c("cp17","cp23"),"Cryptosporidium\nCp17 v Cp23",comp),
-         comp= ifelse(antigen %in% c("p18","p39"),"Campylobacter\np18 v p39",comp),
-         comp= ifelse(antigen %in% c("sald","salb"),"Salmonella\nLPS Group B v LPS Group D",comp),
-         comp= ifelse(antigen %in% c("cholera","etec"),"ETEC toxin beta subunit v\nV. cholerae toxin beta subunit",comp),
-         comp= ifelse(antigen %in% c("norogi","norogii"),"Norovirus\nGI v GII",comp),
+  mutate(comp= ifelse(antigen %in% c("vsp3","vsp5"),"Giardia\nVSP-5 (y-axis)\nVSP-3 (x-axis)",NA),
+         comp= ifelse(antigen %in% c("cp17","cp23"),"Cryptosporidium\nCp23 (y-axis)\nCp17 (x-axis)",comp),
+         comp= ifelse(antigen %in% c("p18","p39"),"Campylobacter\np39 (y-axis)\np18 (x-axis)",comp),
+         comp= ifelse(antigen %in% c("sald","salb"),"Salmonella\nLPS Group D (y-axis)\nLPS Group B (x-axis)",comp),
+         comp= ifelse(antigen %in% c("cholera","etec"),"ETEC toxin beta subunit (y-axis)\nV. cholerae toxin beta subunit (x-axis)",comp),
+         comp= ifelse(antigen %in% c("norogi","norogii"),"Norovirus\nGI (y-axis)\nGII (x-axis)",comp),
          comp= ifelse(country=="Haiti" & antigen =="etec",NA,comp),
-         comp= factor(comp,levels=c("Giardia\nVSP-3 v VSP-5","Cryptosporidium\nCp17 v Cp23","Campylobacter\np18 v p39","Salmonella\nLPS Group B v LPS Group D","ETEC toxin beta subunit v\nV. cholerae toxin beta subunit","Norovirus\nGI v GII"))
+         comp= factor(comp,levels=c("Giardia\nVSP-5 (y-axis)\nVSP-3 (x-axis)","Cryptosporidium\nCp23 (y-axis)\nCp17 (x-axis)","Campylobacter\np39 (y-axis)\np18 (x-axis)","Salmonella\nLPS Group D (y-axis)\nLPS Group B (x-axis)","ETEC toxin beta subunit (y-axis)\nV. cholerae toxin beta subunit (x-axis)","Norovirus\nGI (y-axis)\nGII (x-axis)"))
          ) %>%
   filter(!is.na(comp))
 
@@ -160,7 +166,7 @@ complot <- ggplot(data=dw,aes(x=x,y=y)) +
   theme_minimal() +
   theme(
     strip.text.x=element_text(face="bold",size=12),
-    strip.text.y=element_text(face="bold",size=10),
+    strip.text.y=element_text(face="bold",size=12,angle=0),
     legend.position="none"
   )
 
@@ -168,7 +174,7 @@ complot <- ggplot(data=dw,aes(x=x,y=y)) +
 complot
 
 # save a PDF version
-ggsave("~/enterics-immuno-epi/figs/all-ab-scatter-composite.pdf",plot=complot,device="pdf",width=9,height=15)
+ggsave("~/enterics-immuno-epi/figs/all-ab-scatter-composite.pdf",plot=complot,device="pdf",width=13,height=15)
 
 ```
 
