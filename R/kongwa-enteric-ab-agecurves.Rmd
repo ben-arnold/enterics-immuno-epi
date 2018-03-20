@@ -60,10 +60,10 @@ cgrey <- "#777777"
 dl <- readRDS("~/enterics-immuno-epi/data/kongwa_analysis2.rds")
 
 # list the enteric antigens and formatted labels for them
-mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","p18","p39","etec","cholera")
+mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","etec","cholera","p18","p39")
 
 mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23",
-             "E. histolytica LecA","Campylobacter p18","Campylobacter p39","ETEC toxin beta subunit","Cholera toxin beta subunit","Salmonella LPS B","Salmonella LPS D")
+             "E. histolytica LecA","Salmonella LPS B","Salmonella LPS D","ETEC toxin beta subunit","Cholera toxin beta subunit","Campylobacter p18","Campylobacter p39")
 ```
 
 #Estimate age-dependent mean antibody levels
@@ -191,7 +191,7 @@ log10labs <- c(
 )
 
 # custom color blind color palette is in the preamble chunck
-pcols <- c(cred,corange,cgreen,cteal,cteal,cblue,cgrey)
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cgrey)
 
 pcurveall <- ggplot(data=gamfits,aes(x=age+0.5,group=pathogen,color=pathogen,fill=pathogen)) +
   # approximate simultaneous CI from spline fit
@@ -235,17 +235,17 @@ log10labs <- c(
 )
 
 # custom color blind color palette is in the preamble chunck
-pcols <- c(cred,corange,cgreen,cteal,cteal,cblue,cgrey)
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cgrey)
 
-pcurve <- ggplot(data=gamfits,aes(x=age+0.5,group=pathogen,color=pathogen,fill=pathogen)) +
+pcurve <- ggplot(data=gamfits,aes(x=age+0.5,color=pathogen,fill=pathogen)) +
   # approximate simultaneous CI from spline fit
   geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA,fill=cgrey) +
   # actual measurements
-  geom_jitter(aes(y=logmfi),width=0.2,height=0,color="black",alpha=0.3,size=0.3) +
+  geom_jitter(aes(y=logmfi),width=0.2,height=0,alpha=0.3,size=0.3) +
   # ensemble fit
   # geom_line(data=slfits,aes(x=age,y=fit),color=cgrey) +
   # spline fit
-  geom_line(aes(y=fit)) +
+  geom_line(aes(y=fit),color="black") +
   # plot aesthetics
   facet_wrap(~antigenf,nrow=6,ncol=2) +
   scale_x_continuous(limits=c(0,10),breaks=seq(0,10,by=2))+
@@ -269,7 +269,8 @@ ggsave("~/enterics-immuno-epi/figs/kongwa-ab-agecurves-mean.pdf",plot=pcurve,dev
 
 ##Estimate seroprevalence curves using splines in a generalized additive model (GAM)
 
-```{r age-curve seroprevalence gam }
+
+```{r seroprevalence and composite antigens, warning=FALSE}
 
 #-----------------------------
 # subset the data to antigens
@@ -279,13 +280,55 @@ ggsave("~/enterics-immuno-epi/figs/kongwa-ab-agecurves-mean.pdf",plot=pcurve,dev
 # antigens that have reliable
 # cutoff values are those with
 # ROC cutoffs
-
 #-----------------------------
 dlp <- dl %>%
   mutate(seropos=ifelse(!is.na(posroc),posroc,posmix),
-         serocut=ifelse(!is.na(posroc),log10(roccut),mixcut),
+         serocut=ifelse(!is.na(posroc),roccut,mixcut),
          serocut_desc=ifelse(!is.na(posroc),"ROC","Mixture Model")) %>%
-  filter(!is.na(seropos))
+  filter(!is.na(seropos)) %>%
+  mutate(antigenf=droplevels(antigenf))
+
+
+#-----------------------------
+# create composite 
+# seropositivity indicators
+# that use information from
+# multiple antigens
+#-----------------------------
+
+dgi <- dlp %>% 
+  filter(antigen %in% c("vsp3","vsp5")) %>%
+  select(svy,year,vilid,clusterid,hhid,seroid,id,aztr,age,pathogen,antigen,seropos) %>%
+  spread(antigen,seropos) %>%
+  mutate(seropos=ifelse(vsp3==1|vsp5==1,1,0),
+         antigen="vsp3vsp5",
+         antigenf="Giardia VSP-3 + VSP-5") %>%
+  select(-vsp3,-vsp5)
+
+dcr <- dlp %>% 
+  filter(antigen %in% c("cp17","cp23")) %>%
+  select(svy,year,vilid,clusterid,hhid,seroid,id,aztr,age,pathogen,antigen,seropos) %>%
+  spread(antigen,seropos) %>%
+  mutate(seropos=ifelse(cp17==1|cp23==1,1,0),
+         antigen="cp17cp23",
+         antigenf="Cryptosporidium Cp17 + Cp23") %>%
+  select(-cp17,-cp23)
+
+
+dlp <- bind_rows(dlp,dgi,dcr) %>%
+  mutate(antigenf=factor(antigenf,
+                         levels=c("Giardia VSP-3 + VSP-5",
+                                  "Cryptosporidium Cp17 + Cp23",
+                                  "E. histolytica LecA")) ) %>%
+  filter(!is.na(antigenf)) %>%
+  select(pathogen,antigen,antigenf,
+         svy,year,vilid,clusterid,hhid,seroid,id,aztr,age,
+         roccut,mixcut,serocut,serocut_desc,
+         posroc,posmix,seropos) %>%
+  arrange(pathogen,antigenf,svy,year,clusterid,id,age)
+```
+
+```{r age-curve seroprevalence gam }
 
 #-----------------------------
 # estimate seroprevalence curves with 
@@ -296,8 +339,8 @@ dlp <- dl %>%
 # estimate approximate simultaneous confidence intervals
 # for the fits
 library(mgcv)
-pgamfits <- foreach(ab=c("vsp3","vsp5","cp17","cp23","leca"),.combine=rbind) %dopar% {
-    pd <- filter(dlp, antigen==ab)
+pgamfits <- foreach(ab=c("Giardia VSP-3 + VSP-5","Cryptosporidium Cp17 + Cp23","E. histolytica LecA"),.combine=rbind) %dopar% {
+    pd <- filter(dlp, antigenf==ab)
     gfit <- mgcv::gam(seropos~s(age, bs="cr",k=9),data=pd,family="binomial")
     gsci <- gamCI(m=gfit,newdata=pd,nreps=1000)
     gsci$antigen <- ab
@@ -311,7 +354,7 @@ pgamfits <- pgamfits %>%
          lwrP = 1/(1+exp(-lwrP)),
          uprS = 1/(1+exp(-uprS)),
          lwrS = 1/(1+exp(-lwrS))) %>%
-  mutate(antigenf=factor(antigen,levels=mbavars,labels=mbalabs))
+  mutate(antigenf=factor(antigenf,levels=levels(dlp$antigenf)))
 
 ```
 
@@ -332,8 +375,8 @@ pgamfits <- pgamfits %>%
 detach("package:mgcv", unload=TRUE)
 
 set.seed(12345)
-pslfits <-  foreach(ab=c("vsp3","vsp5","cp17","cp23","leca"),.combine=rbind) %dopar% {
-  pd <- filter(dlp, antigen==ab)
+pslfits <-  foreach(ab=c("Giardia VSP-3 + VSP-5","Cryptosporidium Cp17 + Cp23","E. histolytica LecA"),.combine=rbind) %dopar% {
+  pd <- filter(dlp, antigenf==ab)
   slfit <- agecurveAb(Y=pd$seropos,
                       Age=pd$age,
                       id=pd$id,
@@ -353,7 +396,7 @@ pslfits <-  foreach(ab=c("vsp3","vsp5","cp17","cp23","leca"),.combine=rbind) %do
 # influence curve
 #-----------------------------
 
-tmlemeansp <- foreach(ab=c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA"),.combine=rbind) %:%
+tmlemeansp <- foreach(ab=c("Giardia VSP-3 + VSP-5","Cryptosporidium Cp17 + Cp23","E. histolytica LecA"),.combine=rbind) %:%
   foreach(agei=1:9,.combine=rbind) %dopar% {
     pd <- filter(dlp,antigenf==ab & floor(age)==agei)
     mu <- tmleAb(Y=pd$seropos,id=pd$clusterid,SL.library="SL.mean")
@@ -372,7 +415,7 @@ Plot all of the estimates together. The spline fits are colored and the highly a
 # bright color-blind palette defined in an earlier code chunk
 pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
 
-ppcurve <- ggplot(data=pgamfits,aes(x=age+0.5,group=pathogen,color=pathogen,fill=pathogen)) +
+ppcurve <- ggplot(data=pgamfits,aes(x=age+0.5,color=pathogen,fill=pathogen)) +
   # approximate simultaneous CI from spline fit
   geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA,fill=cgrey) +
   # actual measurements
@@ -384,7 +427,7 @@ ppcurve <- ggplot(data=pgamfits,aes(x=age+0.5,group=pathogen,color=pathogen,fill
   # empirical means 95% CI from the influence curve (averaged for each age)
   geom_pointrange(data=tmlemeansp,aes(x=age+0.5,y=mean,ymin=lb,ymax=ub),size=0.2,color=cblack)+
   # plot aesthetics
-  facet_wrap(~antigenf,nrow=6,ncol=2) +
+  facet_wrap(~antigenf,nrow=4,ncol=1) +
   scale_x_continuous(limits=c(0,10),breaks=seq(0,10,by=2))+
   scale_y_continuous(breaks=seq(0,1,by=0.2),labels=sprintf("%1.0f",seq(0,1,by=0.2)*100))+
   coord_cartesian(ylim=c(0,1))+
@@ -397,7 +440,7 @@ ppcurve <- ggplot(data=pgamfits,aes(x=age+0.5,group=pathogen,color=pathogen,fill
 ppcurve
 
 # save a PDF version
-ggsave("~/enterics-immuno-epi/figs/kongwa-ab-agecurves-seroprev-allests.pdf",plot=ppcurve,device="pdf",width=7,height=14)
+ggsave("~/enterics-immuno-epi/figs/kongwa-ab-agecurves-seroprev-allests.pdf",plot=ppcurve,device="pdf",width=4,height=10)
 
 ```
 
@@ -411,13 +454,13 @@ pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
 
 ppcurve2 <- ggplot(data=pgamfits,aes(x=age+0.5,group=pathogen,color=pathogen,fill=pathogen)) +
   # approximate simultaneous CI from spline fit
-  geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA,fill=cgrey) +
+  geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA) +
   # actual measurements
   # geom_jitter(aes(y=seropos),width=0.2,height=0,color="black",alpha=0.4,size=0.3) +
   # spline fit
   geom_line(aes(y=fit)) +
   # plot aesthetics
-  facet_wrap(~antigenf,nrow=6,ncol=2) +
+  facet_wrap(~antigenf,nrow=4,ncol=1) +
   scale_x_continuous(limits=c(0,10),breaks=seq(0,10,by=2))+
   scale_y_continuous(breaks=seq(0,1,by=0.2),labels=sprintf("%1.0f",seq(0,1,by=0.2)*100))+
   coord_cartesian(ylim=c(0,1))+
@@ -430,7 +473,7 @@ ppcurve2 <- ggplot(data=pgamfits,aes(x=age+0.5,group=pathogen,color=pathogen,fil
 ppcurve2
 
 # save a PDF version
-ggsave("~/enterics-immuno-epi/figs/kongwa-ab-agecurves-seroprev.pdf",plot=ppcurve2,device="pdf",width=7,height=14)
+ggsave("~/enterics-immuno-epi/figs/kongwa-ab-agecurves-seroprev.pdf",plot=ppcurve2,device="pdf",width=4,height=10)
 
 ```
 
