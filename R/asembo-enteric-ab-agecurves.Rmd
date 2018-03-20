@@ -191,7 +191,7 @@ log10labs <- c(
 )
 
 # bright color-blind palette defined in an earlier code chunk
-pcols <- c(cred,corange,cgreen,cchartr,cteal,cteal,cblue,cgrey)
+pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
 
 pcurve <- ggplot(data=gamfits,aes(x=age,group=pathogen,color=pathogen,fill=pathogen)) +
   # approximate simultaneous CI from spline fit
@@ -232,19 +232,21 @@ log10labs <- c(
 )
 
 # bright color-blind palette defined in an earlier code chunk
-pcols <- c(cred,corange,cgreen,cchartr,cteal,cteal,cblue,cgrey)
+pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
 
 pcurve <- ggplot(data=filter(gamfits,age<=17),aes(x=age,group=pathogen,color=pathogen,fill=pathogen)) +
   # approximate simultaneous CI from spline fit
   geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA,fill=cgrey) +
   # actual measurements
-  geom_jitter(aes(y=logmfi),width=0.2,height=0,color="black",alpha=0.4,size=0.3) +
+  geom_jitter(aes(y=logmfi),width=0.2,height=0,alpha=0.4,size=0.3) +
   # spline fit
   geom_line(aes(y=fit),color="black") +
   # plot aesthetics
   facet_wrap(~antigenf,nrow=6,ncol=2) +
   scale_x_continuous(breaks=seq(4,18,by=2))+
   scale_y_continuous(breaks=0:4,labels=log10labs)+
+  scale_fill_manual(values=pcols) +
+  scale_color_manual(values=pcols) +
   coord_cartesian(ylim=c(0,4.5))+
   labs(x="Age in months",y="Luminex Response (MFI-bg)") +
   theme_minimal() +
