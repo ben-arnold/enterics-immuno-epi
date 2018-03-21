@@ -1,7 +1,7 @@
 ---
 title: "Haiti enteric antibody analysis of longitudinal change"
 output: 
-  html_document:
+  html_notebook:
     theme: default
     highlight: haddock
     toc: true
@@ -66,17 +66,24 @@ Among children, identify those that changed status between enrollment and follow
 ```{r long incidence}
 
 #-----------------------------
-# Identify seropositive
-# measurements using ROC-based
-# cutoffs if available or
-# mixture model cutoffs as
-# a secondary. ETEC has no
-# defined cutoff through either
-# method
+# identify seropositive measures
+# hierarchy of information for 
+# cutoffs:
+# 1. ROC
+# 2. mixture model based
+# 3. estimated among presumed unexposed
+#
+# store the cutoff value used
+# for figures
 #-----------------------------
 dl <- dl %>%
-  mutate(seropos=ifelse(!is.na(posroc),posroc,posmix)) %>%
-  mutate(antigenf=factor(antigenf))
+  mutate(seropos=ifelse(!is.na(posroc),posroc,posmix),
+         serocut=ifelse(!is.na(posroc),log10(roccut),mixcut),
+         serocut_desc=ifelse(!is.na(posroc),"ROC","Mixture Model")) %>%
+  mutate(seropos=ifelse(!is.na(seropos),seropos,posunex),
+         serocut_desc=ifelse(!is.na(serocut),serocut_desc,"Unexp dist"),
+         serocut=ifelse(!is.na(serocut),serocut,unexpcut)) 
+
 
 #-----------------------------
 # identify incident 
@@ -119,7 +126,7 @@ dl2 <- dl %>%
          starts_with("age"),
          pathogen,antigen,antigenf,
          mfi,logmfi,logmfi_dlag,logmfi_dlead,
-         roccut,mixcut,
+         roccut,mixcut,serocut,
          posroc,posmix,seropos,seroi,seroin,seror,serorn,
          -logmfi_lag,-logmfi_lead,-seropos_lag)
 
@@ -194,7 +201,7 @@ foreach(iid=c(20,24,30,34,35,38,43,47,72,76,77,119,135)) %do% {
     geom_line(alpha=0.1,color=cgrey) +
     guides(colour=FALSE) +
     guides(alpha=FALSE) +
-    geom_hline(aes(yintercept=ifelse(!is.na(roccut),log10(roccut),mixcut)),linetype="dashed") +
+    geom_hline(aes(yintercept=serocut),linetype="dashed") +
     geom_line(data=filter(dl2plot,sid==iid),aes(x=age,y=logmfi,color=sero_chng)) +
     scale_color_manual(values=c(corange,cteal,cgrey))+
     xlab("Child Age (Years)") +
@@ -217,86 +224,286 @@ foreach(iid=c(20,24,30,34,35,38,43,47,72,76,77,119,135)) %do% {
 
 
 ## Summarize distribution of changes in MFI by age category
-```{r change in MFI by agecat, fig.width=5,fig.height=12}
+```{r change in MFI by agecat, fig.width=7,fig.height=7}
 
 # Difference in MFI values - boxplot
 dl2plot <- dl2 %>%
-  mutate(agecat=factor(agecat,levels=levels(agecat),labels=c("0","1","2","3+")))
+  mutate(agecat=cut(age,breaks=c(0,0.99,1.99,2.99,3.99,4.99,12),labels=c("0","1","2","3","4","5+")))
 
+# calculate Ns in each age category to print in the figure
+ageNs <- dl2plot %>%
+  group_by(pathogen,antigenf,agecat) %>%
+  summarize(n=n()) %>%
+  filter(!is.na(agecat)) %>%
+  mutate(nlab=paste("(n=",n,")",sep=""))
 
 # custom color blind color palette is in the preamble chunck
 pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
 
-diffmfi_byage <- ggplot(data=dl2plot,aes(x=agecat,y=logmfi_dlead,fill=pathogen)) +
-  facet_wrap(~antigenf,nrow=6,ncol=2)+ # ,scales='free_y'
-  geom_boxplot(alpha=0.6,notch=FALSE,outlier.color=NA)+
-  # geom_violin(alpha=0.6)+
+diffmfi_byage <- ggplot(data=dl2plot,aes(x=agecat,y=logmfi_dlead,fill=pathogen,color=pathogen)) +
+  facet_wrap(~antigenf,nrow=6,ncol=4)+ # ,scales='free_y'
+  geom_jitter(position = position_jitter(width = 0.2), alpha = 0.2,pch=19) +
+  geom_boxplot(notch=FALSE,outlier.color=NA,width=0.5,alpha=0.5,fill=NA,color="grey20")+
   geom_hline(aes(yintercept = 0)) +
-  scale_y_continuous(expand=c(0,0),limits=c(-3,4.5),breaks=-3:4) +
+  geom_text(data=ageNs,aes(x=agecat,y=-3.75,label=nlab),col="gray40",size=2) +
+
+  scale_y_continuous(expand=c(0,0),limits=c(-4,4.5),breaks=-3:4) +
   scale_fill_manual(values=pcols)+
   scale_color_manual(values=pcols)+
   labs(title="",x="Age at beginning of period (years completed)",y="Change in log10 Luminex Response (MFI-bg) between measurements") +
-  theme_minimal()+
+  theme_minimal(base_size=12)+
   theme(
-    axis.title = element_text(size=14),
-    axis.text.y = element_text(size=10),
-    axis.text.x = element_text(size=10),
-    strip.text = element_text(size=12),
-    strip.text.y=element_text(angle=0),
-    # panel.grid.minor.y = element_blank(),
     panel.grid.minor.x = element_blank(),
-    # panel.grid.major.x = element_blank(),
     legend.position="none"
   )
 
 diffmfi_byage
 
 # save a PDF version
-ggsave("~/enterics-immuno-epi/figs/haiti-ab-mfidiff-byage.pdf",plot=diffmfi_byage,device="pdf",width=5,height=14)
+ggsave("~/enterics-immuno-epi/figs/haiti-ab-mfidiff-byage.pdf",plot=diffmfi_byage,device="pdf",width=9,height=8)
 
 
 ```
 
-## Summarize distribution of changes in MFI by incident episode number
-```{r change in MFI by episode, fig.width=5,fig.height=12}
+## Distribution of changes in MFI by seroconversion status
+```{r change in MFI by episode, fig.width=7,fig.height=7}
 
-# Difference in MFI values by episode number - boxplot
+# Create a factor that summarizes seroconversion status, with 4 categories:
+# seroreversion, no change, 1st seroconversion, 2nd or 3rd seroconversion
 dl2plot <- dl2 %>%
-  mutate(seroinf=factor(seroin,levels=c(0,1,2,3),labels=c("0","1","2","3")))
+  mutate(seroinf=cut(seroin,breaks=c(-1,0,1,5),
+                     labels=c("No change", "1st\nseroconversion", "2nd or 3rd\nseroconversion")),
+         serostat = seroinf
+  )
 
-# set ETEC all to 0 since we don't have episodes
-dl2plot$seroinf[dl2plot$antigen=="etec"] <- "0"
+dl2plot$serostat = factor(dl2plot$serostat,levels=c("Seroreversion",levels(dl2plot$seroinf))) 
+dl2plot$serostat[dl2plot$seror==1] <- "Seroreversion"
+                          
+# calculate Ns in each seroconversion category to print in the figure
+epiNs <- dl2plot %>%
+  group_by(pathogen,antigenf,serostat) %>%
+  summarize(n=n()) %>%
+  filter(!is.na(serostat)) %>%
+  mutate(nlab=paste("(n=",n,")",sep=""))
 
 
 # custom color blind color palette is in the preamble chunck
 pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
 
-diffmfi_byepisode <- ggplot(data=filter(dl2plot,!is.na(seroinf)),aes(x=seroinf,y=logmfi_dlag,fill=pathogen)) +
-  facet_wrap(~antigenf,nrow=6,ncol=2)+ # ,scales='free_y'
-  geom_boxplot(alpha=0.6,notch=FALSE,outlier.color=NA,position=position_dodge(width=1))+
+set.seed(123)
+diffmfi_byepisode <- ggplot(data=filter(dl2plot,!is.na(serostat)),aes(x=serostat,y=logmfi_dlag,fill=pathogen,color=pathogen)) +
+  facet_wrap(~antigenf,nrow=6,ncol=4)+ 
+  geom_jitter(position = position_jitter(width = 0.2), alpha = 0.2,pch=19) +
+  geom_boxplot(notch=FALSE,outlier.color=NA,width=0.5,alpha=0.5,fill=NA,color="grey20")+
   geom_hline(aes(yintercept = 0)) +
-  scale_y_continuous(expand=c(0,0),limits=c(-3,4.5),breaks=-3:4) +
+  # add Ns
+  geom_text(data=epiNs,aes(x=serostat,y=-3.25,label=nlab),col="gray40",size=2) +
+  scale_y_continuous(expand=c(0,0),limits=c(-3.5,4.5),breaks=-3:4) +
   scale_fill_manual(values=pcols)+
   scale_color_manual(values=pcols)+
-  labs(title="",x="Incident Episode Number",y="Change in log10 Luminex Response (MFI-bg) between measurements") +
-  theme_minimal()+
+  labs(title="",x="Seroconversion status",y="Change in log10 Luminex Response (MFI-bg) between measurements") +
+  theme_minimal(base_size=12)+
   theme(
-    axis.title = element_text(size=14),
-    axis.text.y = element_text(size=10),
-    axis.text.x = element_text(size=10),
-    strip.text = element_text(size=12),
-    strip.text.y=element_text(angle=0),
-    # panel.grid.minor.y = element_blank(),
     panel.grid.minor.x = element_blank(),
-    # panel.grid.major.x = element_blank(),
+    axis.text.x=element_text(angle=45,hjust=1),
     legend.position="none"
   )
 
 diffmfi_byepisode
 
 # save a PDF version
-ggsave("~/enterics-immuno-epi/figs/haiti-ab-mfidiff-byepisode.pdf",plot=diffmfi_byepisode,device="pdf",width=5,height=14)
+ggsave("~/enterics-immuno-epi/figs/haiti-ab-mfidiff-byepisode.pdf",plot=diffmfi_byepisode,device="pdf",width=9,height=8)
 
+
+```
+
+
+
+# Seroincidence estimates
+
+Estimates of the mean seroincidence rates among children with at least 2 measurements between 6 months and 3 years old. The rates assume that incident sero-conversions and sero-reversions happened at the mid-point between measurements for each child.
+
+As with the age-prevalence curve analysis, use information across multiple recombinant antigens for each pathogen when identifying risk periods and incident seroconversions and seroreversions.
+
+
+
+
+
+```{r identify incidence subgroup}
+#-----------------------------
+# identify children with at 
+# least 2 measurements < 3 y
+# take their first two measurements
+#-----------------------------
+dl3 <- dl2 %>%
+  filter(age>0.5 & age<3) %>%
+  group_by(antigen,antigenf,id) %>%
+  arrange(antigen,antigenf,id,age) %>%
+  mutate(nobs=n(),obsnum=row_number()) %>%
+  filter(nobs>=2 & obsnum<=2) %>%
+  select(antigen,antigenf,id,age,seropos,obsnum) %>%
+  mutate(agediff=ifelse(obsnum==1,lead(age)-age,age-lag(age))) %>%
+  ungroup()
+```
+
+```{r composite antigens}
+#-----------------------------
+# create composite 
+# seropositivity indicators
+# that use information from
+# multiple antigens
+#-----------------------------
+
+dgi <- dl3 %>% 
+  filter(antigen %in% c("vsp3","vsp5")) %>%
+  select(antigen,id,obsnum,age,agediff,seropos) %>%
+  spread(antigen,seropos) %>%
+  mutate(seropos=ifelse(vsp3==1|vsp5==1,1,0),
+         antigen="vsp3vsp5",
+         antigenf="Giardia VSP-3 + VSP-5") %>%
+  select(-vsp3,-vsp5)
+
+dcr <- dl3 %>% 
+  filter(antigen %in% c("cp17","cp23")) %>%
+  select(antigen,id,obsnum,age,agediff,seropos) %>%
+  spread(antigen,seropos) %>%
+  mutate(seropos=ifelse(cp17==1|cp23==1,1,0),
+         antigen="cp17cp23",
+         antigenf="Cryptosporidium Cp17 + Cp23") %>%
+  select(-cp17,-cp23)
+
+ds <- dl3 %>% 
+  filter(antigen %in% c("salb","sald")) %>%
+  select(antigen,id,obsnum,age,agediff,seropos) %>%
+  spread(antigen,seropos) %>%
+  mutate(seropos=ifelse(salb==1|sald==1,1,0),
+         antigen="salbsald",
+         antigenf="Salmonella LPS groups B + D") %>%
+  select(-salb,-sald)
+
+
+dl3 <- bind_rows(dl3,dgi,dcr,ds) %>%
+  mutate(antigenf=factor(antigenf,
+                         levels=c("Giardia VSP-3 + VSP-5",
+                                  "Cryptosporidium Cp17 + Cp23",
+                                  "E. histolytica LecA",
+                                  "Salmonella LPS groups B + D",
+                                  "ETEC toxin beta subunit",
+                                  "Norovirus GI", 
+                                  "Norovirus GII")) ) %>%
+  filter(!is.na(antigenf)) %>%
+  select(antigen,antigenf,id,obsnum,age,agediff,seropos)
+
+
+```
+
+
+```{r incidence}
+
+#-----------------------------
+# identify incident 
+# seroconversions and reversions
+#-----------------------------
+# spread the data to wide format to 
+# identify incident sero-conversions and sero-reversions
+# subset to the individuals measured at both timepoints
+dl3w <- dl3 %>%
+  mutate(time=ifelse(obsnum==1,"A","B")) %>%
+  select(antigen,antigenf,id,time,agediff,seropos) %>%
+  spread(time,seropos) %>% 
+  filter(!is.na(A) & !is.na(B)) %>%
+  mutate(seroi=ifelse(B==1 & A==0,1,0),
+         seror=ifelse(B==0 & A==1,1,0)) %>%
+  select(id,antigen,seroi,seror)
+
+#  merge these new variables back to the main data
+dl4 <- left_join(dl3,dl3w,by=c("id","antigen"))
+
+```
+
+Estimate prospective incidence rates
+
+```{r long incidence rate estimates}
+#-----------------------------
+# estimate sero-incidence rates
+# for conversion and reversion
+# estimate SEs with a bootstrap
+#-----------------------------
+#-----------------------------
+# filter to just 1 obs per child
+# (first observation)
+#-----------------------------
+dl5 <- dl4 %>% filter(obsnum==1)
+
+#-----------------------------
+# estimate time at risk
+# for seroconversion and reversion
+# assumed to be 1/2 of time
+# between measurements
+# if indivs are seropositive
+# at measurement 1 they are
+# not at risk for seroconversion
+# (and vice-versa for seroreversion)
+#-----------------------------
+dl5 <- dl5 %>%
+  mutate(ptc = ifelse(seropos==0,agediff/2,0),
+         ptr = ifelse(seropos==1,agediff/2,0))
+
+#-----------------------------
+# estimate incidence rates
+# for each antibody
+# units are episodes per child-year
+# (dividing person time in months by 12)
+#-----------------------------
+rate_ests <- dl5 %>%
+  group_by(antigenf) %>%
+  summarize(ni=sum(seroi,na.rm=T),
+            nit=sum(ptc,na.rm=T),
+            nr=sum(seror,na.rm=T),
+            nrt=sum(ptr,na.rm=T)) %>%
+  mutate(seroi=ni/nit,
+         seror=nr/nrt)
+
+#-----------------------------
+# get bootstrap CIs
+#-----------------------------
+dboot <- dl5 %>%
+  group_by(antigen,antigenf) %>%
+  select(antigen,antigenf,seroi,seror,ptc,ptr)
+
+set.seed(123)
+bootests <- foreach(brep=1:1000,.combine=rbind) %dopar% {
+    di <- sample_frac(dboot,size=1,replace=TRUE) %>%
+      summarize_all(function(x) sum(x,na.rm=TRUE))
+    }
+
+rate_cis <- bootests %>% 
+  group_by(antigen,antigenf) %>%
+  mutate(sero_c=seroi/ptc,sero_r=seror/ptr) %>%
+  summarize(seroi_lb = quantile(sero_c,probs=c(0.025),na.rm=T),
+            seroi_ub = quantile(sero_c,probs=c(0.975),na.rm=T),
+            seror_lb = quantile(sero_r,probs=c(0.025),na.rm=T),
+            seror_ub = quantile(sero_r,probs=c(0.975),na.rm=T)
+            )
+
+rate_ests <- left_join(rate_ests,rate_cis,by="antigenf") %>%
+  select(antigen,antigenf,ni,nit,starts_with("seroi"),nr,nrt,starts_with("seror"))
+
+
+```
+
+Table of results
+```{r long incidence rate tables}
+knitr::kable(select(rate_ests,antigenf,nit,ni,starts_with("seroi")),digits=1,
+             caption="Incidence rates seroconversion per child year",
+             col.names = c("Antigen","Years at risk","n events","Incidence per year","min95","max95"),
+             row.names = FALSE)
+
+
+knitr::kable(select(rate_ests,antigenf,nrt,nr,starts_with("seror")),digits=1,
+             caption="Incidence rates seroreversion per child year",
+             col.names = c("Antigen","Years at risk","n events","Incidence per year","min95","max95"),
+             row.names = FALSE)
 
 ```
 
