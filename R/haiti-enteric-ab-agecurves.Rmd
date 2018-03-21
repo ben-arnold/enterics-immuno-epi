@@ -494,15 +494,19 @@ Create a more parsimonius plot, that only includes the spline fits but also incl
 
 ```{r age-curve seroprevalence figure, fig.height=9, fig.width=6}
 
-  # set ETEC confidence band to NA after it flatlines at 100%
+# set ETEC confidence band to NA after it flatlines at 100%
 dplot <- pgamfits %>%
   mutate(lwrS=ifelse(antigen=="etec" & fit==1,NA,lwrS))
 
 
-# bright color-blind palette defined in an earlier code chunk
-pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+# re-arrange antigen factor to group noro on the same row
+dplot <- dplot %>%
+  mutate(antigenf=factor(antigenf,levels=c("Giardia VSP-3 + VSP-5","Cryptosporidium Cp17 + Cp23","Salmonella LPS groups B + D","ETEC toxin beta subunit","Norovirus GI","Norovirus GII","E. histolytica LecA")))
 
-ppcurve2 <- ggplot(data=dplot,aes(x=age,group=pathogen,color=pathogen,fill=pathogen)) +
+# bright color-blind palette defined in an earlier code chunk
+pcols <- c(cred,corange,cgreen,cblue,cteal,cmagent)
+
+ppcurve2 <- ggplot(data=dplot,aes(x=age,color=pathogen,fill=pathogen)) +
   # approximate simultaneous CI from spline fit
   geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA) +
   # actual measurements
