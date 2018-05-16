@@ -1,5 +1,5 @@
-# enterics-immuno-epi
-Insights into the complex immuno-epidemiology of enteric pathogens
+# enterics-seroepi
+Insights into the complex seroepidemiology of enteric pathogens
 
 
 ## Description
