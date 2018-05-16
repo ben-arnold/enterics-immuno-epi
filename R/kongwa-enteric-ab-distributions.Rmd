@@ -337,7 +337,7 @@ dl <- dl %>%
 # with both
 dcomp <- dl %>%
   filter(age==1) %>%
-  filter(antigen %in% c("vsp3","leca")) %>% 
+  filter(antigen %in% c("vsp3","vsp5","leca")) %>% 
   mutate(antigen=factor(antigen))
 
 
