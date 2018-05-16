@@ -24,7 +24,10 @@ For Giardia and Cryptosporidium antigens, the CDC lab estimated cutoff values us
 #-----------------------------
 # preamble
 #-----------------------------
-rm(list=ls())
+library(here)
+here()
+
+# load packages
 library(tidyverse)
 library(mixtools)
 
@@ -57,7 +60,7 @@ cgrey <- "#777777"
 # created with 
 # asembo-enteric-ab-data-format.Rmd
 #-----------------------------
-dl <- readRDS("~/enterics-immuno-epi/data/asembo_analysis.rds")
+dl <- readRDS(here("data","asembo_analysis.rds"))
 
 # list the enteric antigens and make formatted labels for them
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","rotavirus","salb","sald","etec","cholera","p18","p39")
@@ -84,8 +87,7 @@ log10labs <- c(
 
 p <- ggplot(data=dl,aes(x=logmfi,group=pathogen,color=pathogen,fill=pathogen)) +
   facet_wrap(~antigenf,nrow=6,ncol=2,scales="free_y") +
-  geom_histogram(aes(y=..density..),bins=50,alpha=0.7) +
-  geom_density(aes(fill=NULL),color=cgrey) +
+  geom_density(aes(y=..density..),alpha=0.7) +
   scale_x_continuous(limits = c(0,4.5),breaks = 0:4,labels=log10labs) +
   scale_fill_manual(values=pcols) +
   scale_color_manual(values=pcols) +
@@ -96,7 +98,7 @@ p <- ggplot(data=dl,aes(x=logmfi,group=pathogen,color=pathogen,fill=pathogen)) +
 p
 
 # save a PDF version
-ggsave("~/enterics-immuno-epi/figs/asembo-ab-distributions.pdf",plot=p,device="pdf",width=7,height=14)
+ggsave(here("figs","asembo-ab-distributions.pdf"),plot=p,device="pdf",width=7,height=14)
 
 ```
 
@@ -110,10 +112,10 @@ ggsave("~/enterics-immuno-epi/figs/asembo-ab-distributions.pdf",plot=p,device="p
 # provided by Jeff Priest CDC
 #-----------------------------
 dl$roccut <- NA
-dl$roccut[dl$antigen %in% "vsp3"] <- 542
-dl$roccut[dl$antigen %in% "vsp5"] <- 421
-dl$roccut[dl$antigen %in% "cp17"] <- 375
-dl$roccut[dl$antigen %in% "cp23"] <- 1336
+dl$roccut[dl$antigen %in% "vsp3"] <- log10(542)
+dl$roccut[dl$antigen %in% "vsp5"] <- log10(421)
+dl$roccut[dl$antigen %in% "cp17"] <- log10(375)
+dl$roccut[dl$antigen %in% "cp23"] <- log10(1336)
 ```
 
 ## Mixture-model based cutoffs
@@ -204,7 +206,7 @@ pmix <- ggplot(data=dl,aes(x=logmfi,group=pathogen,color=pathogen,fill=pathogen)
   geom_line(data=plotmixdens,aes(x=x,y=den1),color=cblack) +
   # geom_line(data=plotmixdens,aes(x=x,y=den2p),color=cblack) +
   # add vertical lines for the cutoff values
-  geom_vline(aes(xintercept=log10(roccut))) +
+  geom_vline(aes(xintercept=roccut)) +
   geom_vline(aes(xintercept=mixcut),linetype=2) +
   # labels and formatting
   scale_x_continuous(limits = c(0,4.5),breaks = 0:4,labels=log10labs) +
@@ -218,12 +220,16 @@ pmix <- ggplot(data=dl,aes(x=logmfi,group=pathogen,color=pathogen,fill=pathogen)
 pmix
 
 # save a PDF version
-ggsave("~/enterics-immuno-epi/figs/asembo-ab-mixture-distributions.pdf",plot=pmix,device="pdf",width=7,height=14)
+ggsave(here("figs","asembo-ab-mixture-distributions.pdf"),plot=pmix,device="pdf",width=7,height=14)
 
 ```
 
-## Cutoffs derived from presumed unexposed
-Children whose antibody levels increased by at least 2 on the log10 scale were presumably unexposed at their first measurement. Use them to identify an unexposed distribution.
+## Cutoffs derived from presumed seroconverters
+Children whose antibody levels increased by at least 2 on the log10 scale presumably seroconverted during the study and are assumed unexposed at their first measurement. Use the unexposed measurements to estimate the mean and standard deviation among the unexposed measurements, and use the mean plus 3 standard deviations to create a seropositivity cutoff.
+
+Note that the use of +2 log10 change in MFI is conservative assumption for many antibodies in this analysis. We conducted a sensitivity analysis in this study wherby we compared classification agreement with ROC-based and mixture model-based classification across a range of possible changes to use as the threshold.  In that sensitivity analysis, a change of between 0.5 and 1.75 on the log10 scale led to the maximum agreement with ROC-based and mixture model-based classification for most antigens (see computational notebook: asembo-enteric-ab-fold-change-analysis.nb.html).
+
+
 ```{r distribution among unexposed}
 #-----------------------------
 # subset the data to the first
@@ -284,7 +290,7 @@ punexp <- ggplot(data=filter(dl,unexp=="Presumed unexposed" & !is.na(unexpcut)),
   # plot empirical smoothed distribution
   geom_density(aes(y=..density..),color=NA,alpha=0.7)+
   # add vertical lines for the cutoff values
-  geom_vline(aes(xintercept=log10(roccut))) +
+  geom_vline(aes(xintercept=roccut)) +
   geom_vline(aes(xintercept=mixcut),linetype=2) +
   geom_vline(aes(xintercept=unexpcut),linetype=3) + 
   # labels and formatting
@@ -299,12 +305,15 @@ punexp <- ggplot(data=filter(dl,unexp=="Presumed unexposed" & !is.na(unexpcut)),
 punexp
 
 # save a PDF version
-ggsave("~/enterics-immuno-epi/figs/asembo-ab-unexposed-distributions.pdf",plot=punexp,device="pdf",width=7,height=14)
+ggsave(here("figs","asembo-ab-unexposed-distributions.pdf"),plot=punexp,device="pdf",width=7,height=14)
 
 ```
 
 
 ## Figure of mixture and unexposed distributions together
+
+This is Figure 1, supplement 2 in the main text.
+
 ```{r mixture and unexp distribution figure, fig.height=12, fig.width=6}
 #-----------------------------
 # Get the mixture density distributions
@@ -330,7 +339,7 @@ pall <- ggplot(data=dl,aes(x=logmfi,group=pathogen,color=pathogen,fill=pathogen)
   # geom_line(data=plotmixdens,aes(x=x,y=den1p),color=cblack) +
   # geom_line(data=plotmixdens,aes(x=x,y=den2p),color=cblack) +
   # add vertical lines for the cutoff values
-  geom_vline(aes(xintercept=log10(roccut))) +
+  geom_vline(aes(xintercept=roccut)) +
   geom_vline(aes(xintercept=mixcut),linetype=2) +
   geom_vline(aes(xintercept=unexpcut),linetype=3) +
 
@@ -346,121 +355,21 @@ pall <- ggplot(data=dl,aes(x=logmfi,group=pathogen,color=pathogen,fill=pathogen)
 pall
 
 # save a PDF version
-ggsave("~/enterics-immuno-epi/figs/asembo-ab-mixunexp-distributions.pdf",plot=pall,device="pdf",width=7,height=14)
+ggsave(here("figs","asembo-ab-mixunexp-distributions.pdf"),plot=pall,device="pdf",width=7,height=14)
 
 ```
 
-#Comparison of seropositivity cutoffs
-
-This part of the analysis identifies seropositive individuals based on ROC cutoffs (if available) and mixture distribution cutoffs (if available).  In cases where both cutoffs are available (_Giardia_ and _Cryptosporidium_), we summarize the number of discordant measurements.  The results are mainly consistent between the two approaches, particularly for _Cryptosporidium_. Later seropositivity analyses rely on the mixture model cutoffs to be consistent across pathogens.
-
-```{r seropositivity}
-dl <- dl %>%
-  mutate(posroc = ifelse(logmfi > log10(roccut),1,0),
-         posmix = ifelse(logmfi > mixcut,1,0),
-         posunex = ifelse(logmfi > unexpcut,1,0))
-
-```
-
-```{r seropositivity roc vs mix}
-#-----------------------------
-# compare classification by ROC and mixture models 
-# for Giardia and Cryptosporidium, the 2 pathogens
-# with both
-#-----------------------------
-dcomp <- dl %>%
-  filter(antigen %in% c("vsp3","vsp5","cp17","cp23")) %>% 
-  mutate(antigen=factor(antigen))
-
-
-dclass <- foreach(ab=levels(dcomp$antigen),.combine=rbind) %do% {
-  dcompi <- dcomp %>% filter(antigen==ab)
-  tabi <- as.vector(table(dcompi$posroc,dcompi$posmix))
-  names(tabi) <- c("roc0mix0","roc1mix0","roc0mix1","roc1mix1")
-  kappai <- psych::cohen.kappa(table(dcompi$posroc,dcompi$posmix))$kappa
-  tabi <- data.frame(t(tabi))
-  tabi <- tabi %>%
-    mutate(Nobs=roc0mix0+roc1mix0+roc0mix1+roc1mix1,
-           discordance=(roc1mix0+roc0mix1)/Nobs,
-           agreement=(roc0mix0+roc1mix1)/Nobs,
-           kappa=kappai,
-           antigen=ab) %>%
-    select(antigen,Nobs,everything())
-  tabi
-}
-
-knitr::kable(dclass,digits=3,caption="Summary of seropositivity classifications by ROC curve and Gaussian mixture models for Giardia (VSP-3 and VSP-5) and Cryptosporidium (Cp17, Cp23)")
-
-```
-
-```{r seropositivity roc vs unexp}
-#-----------------------------
-# compare classification by ROC and 
-# distribution among the unexposed
-# for Giardia and Cryptosporidium, 
-# the 2 pathogens with both
-#-----------------------------
-dcomp <- dl %>%
-  filter(antigen %in% c("vsp3","vsp5","cp17","cp23")) %>% 
-  mutate(antigen=factor(antigen))
-
-
-dclass2 <- foreach(ab=levels(dcomp$antigen),.combine=rbind) %do% {
-  dcompi <- dcomp %>% filter(antigen==ab)
-  tabi <- as.vector(table(dcompi$posroc,dcompi$posunex))
-  names(tabi) <- c("roc0unexp0","roc1unexp0","roc0unexp1","roc1unexp1")
-  kappai <- psych::cohen.kappa(table(dcompi$posroc,dcompi$posunex))$kappa
-  tabi <- data.frame(t(tabi))
-  tabi <- tabi %>%
-    mutate(Nobs=roc0unexp0+roc1unexp0+roc0unexp1+roc1unexp1,
-           discordance=(roc1unexp0+roc0unexp1)/Nobs,
-           agreement=(roc0unexp0+roc1unexp1)/Nobs,
-           kappa=kappai,
-           antigen=ab) %>%
-    select(antigen,Nobs,everything())
-  tabi
-}
-
-knitr::kable(dclass2,digits=3,caption="Summary of seropositivity classifications by ROC curve and distribution among unexposed for Giardia (VSP-3 and VSP-5) and Cryptosporidium (Cp17, Cp23)")
-
-```
-```{r seropositivity mix vs unexp}
-#-----------------------------
-# compare classification by mixture
-# model and distribution among the unexposed
-# for Giardia and Cryptosporidium, 
-# and Campylobacter p39
-# the 3 pathogens with both
-#-----------------------------
-dcomp <- dl %>%
-  filter(antigen %in% c("vsp3","vsp5","cp17","cp23","p39")) %>% 
-  mutate(antigen=factor(antigen))
-
-
-dclass3 <- foreach(ab=levels(dcomp$antigen),.combine=rbind) %do% {
-  dcompi <- dcomp %>% filter(antigen==ab)
-  tabi <- as.vector(table(dcompi$posmix,dcompi$posunex))
-  names(tabi) <- c("mix0unexp0","mix1unexp0","mix0unexp1","mix1unexp1")
-  kappai <- psych::cohen.kappa(table(dcompi$posmix,dcompi$posunex))$kappa
-  tabi <- data.frame(t(tabi))
-  tabi <- tabi %>%
-    mutate(Nobs=mix0unexp0+mix1unexp0+mix0unexp1+mix1unexp1,
-           discordance=(mix1unexp0+mix0unexp1)/Nobs,
-           agreement=(mix0unexp0+mix1unexp1)/Nobs,
-           kappa=kappai,
-           antigen=ab) %>%
-    select(antigen,Nobs,everything())
-  tabi
-}
-
-knitr::kable(dclass3,digits=3,caption="Summary of seropositivity classifications by Gaussian mixture model and distribution among unexposed for Giardia (VSP-3 and VSP-5), Cryptosporidium (Cp17, Cp23), and Campylobacter (p39)")
-```
 
 ```{r composite seropositive indicators}
 #-----------------------------
 # create composite measures of 
 # seropositivity
 #-----------------------------
+dl <- dl %>%
+  mutate(posroc = ifelse(logmfi > roccut,1,0),
+         posmix = ifelse(logmfi > mixcut,1,0),
+         posunex = ifelse(logmfi > unexpcut,1,0))
+
 #-----------------------------
 # hierarchy of information for 
 # cutoffs:
@@ -471,7 +380,7 @@ knitr::kable(dclass3,digits=3,caption="Summary of seropositivity classifications
 #-----------------------------
 dl <- dl %>%
   mutate(seropos=ifelse(!is.na(posroc),posroc,posmix),
-         serocut=ifelse(!is.na(posroc),log10(roccut),mixcut),
+         serocut=ifelse(!is.na(posroc),roccut,mixcut),
          serocut_desc=ifelse(!is.na(posroc),"ROC","Mixture Model")) %>%
   mutate(seropos=ifelse(!is.na(seropos),seropos,posunex),
          serocut_desc=ifelse(!is.na(serocut),serocut_desc,"Unexp dist"),
@@ -487,7 +396,7 @@ dl <- dl %>%
 # that includes cutoff values
 # and seropositive indicators
 #-----------------------------
-saveRDS(dl,file="~/enterics-immuno-epi/data/asembo_analysis2.rds")
+saveRDS(dl,file=here("data","asembo_analysis2.rds"))
 
 ```
 

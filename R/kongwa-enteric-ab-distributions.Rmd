@@ -1,6 +1,16 @@
 ---
 title: "Kongwa enteric antibody distributions and seropositivity cutoffs"
-output: 
+output:
+  html_document:
+    highlight: haddock
+    theme: default
+    code_folding: show
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
   html_notebook:
     theme: default
     highlight: haddock
@@ -17,19 +27,18 @@ This script summarizes the distribution of enteric antibody responses in the Kon
 
 It fits Gaussian mixture models to the distributions, and where possible, estimates seropositivity cutoffs based on the mixture model fits.
 
-For Giardia and Cryptosporidium antigens, the CDC lab estimated cutoff values using a receiver operator characteristic (ROC) curve approach with known positive and negative specimens. For these antigens, the script compares the classification of measurements by cutoff values derived from ROC and mixture models.
 
 # Script preamble
 ```{r preamble}
 #-----------------------------
 # preamble
 #-----------------------------
-rm(list=ls())
+library(here)
+here()
+
+# load packages
 library(tidyverse)
 library(mixtools)
-library(ellipse)
-library(RColorBrewer)
-
 
 # set up for parallel computing
 # configure for a laptop (use only 3 cores)
@@ -60,10 +69,7 @@ cgrey <- "#777777"
 # created with 
 # asembo-enteric-ab-data-format.Rmd
 #-----------------------------
-#--------------------------------
-# load the kongwa dataset
-#--------------------------------
-dl <- readRDS("~/enterics-immuno-epi/data/kongwa_analysis.rds")
+dl <- readRDS(here("data","kongwa_analysis.rds"))
 
 # list the enteric antigens and formatted labels for them
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","etec","cholera","p18","p39")
@@ -106,7 +112,7 @@ p <- ggplot(data=dl,aes(x=logmfi,group=pathogen,color=pathogen,fill=pathogen)) +
 p
 
 # save a PDF version
-ggsave("~/enterics-immuno-epi/figs/kongwa-ab-distributions.pdf",plot=p,device="pdf",width=7,height=14)
+ggsave(here("figs","kongwa-ab-distributions.pdf"),plot=p,device="pdf",width=7,height=14)
 
 ```
 
@@ -133,7 +139,7 @@ for(i in 1:9) {
   p
 
 # save a PDF version
-ggsave(file=paste("~/enterics-immuno-epi/figs/kongwa-ab-distributions-age-",i,".pdf",sep=""),plot=p,device="pdf",width=7,height=14)
+ggsave(file=here("figs",paste("kongwa-ab-distributions-age-",i,".pdf",sep="")),plot=p,device="pdf",width=7,height=14)
 }
 
 
@@ -267,11 +273,13 @@ pmix <- ggplot(data=filter(dl,age==1),
 pmix
 
 # save a PDF version
-ggsave("~/enterics-immuno-epi/figs/kongwa-ab-mixture-distributions.pdf",plot=pmix,device="pdf",width=7,height=14)
+ggsave(here("figs","kongwa-ab-mixture-distributions.pdf"),plot=pmix,device="pdf",width=7,height=14)
 
 ```
 
-## Figure of age-stratified antibody distributions, with cutoffs
+## Figure 1 - supp 2: age-stratified antibody distributions, with cutoffs
+
+**This is Figure 1 - supplement 2 in the article**
 
 ```{r age stratified distribution figure, fig.width=12,fig.height=6}
 # create age categories, display a single ROC cutoff, put
@@ -319,49 +327,17 @@ p2 <- ggplot(data=dlplot,aes(x=logmfi,fill=pathogen,color=pathogen)) +
 
 p2
 
-ggsave("~/enterics-immuno-epi/figs/kongwa-ab-distributions-byage.pdf",plot=p2,device="pdf",width=18,height=6)
+ggsave(here("figs","kongwa-ab-distributions-byage.pdf"),plot=p2,device="pdf",width=18,height=6)
 
 ```
 
-#Comparison of seropositivity cutoffs
-
-This part of the analysis identifies seropositive individuals based on ROC cutoffs (if available) and mixture distribution cutoffs (if available).  In cases where both cutoffs are available (_Giardia_,  and _E. histolytica_), we summarize the number of discordant measurements.  
-
+# Save data
 ```{r seropositivity}
 dl <- dl %>%
   mutate(posroc = ifelse(logmfi > roccut,1,0),
          posmix = ifelse(logmfi > mixcut,1,0))
 
-# compare classification by ROC and mixture models 
-# for Giardia and E. histolytica, the 2 pathogens
-# with both
-dcomp <- dl %>%
-  filter(age==1) %>%
-  filter(antigen %in% c("vsp3","vsp5","leca")) %>% 
-  mutate(antigen=factor(antigen))
-
-
-dclass <- foreach(ab=levels(dcomp$antigen),.combine=rbind) %do% {
-  dcompi <- dcomp %>% filter(antigen==ab)
-  tabi <- as.vector(table(dcompi$posroc,dcompi$posmix))
-  names(tabi) <- c("roc0mix0","roc1mix0","roc0mix1","roc1mix1")
-  kappai <- psych::cohen.kappa(table(dcompi$posroc,dcompi$posmix))$kappa
-  tabi <- data.frame(t(tabi))
-  tabi <- tabi %>%
-    mutate(Nobs=roc0mix0+roc1mix0+roc0mix1+roc1mix1,
-           discordance=(roc1mix0+roc0mix1)/Nobs,
-           agreement=(roc0mix0+roc1mix1)/Nobs,
-           kappa=kappai,
-           antigen=ab) %>%
-    select(antigen,Nobs,everything())
-  tabi
-}
-
-knitr::kable(dclass,digits=2,caption="Summary of seropositivity classifications by ROC curve and Gaussian mixture models for Giardia (VSP-3) and E. histolytica (LecA)")
-
-
 ```
-
 
 ```{r save data}
 #-----------------------------
@@ -369,7 +345,7 @@ knitr::kable(dclass,digits=2,caption="Summary of seropositivity classifications 
 # that includes cutoff values
 # and seropositive indicators
 #-----------------------------
-saveRDS(dl,file="~/enterics-immuno-epi/data/kongwa_analysis2.rds")
+saveRDS(dl,file=here("data","kongwa_analysis2.rds"))
 
 ```
 
