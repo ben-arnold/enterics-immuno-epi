@@ -1,0 +1,495 @@
+---
+title: Insights into the seroepidemiology of enteric pathogens among children living
+  in high transmission settings
+subtitle: Supporting Information File 2
+output:
+  html_document:
+    highlight: haddock
+    theme: default
+    code_folding: show
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+  html_notebook:
+    highlight: haddock
+    toc: yes
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+---
+
+# Summary
+
+This notebook compares agreement between seropositivity cutoff values estimated by three different methods:
+
+**ROC-based cutoffs using out-of-sample known positive and negative specimens**: These cutoff values are available only for a select group of antigens where confirmed positive and negative specimens existed. 
+
+**Finite Gaussian mixture models**: Estimated by fitting a 2-component, finite Gaussian mixture model to the antibody distributions among children 1 year old or younger. Then, we estimated the mean plus 3 standard deviations of the lower component to define a seropositivity cutoff. In many cases the mixture model-based cutoffs were very unrealistic because the model failed to identify a reasonable seronegative distribution. We only examine agreement among antigens for which we could estimate reasonable cutoff values.
+
+**Distribution of antibody levels among children who seroconverted**: In longitudinal cohorts (Haiti, Kenya), we identified children who had antibody levels increase by at least 2 on the log10 scale. We then estimated the mean plus 3 standard deviations of the measurements before the change to define a seropositivity cutoff.
+
+Below, we make all possible comparisons between methods, but not all three cutoff values are available for every antibody in every cohort. ROC-based cutoffs were available for _Giardia sp._, _Cryptosporidium spp._, and _E. histolytica_ (Haiti, Tanzania only).  Mixture model-based cutoffs were only available if mixture models fit a reasonable distribution for the lower component. Cutoff values based on the distribution of antibody measurements before children seroconverted could only be estimated in the two longitudinal cohorts (Haiti, Kenya).  
+
+Distribution figures at the beginning of each cohort's estimates provide a visual summary and comparison of seropositivity cutoffs.
+
+
+
+# Script preamble
+```{r preamble}
+#-----------------------------
+# preamble
+#-----------------------------
+library(here)
+here()
+
+# load packages
+library(tidyverse)
+library(psych)
+library(knitr)
+library(kableExtra)
+  options(knitr.table.format = "html") 
+
+
+# set up for parallel computing
+# configure for a laptop (use only 3 cores)
+library(foreach)
+library(doParallel)
+registerDoParallel(cores=3)
+
+
+# bright color blind palette:  https://personal.sron.nl/~pault/ 
+cblack <- "#000004FF"
+cblue <- "#3366AA"
+cteal <- "#11AA99"
+cgreen <- "#66AA55"
+cchartr <- "#CCCC55"
+cmagent <- "#992288"
+cred <- "#EE3333"
+corange <- "#EEA722"
+cyellow <- "#FFEE33"
+cgrey <- "#777777"
+
+```
+
+# Leogane, Haiti
+
+
+## Load the data
+
+```{r haiti load data}
+#-----------------------------
+# load the formatted data
+# created with 
+# haiti-enteric-ab-data-format.Rmd ->
+# haiti-enteric-ab-distributions.Rmd
+#-----------------------------
+dl <- readRDS(here("data","haiti_analysis2.rds"))
+
+```
+
+## Figure of distributions and cutoffs 
+Limited to children $\leq 1$ year old to ensure a sufficient number of uenxposed children.
+
+```{r haiti fig,fig.width=6,fig.height=12,warning=FALSE}
+
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+
+log10labs <- c( 
+  expression(10^0),
+  expression(10^1),
+  expression(10^2),
+  expression(10^3),
+  expression(10^4)
+)
+
+pmix <- ggplot(data=filter(dl,age<=1),aes(x=logmfi,group=pathogen,color=pathogen,fill=pathogen)) +
+  facet_wrap(~antigenf,nrow=6,ncol=2,scales="free_y") +
+  # plot empirical distribution
+  geom_histogram(aes(y=..density..),alpha=0.7)+
+  geom_density(aes(y=..density..),color=cgrey,fill=NA,alpha=0.7)+
+  # add vertical lines for the cutoff values
+  geom_vline(aes(xintercept=roccut)) +
+  geom_vline(aes(xintercept=mixcut),linetype=2) +
+  geom_vline(aes(xintercept=unexpcut),linetype=3)+
+  # labels and formatting
+  scale_x_continuous(limits = c(0,4.5),breaks = 0:4,labels=log10labs) +
+  coord_cartesian(ylim=c(0,2)) +
+  labs(x="Luminex Response (MFI-bg)") +
+  scale_fill_manual(values=pcols) +
+  scale_color_manual(values=pcols) +
+  theme_minimal(base_size = 16) +
+  theme(legend.position = "none")
+
+pmix
+
+```
+
+## ROC vs Mixture Model cutoffs
+
+For antibodies with both cutoffs available (_Giardia_, _Cryptosporidium_, _E. histolytica_), summarize classification agreement and Cohen's Kappa.   
+
+```{r seropositivity roc vs mix, warning=FALSE}
+# compare classification by ROC and mixture models 
+# for Giardia, Cryptosporidium, and E. histolytica 
+# the 3 pathogens with both
+dcomp <- dl %>%
+  ungroup() %>%
+  filter(age<=1) %>%
+  filter(antigen %in% c("vsp3","vsp5","cp17","cp23","leca")) %>% 
+  mutate(antigen=factor(antigen))
+
+
+dclass <- foreach(ab=levels(dcomp$antigen),.combine=rbind) %do% {
+  dcompi <- dcomp %>% filter(antigen==ab)
+  tabi <- as.vector(table(dcompi$posroc,dcompi$posmix))
+  names(tabi) <- c("roc0mix0","roc1mix0","roc0mix1","roc1mix1")
+  kappai <- psych::cohen.kappa(table(dcompi$posroc,dcompi$posmix))$kappa
+  tabi <- data.frame(t(tabi))
+  tabi <- tabi %>%
+    mutate(Nobs=roc0mix0+roc1mix0+roc0mix1+roc1mix1,
+           agreement=(roc0mix0+roc1mix1)/Nobs,
+           kappa=kappai,
+           antigen=ab) %>%
+    select(antigen,Nobs,everything())
+  tabi
+}
+
+knitr::kable(dclass,digits=3,caption="Summary of seropositivity classifications by ROC curve and Gaussian mixture models for Giardia (VSP-3 and VSP-5), Cryptosporidium (Cp17, Cp23), and E. histolytica (LecA)") %>%
+  kable_styling(bootstrap_options = "striped",full_width = TRUE)
+  
+
+
+```
+## ROC vs unexposed cutoffs
+
+For antibodies with both cutoffs available (_Giardia_, _Cryptosporidium_, _E. histolytica_), summarize classification agreement and Cohen's Kappa.  
+
+```{r seropositivity roc vs unexp}
+dcomp <- dl %>%
+  ungroup() %>%
+  filter(age<=1) %>%
+  filter(antigen %in% c("vsp3","vsp5","cp17","cp23","leca")) %>% 
+  mutate(antigen=factor(antigen))
+
+
+dclass2 <- foreach(ab=levels(dcomp$antigen),.combine=rbind) %do% {
+  dcompi <- dcomp %>% filter(antigen==ab)
+  tabi <- as.vector(table(dcompi$posroc,dcompi$posunex))
+  names(tabi) <- c("roc0unexp0","roc1unexp0","roc0unexp1","roc1unexp1")
+  kappai <- psych::cohen.kappa(table(dcompi$posroc,dcompi$posunex))$kappa
+  tabi <- data.frame(t(tabi))
+  tabi <- tabi %>%
+    mutate(Nobs=roc0unexp0+roc1unexp0+roc0unexp1+roc1unexp1,
+           agreement=(roc0unexp0+roc1unexp1)/Nobs,
+           kappa=kappai,
+           antigen=ab) %>%
+    select(antigen,Nobs,everything())
+  tabi
+}
+
+knitr::kable(dclass2,digits=3,caption="Summary of seropositivity classifications by ROC curve and distribution among unexposed for Giardia (VSP-3 and VSP-5), Cryptosporidium (Cp17, Cp23), and E. histolytica (LecA)") %>%
+  kable_styling(bootstrap_options = "striped",full_width = TRUE)
+
+```
+
+## Mixture model vs unexposed cutoffs
+
+```{r seropositivity mix vs unexp}
+#-----------------------------
+# compare classification by mixture
+# model and distribution among the unexposed
+# for Giardia, Crypto, E. hist,
+# Salmonella, Noro GI and GII
+# the pathogens with both
+#-----------------------------
+dcomp <- dl %>%
+  ungroup() %>%
+  filter(age<=1) %>%
+  filter(antigen %in% c("vsp3","vsp5","cp17","cp23","leca","salb","sald","norogi","norogii")) %>% 
+  mutate(antigen=factor(antigen))
+
+
+dclass3 <- foreach(ab=levels(dcomp$antigen),.combine=rbind) %do% {
+  dcompi <- dcomp %>% filter(antigen==ab)
+  tabi <- as.vector(table(dcompi$posmix,dcompi$posunex))
+  names(tabi) <- c("mix0unexp0","mix1unexp0","mix0unexp1","mix1unexp1")
+  kappai <- psych::cohen.kappa(table(dcompi$posmix,dcompi$posunex))$kappa
+  tabi <- data.frame(t(tabi))
+  tabi <- tabi %>%
+    mutate(Nobs=mix0unexp0+mix1unexp0+mix0unexp1+mix1unexp1,
+           discordance=(mix1unexp0+mix0unexp1)/Nobs,
+           agreement=(mix0unexp0+mix1unexp1)/Nobs,
+           kappa=kappai,
+           antigen=ab) %>%
+    select(antigen,Nobs,everything())
+  tabi
+}
+
+knitr::kable(dclass3,digits=3,caption="Summary of seropositivity classifications by Gaussian mixture model and distribution among unexposed for Giardia (VSP-3 and VSP-5), Cryptosporidium (Cp17, Cp23), E. histolytica (LecA), Salmonella (LPS D and LPS B), and Norovirus (Groups I and II)") %>%
+  kable_styling(bootstrap_options = "striped",full_width = TRUE)
+```
+
+
+# Asembo, Kenya
+
+
+## Load the data
+```{r asembo load data}
+#-----------------------------
+# load the formatted data
+# with seropositivity indicators
+# created with:
+# asembo-enteric-ab-data-format.Rmd -->
+# asembo-enteric-ab-distributions.Rmd
+#-----------------------------
+dl <- readRDS(here("data","asembo_analysis2.rds"))
+
+```
+
+
+## Figure of distributions and cutoffs 
+
+```{r kenya fig,fig.width=6,fig.height=12,warning=FALSE}
+
+pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
+
+log10labs <- c( 
+  expression(10^0),
+  expression(10^1),
+  expression(10^2),
+  expression(10^3),
+  expression(10^4)
+)
+
+pmix <- ggplot(data=dl,aes(x=logmfi,group=pathogen,color=pathogen,fill=pathogen)) +
+  facet_wrap(~antigenf,nrow=6,ncol=2,scales="free_y") +
+  # plot empirical distribution
+  geom_histogram(aes(y=..density..),alpha=0.7)+
+  geom_density(aes(y=..density..),color=cgrey,fill=NA,alpha=0.7)+
+  # add vertical lines for the cutoff values
+  geom_vline(aes(xintercept=roccut)) +
+  geom_vline(aes(xintercept=mixcut),linetype=2) +
+  geom_vline(aes(xintercept=unexpcut),linetype=3)+
+  # labels and formatting
+  scale_x_continuous(limits = c(0,4.5),breaks = 0:4,labels=log10labs) +
+  coord_cartesian(ylim=c(0,2)) +
+  labs(x="Luminex Response (MFI-bg)") +
+  scale_fill_manual(values=pcols) +
+  scale_color_manual(values=pcols) +
+  theme_minimal(base_size = 16) +
+  theme(legend.position = "none")
+
+pmix
+
+```
+
+## ROC vs Mixture Model cutoffs
+
+For antibodies where both cutoffs are available (_Giardia_ and _Cryptosporidium_), summarize classification agreement and Cohen's Kappa.  
+
+```{r asembo roc vs mix}
+#-----------------------------
+# compare classification by ROC and mixture models 
+# for Giardia and Cryptosporidium, the 2 pathogens
+# with both
+#-----------------------------
+dcomp <- dl %>%
+  filter(antigen %in% c("vsp3","vsp5","cp17","cp23")) %>% 
+  mutate(antigen=factor(antigen))
+
+
+dclass <- foreach(ab=levels(dcomp$antigen),.combine=rbind) %do% {
+  dcompi <- dcomp %>% filter(antigen==ab)
+  tabi <- as.vector(table(dcompi$posroc,dcompi$posmix))
+  names(tabi) <- c("roc0mix0","roc1mix0","roc0mix1","roc1mix1")
+  kappai <- psych::cohen.kappa(table(dcompi$posroc,dcompi$posmix))$kappa
+  tabi <- data.frame(t(tabi))
+  tabi <- tabi %>%
+    mutate(Nobs=roc0mix0+roc1mix0+roc0mix1+roc1mix1,
+           agreement=(roc0mix0+roc1mix1)/Nobs,
+           kappa=kappai,
+           antigen=ab) %>%
+    select(antigen,Nobs,everything())
+  tabi
+}
+
+knitr::kable(dclass,digits=3,caption="Summary of seropositivity classifications by ROC curve and Gaussian mixture models for Giardia (VSP-3 and VSP-5) and Cryptosporidium (Cp17, Cp23)") %>%
+  kable_styling(bootstrap_options = "striped",full_width=TRUE)
+
+```
+Classification was very consistent between the two approaches.
+
+## ROC vs unexposed cutoffs
+
+
+```{r Asembo roc vs unexp}
+#-----------------------------
+# compare classification by ROC and 
+# distribution among the unexposed
+# for Giardia and Cryptosporidium, 
+# the 2 pathogens with both
+#-----------------------------
+dcomp <- dl %>%
+  filter(antigen %in% c("vsp3","vsp5","cp17","cp23")) %>% 
+  mutate(antigen=factor(antigen))
+
+
+dclass2 <- foreach(ab=levels(dcomp$antigen),.combine=rbind) %do% {
+  dcompi <- dcomp %>% filter(antigen==ab)
+  tabi <- as.vector(table(dcompi$posroc,dcompi$posunex))
+  names(tabi) <- c("roc0unexp0","roc1unexp0","roc0unexp1","roc1unexp1")
+  kappai <- psych::cohen.kappa(table(dcompi$posroc,dcompi$posunex))$kappa
+  tabi <- data.frame(t(tabi))
+  tabi <- tabi %>%
+    mutate(Nobs=roc0unexp0+roc1unexp0+roc0unexp1+roc1unexp1,
+           agreement=(roc0unexp0+roc1unexp1)/Nobs,
+           kappa=kappai,
+           antigen=ab) %>%
+    select(antigen,Nobs,everything())
+  tabi
+}
+
+knitr::kable(dclass2,digits=3,caption="Summary of seropositivity classifications by ROC curve and distribution among unexposed for Giardia (VSP-3 and VSP-5) and Cryptosporidium (Cp17, Cp23)") %>%
+  kable_styling(bootstrap_options = "striped",full_width=TRUE)
+
+
+```
+Classification was very consistent between the two approaches, but slightly lower for _Cryptosporidium_ Cp23. The Cp23 cutoff value estimated using the presumed unexposed was much lower compared with ROC-based cutoff.
+
+## Mixture model vs unexposed cutoffs
+
+For antibodies where both cutoffs are available (_Giardia_, _Cryptosporidium_, _Campylobacter_), summarize classification agreement and Cohen's Kappa.  
+
+```{r asembo mix vs unexp, warning=FALSE}
+#-----------------------------
+# compare classification by mixture
+# model and distribution among the unexposed
+# for Giardia and Cryptosporidium, 
+# and Campylobacter p39
+# the 3 pathogens with both
+#-----------------------------
+dcomp <- dl %>%
+  filter(antigen %in% c("vsp3","vsp5","cp17","cp23","p39")) %>% 
+  mutate(antigen=factor(antigen))
+
+
+dclass3 <- foreach(ab=levels(dcomp$antigen),.combine=rbind) %do% {
+  dcompi <- dcomp %>% filter(antigen==ab)
+  tabi <- as.vector(table(dcompi$posmix,dcompi$posunex))
+  names(tabi) <- c("mix0unexp0","mix1unexp0","mix0unexp1","mix1unexp1")
+  kappai <- psych::cohen.kappa(table(dcompi$posmix,dcompi$posunex))$kappa
+  tabi <- data.frame(t(tabi))
+  tabi <- tabi %>%
+    mutate(Nobs=mix0unexp0+mix1unexp0+mix0unexp1+mix1unexp1,
+           agreement=(mix0unexp0+mix1unexp1)/Nobs,
+           kappa=kappai,
+           antigen=ab) %>%
+    select(antigen,Nobs,everything())
+  tabi
+}
+
+knitr::kable(dclass3,digits=3,caption="Summary of seropositivity classifications by Gaussian mixture model and distribution among unexposed for Giardia (VSP-3 and VSP-5), Cryptosporidium (Cp17, Cp23), and Campylobacter (p39)") %>%
+  kable_styling(bootstrap_options = "striped",full_width=TRUE)
+
+```
+Classification was very consistent between the two approaches, but slightly lower for _Cryptosporidium_ Cp23. The Cp23 cutoff value estimated using the presumed unexposed was much lower compared with mixture model-based cutoff.
+
+
+# Kongwa, Tanzania
+
+In the Tanzania study, children were enrolled between ages 1-9 years. Enteric pathogen transmission was sufficiently high that most children were exposed by age 1, so there were relatively few children who were unexposed. This meant that mixture models only estimated reasonable seropositivity cutoffs for _Giardia_ and _E. histolytica_.  Comparisons between ROC-based cutoffs and mixture model-based cutoffs focus on these two pathogens.
+
+## Load data
+```{r kongwa load data}
+#-----------------------------
+# load the formatted data
+# created with 
+# kongwa-enteric-ab-data-format.Rmd ->
+# kongwa-enteric-ab-distributions.Rmd
+#-----------------------------
+dl <- readRDS(here("data","kongwa_analysis2.rds"))
+
+```
+
+## Figure of distributions and cutoffs 
+Limited to children $\leq 1$ year old to ensure a sufficient number of uenxposed children.
+
+```{r kongwa fig,fig.width=6,fig.height=12,warning=FALSE}
+dplot <- dl %>%
+  filter(age<=1) %>%
+  group_by(antigen) %>%
+  mutate(plotroc=min(roccut))
+
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cgrey)
+
+log10labs <- c( 
+  expression(10^0),
+  expression(10^1),
+  expression(10^2),
+  expression(10^3),
+  expression(10^4)
+)
+
+pmix <- ggplot(data=dplot,aes(x=logmfi,group=pathogen,color=pathogen,fill=pathogen)) +
+  facet_wrap(~antigenf,nrow=6,ncol=2,scales="free_y") +
+  # plot empirical distribution
+  geom_histogram(aes(y=..density..),alpha=0.7)+
+  geom_density(aes(y=..density..),color=cgrey,fill=NA,alpha=0.7)+
+  # add vertical lines for the cutoff values
+  geom_vline(aes(xintercept=plotroc)) +
+  geom_vline(aes(xintercept=mixcut),linetype=2) +
+  # labels and formatting
+  scale_x_continuous(limits = c(0,4.5),breaks = 0:4,labels=log10labs) +
+  coord_cartesian(ylim=c(0,2)) +
+  labs(x="Luminex Response (MFI-bg)") +
+  scale_fill_manual(values=pcols) +
+  scale_color_manual(values=pcols) +
+  theme_minimal(base_size = 16) +
+  theme(legend.position = "none")
+
+pmix
+
+```
+
+## ROC vs Mixture Model cutoffs
+
+In cases where both cutoffs are available (_Giardia_,  and _E. histolytica_), summarize agreement between classifications.  
+
+```{r seropositivity}
+# for Giardia and E. histolytica, the 2 pathogens
+# with both
+dcomp <- dl %>%
+  filter(age==1) %>%
+  filter(antigen %in% c("vsp3","vsp5","leca")) %>% 
+  mutate(antigen=factor(antigen))
+
+
+dclass <- foreach(ab=levels(dcomp$antigen),.combine=rbind) %do% {
+  dcompi <- dcomp %>% filter(antigen==ab)
+  tabi <- as.vector(table(dcompi$posroc,dcompi$posmix))
+  names(tabi) <- c("roc0mix0","roc1mix0","roc0mix1","roc1mix1")
+  kappai <- psych::cohen.kappa(table(dcompi$posroc,dcompi$posmix))$kappa
+  tabi <- data.frame(t(tabi))
+  tabi <- tabi %>%
+    mutate(Nobs=roc0mix0+roc1mix0+roc0mix1+roc1mix1,
+           agreement=(roc0mix0+roc1mix1)/Nobs,
+           kappa=kappai,
+           antigen=ab) %>%
+    select(antigen,Nobs,everything())
+  tabi
+}
+
+knitr::kable(dclass,digits=2,caption="Summary of seropositivity classifications by ROC curve and Gaussian mixture models for Giardia (VSP-3) and E. histolytica (LecA)") %>%
+  kable_styling(bootstrap_options = "striped",full_width=TRUE)
+
+```
+Classification was very consistent between the two approaches for _Giardia_, but slightly lower for _E. histolytica_. 
+
+# Session Info
+```{r session info}
+sessionInfo()
+```
+
