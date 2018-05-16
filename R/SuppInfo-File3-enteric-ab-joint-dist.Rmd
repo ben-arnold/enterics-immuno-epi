@@ -1,5 +1,6 @@
 ---
-title: "Joint distribution of antibody responses"
+title: "Insights into the seroepidemiology of enteric pathogens among children living in high transmission settings"
+subtitle: "Supporting Information File 3"
 output: 
   html_notebook:
     theme: default
@@ -13,14 +14,18 @@ output:
 
 # Summary
 
-This script summarizes the joint distribution of antibody responses in each cohort. In the main figure, the comparisons are between different antigens for the same pathogen except for ETEC and cholera, where the beta toxin subunit is very similar (so likely have cross-reactivity).  Each scatter plot also includes the spearman's rank correlation coefficient ($\rho$).  After the main summary figure, supplemental figures include pairs plots for the joint distribution of every combination of enteric antibody responses in each cohort.
+This notebook summarizes the joint distribution of antibody responses in each cohort. The first section creates main text Figure 2, which summarizes comparisons between different antigens for the same pathogen plus a comparison between ETEC and cholera, where the beta toxin subunit is known to elicit cross-reactivity.  Each scatter plot also includes the spearman's rank correlation coefficient ($\rho$).  After creating Figure 2, the notebook creates supplemental figures that include pairs plots for the joint distribution of every combination of enteric antibody responses in each cohort.
 
 # Script preamble
 ```{r preamble}
 #-----------------------------
 # preamble
 #-----------------------------
-rm(list=ls())
+# set to local workspace
+library(here)
+here()
+
+# load packages
 library(tidyverse)
 library(scales)
 library(ellipse)
@@ -63,9 +68,9 @@ log10labs <- c(
 #--------------------------------
 # load the various datasets
 #--------------------------------
-dh <- readRDS("~/enterics-immuno-epi/data/haiti_analysis.rds")
-dk <- readRDS("~/enterics-immuno-epi/data/asembo_analysis.rds")
-dt <- readRDS("~/enterics-immuno-epi/data/kongwa_analysis.rds")
+dh <- readRDS(here("data","haiti_analysis.rds"))
+dk <- readRDS(here("data","asembo_analysis.rds"))
+dt <- readRDS(here("data","kongwa_analysis.rds"))
 
 #--------------------------------
 # subset to common variables
@@ -174,7 +179,7 @@ complot <- ggplot(data=dw,aes(x=x,y=y)) +
 complot
 
 # save a PDF version
-ggsave("~/enterics-immuno-epi/figs/all-ab-scatter-composite.pdf",plot=complot,device="pdf",width=13,height=15)
+ggsave(here("figs","all-ab-scatter-composite.pdf"),plot=complot,device="pdf",width=13,height=15)
 
 ```
 
@@ -252,7 +257,7 @@ pairs(hmat[mbavars],labels=mbalabs,cex=0.1,las=1,
 )
 
 # save a PDF version
-pdf("~/enterics-immuno-epi/figs/haiti-pairs-plot.pdf",width=10,height=10)
+pdf(here("figs","haiti-pairs-plot.pdf"),width=10,height=10)
 pairs(hmat[mbavars],labels=mbalabs,cex=0.1,las=1,
       upper.panel=scatterloess,
       lower.panel=myellipse
@@ -280,7 +285,7 @@ pairs(kmat[mbavars],labels=mbalabs,cex=0.1,las=1,
 )
 
 # save a PDF version
-pdf("~/enterics-immuno-epi/figs/asembo-pairs-plot.pdf",width=11,height=11)
+pdf(here("figs","asembo-pairs-plot.pdf"),width=11,height=11)
 pairs(kmat[mbavars],labels=mbalabs,cex=0.1,las=1,
       upper.panel=scatterloess,
       lower.panel=myellipse
@@ -309,7 +314,7 @@ pairs(tmat[mbavars],labels=mbalabs,cex=0.1,las=1,
 )
 
 # save a PDF version
-pdf("~/enterics-immuno-epi/figs/kongwa-pairs-plot.pdf",width=11,height=11)
+pdf(here("figs","kongwa-pairs-plot.pdf"),width=11,height=11)
 pairs(tmat[mbavars],labels=mbalabs,cex=0.1,las=1,
       upper.panel=scatterloess,
       lower.panel=myellipse
