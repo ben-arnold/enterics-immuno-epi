@@ -1,5 +1,5 @@
 # enterics-seroepi
-Insights into the complex seroepidemiology of enteric pathogens
+Insights into the complex seroepidemiology of enteric pathogens among children in high transmission settings
 
 
 ## Description
