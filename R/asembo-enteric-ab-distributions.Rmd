@@ -74,7 +74,9 @@ mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptospori
 ```{r Ab distribution figure, fig.height=12, fig.width=6}
 
 # custom color blind color palette is in the preamble chunck
-pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
+# pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
+pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
+
 
 # custom log labels
 log10labs <- c( 
@@ -197,7 +199,9 @@ plotmixdens <- mixdens %>%
 # and custom log10 labels (log10labs)
 # defined in a previous code chunk
 #-----------------------------
-pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
+# pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
+pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
+
 pmix <- ggplot(data=dl,aes(x=logmfi,group=pathogen,color=pathogen,fill=pathogen)) +
   facet_wrap(~antigenf,nrow=6,ncol=2,scales="free_y") +
   # plot empirical smoothed distribution
@@ -284,7 +288,9 @@ dl <- left_join(dl,dlunexp2,by="antigen")
 # create a figure of the
 # unexposed distributions
 #-----------------------------
-pcols <- c(cred,corange,cblue,cmagent,cgrey)
+# pcols <- c(cred,corange,cblue,cmagent,cgrey)
+pcols <- c(corange,cred,cteal,cgreen,cgrey)
+
 punexp <- ggplot(data=filter(dl,unexp=="Presumed unexposed" & !is.na(unexpcut)), aes(x=logmfi,group=pathogen,color=pathogen,fill=pathogen)) +
   facet_wrap(~antigenf,nrow=6,ncol=2,scales="free_y") +
   # plot empirical smoothed distribution
@@ -310,9 +316,9 @@ ggsave(here("figs","asembo-ab-unexposed-distributions.pdf"),plot=punexp,device="
 ```
 
 
-## Figure of mixture and unexposed distributions together
+## Fig 1 - supp 3. Antibody distributions and cutoff values
 
-This is Figure 1, supplement 2 in the main text.
+**This is Figure 1, supplement 3 in the main text.**
 
 ```{r mixture and unexp distribution figure, fig.height=12, fig.width=6}
 #-----------------------------
@@ -330,7 +336,9 @@ plotmixdens <- plotmixdens %>%
 # create a figure of the
 # unexposed distributions
 #-----------------------------
-pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
+# pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
+pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
+
 pall <- ggplot(data=dl,aes(x=logmfi,group=pathogen,color=pathogen,fill=pathogen)) +
   facet_wrap(~antigenf,nrow=6,ncol=2,scales="free_y") +
   # plot empirical smoothed distribution
