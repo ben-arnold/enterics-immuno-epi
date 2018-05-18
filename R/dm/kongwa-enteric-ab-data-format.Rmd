@@ -20,7 +20,9 @@ This script loads the raw data and formats it for all of the analyses
 #-----------------------------
 # preamble
 #-----------------------------
-rm(list=ls())
+library(here)
+here()
+
 library(tidyverse)
 
 
@@ -32,15 +34,18 @@ library(tidyverse)
 ```{r data format}
 #-----------------------------
 # load the data
+# note: this is an external
+# dataset and not in the
+# current repository
 #-----------------------------
 
 d <- readRDS("~/dropbox/kongwa/data/final/kongwa-mba-kids.rds")
 
 # list the enteric antigens and make formatted labels for them
-mbavars <- c("vsp3","vsp5","cp17","cp23","salb","sald","etec","cholera","p18","p39","leca")
+mbavars <- c("vsp3","vsp5","cp17","cp23","salb","sald","etec","cholera","p18","p39","leca","pgp3")
 
 mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23",
-             "Salmonella LPS B","Salmonella LPS D","ETEC toxin beta subunit","Cholera toxin beta subunit","Campylobacter p18","Campylobacter p39","E. histolytica LecA")
+             "Salmonella LPS B","Salmonella LPS D","ETEC toxin beta subunit","Cholera toxin beta subunit","Campylobacter p18","Campylobacter p39","E. histolytica LecA","C. trachomatis pgp3")
 
 #-----------------------------
 # filter to just the relevant
@@ -85,10 +90,11 @@ dl$pathogen[dl$antigen %in% c("p18","p39")] <- "Campylobacter"
 dl$pathogen[dl$antigen %in% c("salb","sald")] <- "Salmonella"
 dl$pathogen[dl$antigen %in% c("etec")] <- "ETEC"
 dl$pathogen[dl$antigen %in% c("cholera")] <- "V. cholerae"
+dl$pathogen[dl$antigen %in% c("pgp3")] <- "C. trachomatis"
 
 
 dl <- dl %>%
-  mutate(pathogen = factor(pathogen,levels=c("Giardia","Cryptosporidium","E. histolytica","Salmonella","ETEC","V. cholerae","Campylobacter")),
+  mutate(pathogen = factor(pathogen,levels=c("Giardia","Cryptosporidium","E. histolytica","Salmonella","ETEC","V. cholerae","Campylobacter","C. trachomatis")),
          antigenf=factor(antigen,levels=mbavars,labels=mbalabs))
      
 #-----------------------------
@@ -96,7 +102,7 @@ dl <- dl %>%
 # dataset for all future 
 # analyses
 #-----------------------------
-saveRDS(dl,file="~/enterics-immuno-epi/data/kongwa_analysis.rds")
+saveRDS(dl,file=here("data","kongwa_analysis.rds"))
 ```
 # Session Info
 ```{r session info}
