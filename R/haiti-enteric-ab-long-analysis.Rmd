@@ -1,6 +1,16 @@
 ---
 title: "Haiti enteric antibody analysis of longitudinal change"
 output: 
+  html_document:
+    highlight: haddock
+    theme: default
+    code_folding: show
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
   html_notebook:
     theme: default
     highlight: haddock
@@ -21,7 +31,10 @@ This script summarizes the change in antibody levels within individual children 
 #-----------------------------
 # preamble
 #-----------------------------
-rm(list=ls())
+library(here)
+here()
+
+# load packages
 library(tidyverse)
 
 # set up for parallel computing
@@ -51,7 +64,7 @@ cgrey <- "#777777"
 # created with 
 # asembo-enteric-ab-data-format.Rmd
 #-----------------------------
-dl <- readRDS("~/enterics-immuno-epi/data/haiti_analysis2.rds")
+dl <- readRDS(here("data","haiti_analysis2.rds"))
 
 # list the enteric antigens and formatted labels for them
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","etec","salb","sald","norogi","norogii")
@@ -78,7 +91,7 @@ Among children, identify those that changed status between enrollment and follow
 #-----------------------------
 dl <- dl %>%
   mutate(seropos=ifelse(!is.na(posroc),posroc,posmix),
-         serocut=ifelse(!is.na(posroc),log10(roccut),mixcut),
+         serocut=ifelse(!is.na(posroc),roccut,mixcut),
          serocut_desc=ifelse(!is.na(posroc),"ROC","Mixture Model")) %>%
   mutate(seropos=ifelse(!is.na(seropos),seropos,posunex),
          serocut_desc=ifelse(!is.na(serocut),serocut_desc,"Unexp dist"),
@@ -158,7 +171,8 @@ dl2plot <- dl2plot %>%
 
 
 # custom color blind color palette is in the preamble chunck
-pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+# pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+pcols <- c(corange,cred,cmagent,cblue,cteal,cgreen)
 
 # custom log labels
 log10labs <- c( 
@@ -214,7 +228,7 @@ foreach(iid=c(20,24,30,34,35,38,43,47,72,76,77,119,135)) %do% {
       legend.position="none"
     )
 
-  ggsave(filename=paste("~/enterics-immuno-epi/figs/haiti-spaghetti-",iid,".pdf",sep=""),plot = p,device='pdf',width=5,height=14)
+  ggsave(filename=here("figs",paste("haiti-spaghetti-",iid,".pdf",sep="")),plot = p,device='pdf',width=5,height=14)
 
 }
 
@@ -223,49 +237,8 @@ foreach(iid=c(20,24,30,34,35,38,43,47,72,76,77,119,135)) %do% {
 # Analysis of change in MFI
 
 
-## Summarize distribution of changes in MFI by age category
-```{r change in MFI by agecat, fig.width=7,fig.height=7}
 
-# Difference in MFI values - boxplot
-dl2plot <- dl2 %>%
-  mutate(agecat=cut(age,breaks=c(0,0.99,1.99,2.99,3.99,4.99,12),labels=c("0","1","2","3","4","5+")))
-
-# calculate Ns in each age category to print in the figure
-ageNs <- dl2plot %>%
-  group_by(pathogen,antigenf,agecat) %>%
-  summarize(n=n()) %>%
-  filter(!is.na(agecat)) %>%
-  mutate(nlab=paste("(n=",n,")",sep=""))
-
-# custom color blind color palette is in the preamble chunck
-pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
-
-diffmfi_byage <- ggplot(data=dl2plot,aes(x=agecat,y=logmfi_dlead,fill=pathogen,color=pathogen)) +
-  facet_wrap(~antigenf,nrow=6,ncol=4)+ # ,scales='free_y'
-  geom_jitter(position = position_jitter(width = 0.2), alpha = 0.2,pch=19) +
-  geom_boxplot(notch=FALSE,outlier.color=NA,width=0.5,alpha=0.5,fill=NA,color="grey20")+
-  geom_hline(aes(yintercept = 0)) +
-  geom_text(data=ageNs,aes(x=agecat,y=-3.75,label=nlab),col="gray40",size=2) +
-
-  scale_y_continuous(expand=c(0,0),limits=c(-4,4.5),breaks=-3:4) +
-  scale_fill_manual(values=pcols)+
-  scale_color_manual(values=pcols)+
-  labs(title="",x="Age at beginning of period (years completed)",y="Change in log10 Luminex Response (MFI-bg) between measurements") +
-  theme_minimal(base_size=12)+
-  theme(
-    panel.grid.minor.x = element_blank(),
-    legend.position="none"
-  )
-
-diffmfi_byage
-
-# save a PDF version
-ggsave("~/enterics-immuno-epi/figs/haiti-ab-mfidiff-byage.pdf",plot=diffmfi_byage,device="pdf",width=9,height=8)
-
-
-```
-
-## Distribution of changes in MFI by seroconversion status
+## Fig 3 Distribution of changes in MFI by seroconversion status
 ```{r change in MFI by episode, fig.width=7,fig.height=7}
 
 # Create a factor that summarizes seroconversion status, with 4 categories:
@@ -288,13 +261,15 @@ epiNs <- dl2plot %>%
 
 
 # custom color blind color palette is in the preamble chunck
-pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+# pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+pcols <- c(corange,cred,cmagent,cblue,cteal,cgreen)
 
 set.seed(123)
 diffmfi_byepisode <- ggplot(data=filter(dl2plot,!is.na(serostat)),aes(x=serostat,y=logmfi_dlag,fill=pathogen,color=pathogen)) +
   facet_wrap(~antigenf,nrow=6,ncol=4)+ 
   geom_jitter(position = position_jitter(width = 0.2), alpha = 0.2,pch=19) +
   geom_boxplot(notch=FALSE,outlier.color=NA,width=0.5,alpha=0.5,fill=NA,color="grey20")+
+  geom_hline(aes(yintercept = log10(2)),lty="dashed") +
   geom_hline(aes(yintercept = 0)) +
   # add Ns
   geom_text(data=epiNs,aes(x=serostat,y=-3.25,label=nlab),col="gray40",size=2) +
@@ -312,11 +287,53 @@ diffmfi_byepisode <- ggplot(data=filter(dl2plot,!is.na(serostat)),aes(x=serostat
 diffmfi_byepisode
 
 # save a PDF version
-ggsave("~/enterics-immuno-epi/figs/haiti-ab-mfidiff-byepisode.pdf",plot=diffmfi_byepisode,device="pdf",width=9,height=8)
+ggsave(here("figs","haiti-ab-mfidiff-byepisode.pdf"),plot=diffmfi_byepisode,device="pdf",width=9,height=8)
 
 
 ```
 
+## Fig 5 - supp 2: distribution of changes in MFI by age category
+```{r change in MFI by agecat, fig.width=7,fig.height=7}
+
+# Difference in MFI values - boxplot
+dl2plot <- dl2 %>%
+  mutate(agecat=cut(age,breaks=c(0,0.99,1.99,2.99,3.99,4.99,12),labels=c("0","1","2","3","4","5+")))
+
+# calculate Ns in each age category to print in the figure
+ageNs <- dl2plot %>%
+  group_by(pathogen,antigenf,agecat) %>%
+  summarize(n=n()) %>%
+  filter(!is.na(agecat)) %>%
+  mutate(nlab=paste("(n=",n,")",sep=""))
+
+# custom color blind color palette is in the preamble chunck
+# pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+pcols <- c(corange,cred,cmagent,cblue,cteal,cgreen)
+
+diffmfi_byage <- ggplot(data=dl2plot,aes(x=agecat,y=logmfi_dlead,fill=pathogen,color=pathogen)) +
+  facet_wrap(~antigenf,nrow=6,ncol=4)+ # ,scales='free_y'
+  geom_jitter(position = position_jitter(width = 0.2), alpha = 0.2,pch=19) +
+  geom_boxplot(notch=FALSE,outlier.color=NA,width=0.5,alpha=0.5,fill=NA,color="grey20")+
+  geom_hline(aes(yintercept = 0)) +
+  geom_text(data=ageNs,aes(x=agecat,y=-3.75,label=nlab),col="gray40",size=2) +
+
+  scale_y_continuous(expand=c(0,0),limits=c(-4,4.5),breaks=-3:4) +
+  scale_fill_manual(values=pcols)+
+  scale_color_manual(values=pcols)+
+  labs(title="",x="Age at beginning of period (years completed)",y="Change in log10 Luminex Response (MFI-bg) between measurements") +
+  theme_minimal(base_size=12)+
+  theme(
+    panel.grid.minor.x = element_blank(),
+    legend.position="none"
+  )
+
+diffmfi_byage
+
+# save a PDF version
+ggsave(here("figs","haiti-ab-mfidiff-byage.pdf"),plot=diffmfi_byage,device="pdf",width=9,height=8)
+
+
+```
 
 
 # Seroincidence estimates
@@ -324,8 +341,6 @@ ggsave("~/enterics-immuno-epi/figs/haiti-ab-mfidiff-byepisode.pdf",plot=diffmfi_
 Estimates of the mean seroincidence rates among children with at least 2 measurements between 6 months and 3 years old. The rates assume that incident sero-conversions and sero-reversions happened at the mid-point between measurements for each child.
 
 As with the age-prevalence curve analysis, use information across multiple recombinant antigens for each pathogen when identifying risk periods and incident seroconversions and seroreversions.
-
-
 
 
 
@@ -492,15 +507,19 @@ rate_ests <- left_join(rate_ests,rate_cis,by="antigenf") %>%
 
 ```
 
-Table of results
+Tables of results
 ```{r long incidence rate tables}
-knitr::kable(select(rate_ests,antigenf,nit,ni,starts_with("seroi")),digits=1,
+rate_ests %>%
+  select(antigenf,nit,ni,starts_with("seroi")) %>%
+  knitr::kable(digits=1,
              caption="Incidence rates seroconversion per child year",
              col.names = c("Antigen","Years at risk","n events","Incidence per year","min95","max95"),
              row.names = FALSE)
 
 
-knitr::kable(select(rate_ests,antigenf,nrt,nr,starts_with("seror")),digits=1,
+rate_ests %>%
+  select(antigenf,nit,ni,starts_with("seror")) %>%
+  knitr::kable(digits=1,
              caption="Incidence rates seroreversion per child year",
              col.names = c("Antigen","Years at risk","n events","Incidence per year","min95","max95"),
              row.names = FALSE)
