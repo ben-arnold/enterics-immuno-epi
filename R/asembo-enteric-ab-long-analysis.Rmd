@@ -1,14 +1,24 @@
 ---
 title: "Asembo enteric antibody analysis of longitudinal change"
-output: 
-  html_notebook:
-    theme: default
+output:
+  html_document:
     highlight: haddock
-    toc: true
+    theme: default
+    code_folding: show
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+  html_notebook:
+    highlight: haddock
+    theme: default
+    toc: yes
     toc_depth: 3
     toc_float:
-      collapsed: true
-      smooth_scroll: true
+      collapsed: yes
+      smooth_scroll: yes
 ---
 
 # Summary
@@ -22,7 +32,10 @@ The Asembo study was longitudinal and followed children prospectively. We can es
 #-----------------------------
 # preamble
 #-----------------------------
-rm(list=ls())
+library(here)
+here()
+
+# load packages
 library(tidyverse)
 library(mixtools)
 
@@ -53,7 +66,7 @@ cgrey <- "#777777"
 # created with 
 # asembo-enteric-ab-data-format.Rmd
 #-----------------------------
-dl <- readRDS("~/enterics-immuno-epi/data/asembo_analysis2.rds")
+dl <- readRDS(here("data","asembo_analysis2.rds"))
 
 # list the enteric antigens and make formatted labels for them
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","rotavirus","salb","sald","p18","p39","etec","cholera")
@@ -136,7 +149,7 @@ ppq <- ggplot(data=filter(dl,!is.na(mficat)),aes(x=svy,y=logmfi,group=factor(chi
 ppq
 
 # save a PDF version
-ggsave("~/enterics-immuno-epi/figs/asembo-ab-long-mfi.pdf",plot=ppq,device="pdf",width=5,height=12)
+ggsave(here("figs","asembo-ab-long-mfi.pdf"),plot=ppq,device="pdf",width=5,height=12)
 
 ```
 
@@ -184,11 +197,11 @@ pp <- ggplot(data=filter(dl2,!is.na(icat)),aes(x=svy,y=logmfi,group=factor(child
 pp
 
 # save a PDF version
-ggsave("~/enterics-immuno-epi/figs/asembo-ab-long-seroincidence.pdf",plot=pp,device="pdf",width=5,height=8)
+ggsave(here("figs","asembo-ab-long-seroincidence.pdf"),plot=pp,device="pdf",width=5,height=8)
 
 ```
 
-# Antibody distributions conditional on seroconversion
+# Antibody distributions conditional on seroconversion status
 Taking advantage of the longitudinal measurements within individual children, examine the distributions of antibody response among those who seroconverted.
 
 ```{r ab ditributions among sero-converters, fig.height=9, fig.width=6}
@@ -229,13 +242,18 @@ pdiff
 
 ```
 
-Alternate visualization
-```{r ab distribution of change2, fig.height=9, fig.width=6}
+## Figure 3 supp 1: Change in antibody levels by serostatus
+Distribution of change in antibody levels by seroconversion status
+** This is Figure 3 supplement 1 in the manuscript **
+```{r ab distribution of change2, fig.height=7, fig.width=7}
 
 # Reorder the incidence category to be reversion/no change/conversion
+# subset to only the first measurement
 dl2plot <- dl2 %>%
   mutate(serostat=factor(icat,levels=c("Seroreversion","No change","Seroconversion"))
-  )
+  ) %>%
+  filter(time=="A")
+  
 
 # calculate Ns in each seroconversion category to print in the figure
 epiNs <- dl2plot %>%
@@ -245,12 +263,15 @@ epiNs <- dl2plot %>%
   mutate(nlab=paste("(n=",n,")",sep=""))
 
 
-pcols <- c(cred,corange,cgreen,cchartr,cteal,cteal,cblue,cgrey)
+# pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
+pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
+
 set.seed(123)
 diffmfi_byserostat <- ggplot(data=filter(dl2plot,!is.na(serostat)),aes(x=serostat,y=logmfidiff,fill=pathogen,color=pathogen)) +
-  facet_wrap(~antigenf,nrow=6,ncol=2)+ 
+  facet_wrap(~antigenf,nrow=6,ncol=4)+ 
   geom_jitter(position = position_jitter(width = 0.2), alpha = 0.2,pch=19) +
   geom_boxplot(notch=FALSE,outlier.color=NA,width=0.5,alpha=0.5,fill=NA,color="grey20")+
+  geom_hline(aes(yintercept = log10(2)),lty="dashed") +
   geom_hline(aes(yintercept = 0)) +
   # add Ns
   geom_text(data=epiNs,aes(x=serostat,y=-3.25,label=nlab),col="gray40",size=2) +
@@ -268,7 +289,7 @@ diffmfi_byserostat <- ggplot(data=filter(dl2plot,!is.na(serostat)),aes(x=serosta
 diffmfi_byserostat
 
 # save a PDF version
-ggsave("~/enterics-immuno-epi/figs/asembo-ab-mfidiff-byserostat.pdf",plot=diffmfi_byserostat,device="pdf",width=5,height=14)
+ggsave(here("figs","asembo-ab-mfidiff-byserostat.pdf"),plot=diffmfi_byserostat,device="pdf",width=8,height=8)
 
 
 ```
@@ -392,14 +413,15 @@ dp <- dp %>%
 #-----------------------------
 # estimate incidence rates
 # for each antibody
-# units are episodes per child-month
+# units are episodes per child-year
+# (dividing person time in months by 12)
 #-----------------------------
 rate_ests <- dp %>%
   group_by(antigenf) %>%
   summarize(ni=sum(seroi,na.rm=T),
-            nit=sum(ptc,na.rm=T),
+            nit=sum(ptc,na.rm=T)/12,
             nr=sum(seror,na.rm=T),
-            nrt=sum(ptr,na.rm=T)) %>%
+            nrt=sum(ptr,na.rm=T)/12) %>%
   mutate(seroi=ni/nit,
          seror=nr/nrt)
 
@@ -418,7 +440,7 @@ bootests <- foreach(brep=1:1000,.combine=rbind) %dopar% {
 
 rate_cis <- bootests %>% 
   group_by(pathogen,antigen,antigenf) %>%
-  mutate(sero_c=seroi/ptc,sero_r=seror/ptr) %>%
+  mutate(sero_c=seroi/(ptc/12),sero_r=seror/(ptr/12)) %>%
   summarize(seroi_lb = quantile(sero_c,probs=c(0.025)),
             seroi_ub = quantile(sero_c,probs=c(0.975)),
             seror_lb = quantile(sero_r,probs=c(0.025),na.rm=T),
@@ -433,20 +455,25 @@ rate_ests <- left_join(rate_ests,rate_cis,by="antigenf") %>%
 
 Table of results
 ```{r long incidence rate tables}
-knitr::kable(select(rate_ests,antigenf,nit,ni,starts_with("seroi")),digits=3,
-             caption="Incidence rates seroconversion per child month",
-             col.names = c("Antigen","Months risk","n events","Incidence per month","min95","max95"),
+rate_ests %>%
+  select(antigenf,nit,ni,starts_with("seroi")) %>%
+  knitr::kable(digits=1,
+             caption="Incidence rates seroconversion per child year",
+             col.names = c("Antigen","Years at risk","n events","Incidence per year","min95","max95"),
              row.names = FALSE)
 
 
-knitr::kable(select(rate_ests,antigenf,nrt,nr,starts_with("seror")),digits=3,
-             caption="Incidence rates seroreversion per child month",
-             col.names = c("Antigen","Months risk","n events","Incidence per month","min95","max95"),
+rate_ests %>%
+  select(antigenf,nit,ni,starts_with("seroi")) %>%
+  knitr::kable(digits=1,
+             caption="Incidence rates seroreversion per child year",
+             col.names = c("Antigen","Years at risk","n events","Incidence per year","min95","max95"),
              row.names = FALSE)
 
 ```
 
-
+## Fig 6: sero incidence rates
+**This is Figure 6 in the manuscript**
 ```{r seroincidence rate figure}
 
 # reshape the rate estimates to long
@@ -461,13 +488,15 @@ rate_ests_long <- bind_rows(rate_ests_i,rate_ests_r)
 
 
 # bright color-blind palette defined in an earlier code chunk
-pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
+# pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
+pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
+
 
 rateplot <- ggplot(data=rate_ests_long,aes(x=antigenf,y=rate,color=pathogen,fill=pathogen)) +
   geom_pointrange(aes(ymin=rate_lb,ymax=rate_ub)) +
   
   facet_wrap(~factor(outcome),nrow=2,ncol=1)+
-  labs(x="",y="Incidence rate per child-month") +
+  labs(x="",y="Incidence rate per child-year") +
   scale_fill_manual(values=pcols) +
   scale_color_manual(values=pcols) +
   # scale_color_identity(name = 'xxx', guide = 'legend',labels = c('m1',"m2")) +
@@ -479,7 +508,7 @@ rateplot <- ggplot(data=rate_ests_long,aes(x=antigenf,y=rate,color=pathogen,fill
 rateplot
 
 # save a PDF version
-ggsave("~/enterics-immuno-epi/figs/asembo-ab-long-seroincidence-rate-ests.pdf",plot=rateplot,device="pdf",width=5,height=5)
+ggsave(here("figs","asembo-ab-long-seroincidence-rate-ests.pdf"),plot=rateplot,device="pdf",width=5,height=5)
 
 
 ```
@@ -567,22 +596,29 @@ est_seror <- foreach(ab=levels(dp$antigenf),.combine=rbind) %do% {
   res
 }
 ```
-Table of results
+Tables of results
 ```{r long incidence proportion tables}
-knitr::kable(select(est_seroi,-pathogen),digits=3,
+est_seroi %>%
+  select(-pathogen) %>%
+  mutate(mean=mean*100,min95=min95*100,max95=max95*100) %>%
+  knitr::kable(digits=0,
              caption="Incidence proportion of seroconversion over a 6-month period",
              col.names = c("Antigen","N at risk","n events","Incidence per 100","min95","max95"),
              row.names = FALSE)
 
 
-knitr::kable(select(est_seror,-pathogen),digits=3,
+est_seror %>%
+  select(-pathogen) %>%
+  mutate(mean=mean*100,min95=min95*100,max95=max95*100) %>%
+  knitr::kable(digits=0,
              caption="Incidence proportion of seroreversion over a 6-month period",
              col.names = c("Antigen","N at risk","n events","Incidence per 100","min95","max95"),
              row.names = FALSE)
 
 ```
 
-Incidence proportion figure
+## Fig 6 - supp 1: sero incidence proportion
+**This is Figure 6 - supplement 1 in the manuscript**
 ```{r seroincidence proportion figure}
 
 # code to plot conversion and reversion in a single panel (not used)
@@ -610,7 +646,8 @@ est_sero <- est_seroi %>%
 
 
 # bright color-blind palette defined in an earlier code chunk
-pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
+# pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
+pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
 
 seroip <- ggplot(data=est_sero,aes(x=antigenf,y=mean*100,color=pathogen,fill=pathogen)) +
   geom_pointrange(aes(ymin=min95*100,ymax=max95*100)) +
@@ -628,7 +665,7 @@ seroip <- ggplot(data=est_sero,aes(x=antigenf,y=mean*100,color=pathogen,fill=pat
 seroip
 
 # save a PDF version
-ggsave("~/enterics-immuno-epi/figs/asembo-ab-long-seroincidence-ests.pdf",plot=seroip,device="pdf",width=5,height=5)
+ggsave(here("figs","asembo-ab-long-seroincidence-ests.pdf"),plot=seroip,device="pdf",width=5,height=5)
 
 
 ```
@@ -638,9 +675,9 @@ ggsave("~/enterics-immuno-epi/figs/asembo-ab-long-seroincidence-ests.pdf",plot=s
 
 # Save incidence estimates
 ```{r save estimates}
-saveRDS(rate_ests_long,file="~/enterics-immuno-epi/output/asembo-enteric-ab-ests-incidencerates.rds")
-saveRDS(est_seroi,file="~/enterics-immuno-epi/output/asembo-enteric-ab-ests-seroconversion.rds")
-saveRDS(est_seror,file="~/enterics-immuno-epi/output/asembo-enteric-ab-ests-seroreversion.rds")
+saveRDS(rate_ests_long,file=here("output","asembo-enteric-ab-ests-incidencerates.rds"))
+saveRDS(est_seroi,file=here("output","asembo-enteric-ab-ests-seroconversion.rds"))
+saveRDS(est_seror,file=here("output","asembo-enteric-ab-ests-seroreversion.rds"))
 ```
 
 # Session Info
