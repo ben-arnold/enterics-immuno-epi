@@ -9,7 +9,9 @@
 #-----------------------------------------
 # preamble
 #-----------------------------------------
-rm(list=ls())
+library(here)
+here()
+
 library(shiny)
 library(tidyverse)
 
@@ -28,9 +30,9 @@ cgrey <- "#777777"
 #-----------------------------------------
 # load the underlying datasets for viewing
 #-----------------------------------------
-d_leogane <- readRDS("~/enterics-immuno-epi/data/haiti_analysis2.rds")
-d_kongwa <- readRDS("~/enterics-immuno-epi/data/kongwa_analysis2.rds")
-d_asembo <- readRDS("~/enterics-immuno-epi/data/asembo_analysis2.rds")
+d_leogane <- readRDS(here("data","haiti_analysis2.rds"))
+d_kongwa <- readRDS(here("data","kongwa_analysis2.rds"))
+d_asembo <- readRDS(here("data","asembo_analysis2.rds"))
 
 
 # Define UI for dataset viewer app ----
@@ -48,7 +50,7 @@ ui <- fluidPage(
       # Input: Selector for choosing dataset ----
       selectInput(inputId = "dataset",
                   label = "Choose a dataset:",
-                  choices = c("Kongwa", "Leogane","Asembo")),
+                  choices = c("Kongwa, Tanzania", "Leogane, Haiti","Asembo, Kenya")),
       
       # Input: Select an antibody ----
       uiOutput("d_antigens"),
@@ -65,7 +67,7 @@ ui <- fluidPage(
       # Output: Formatted text for caption ----
       h3(textOutput("selected_ages", container = span)),
       
-      h5("If available, the figure includes seropositivity cutoffs based on an ROC analysis (solid line)."),
+      h5("If available, the figure includes seropositivity cutoffs based on an ROC analysis (solid line) or mixture model (dashed line)."),
       
       
       # Output: HTML table with requested number of observations ----
@@ -87,9 +89,9 @@ server <- function(input, output) {
   #    i.e. it only executes a single time
   datasetInput <- reactive({
     switch(input$dataset,
-           "Kongwa" = d_kongwa,
-           "Leogane" = d_leogane,
-           "Asembo" = d_asembo
+           "Kongwa, Tanzania" = d_kongwa,
+           "Leogane, Haiti" = d_leogane,
+           "Asembo, Kenya" = d_asembo
            )
   })
   
@@ -155,7 +157,8 @@ server <- function(input, output) {
       # facet_wrap(~antigenf,nrow=6,ncol=2,scales="free_y") +
       geom_histogram(aes(y=..density..),bins=50,alpha=0.7) +
       geom_density(aes(fill=NULL),color=cgrey) +
-      geom_vline(aes(xintercept=log10(min(roccut))),size=1.5)+
+      geom_vline(aes(xintercept=min(roccut)),size=1.5)+
+      geom_vline(aes(xintercept=min(mixcut)),lty="dashed",size=1.5)+
       # geom_vline(aes(xintercept=mixcut),linetype="dashed",size=1.5)+
       scale_x_continuous(limits = c(0,4.5),breaks = 0:4,labels=log10labs) +
       # coord_cartesian(ylim=c(0,1))+
