@@ -1,0 +1,133 @@
+---
+title: "Insights into the seroepidemiology of enteric pathogens among children living in high transmission settings"
+subtitle: "Table 1"
+output: 
+  html_document:
+    highlight: haddock
+    theme: default
+    code_folding: show
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+---
+
+# Notebook summary
+This notebook summarizes the antigens included in each cohort, the number of children, number of measurements, and seropositivity cutoff values estimated through ROC-based cutoffs, mixture models, or distribution among presumed unexposed (see main article Methods for details).
+
+This notebook draws on datasets created by the notebooks that estimate antibody distributions in each cohort:
+  * Haiti: haiti-enteric-ab-distributions.Rmd -> haiti_analysis2.rds
+  * Kenya: asembo-enteric-ab-distributions.Rmd -> asembo_analysis2.rds
+  * Tanzania: kongwa-enteric-ab-distributions.Rmd -> kongwa_analysis2.rds
+
+
+# Script preamble
+```{r preamble}
+#-----------------------------
+# preamble
+#-----------------------------
+library(here)
+here()
+library(tidyverse)
+library(kableExtra)
+
+
+```
+
+# Load the data
+
+```{r load data}
+#-----------------------------
+# load the formatted data
+#-----------------------------
+dh <- readRDS(here("data","haiti_analysis2.rds"))
+da <- readRDS(here("data","asembo_analysis2.rds"))
+dk <- readRDS(here("data","kongwa_analysis2.rds"))
+```
+
+# Summary counts and statistics for each study
+
+## Haiti
+```{r haiti summary, warning=FALSE}
+#-----------------------------
+# Haiti summary
+#-----------------------------
+dhsum <- dh %>%
+  group_by(antigenf) %>%
+  summarize(Nchild=length(unique(id)),
+            Nobs=length(!is.na(mfi)),
+            roccut=max(roccut,na.rm=T),
+            mixcut=max(mixcut,na.rm=T),
+            unexpcut=max(unexpcut,na.rm=T)
+  )
+```
+
+## Kenya
+```{r kenya summary, warning=FALSE}
+#-----------------------------
+# Kenya summary
+#-----------------------------
+dasum <- da %>%
+  group_by(antigenf) %>%
+  summarize(Nchild=length(unique(childid)),
+            Nobs=length(!is.na(mfi)),
+            roccut=max(roccut,na.rm=T),
+            mixcut=max(mixcut,na.rm=T),
+            unexpcut=max(unexpcut,na.rm=T)
+  )
+```
+
+## Tanzania
+```{r tanzania summary, warning=FALSE}
+#-----------------------------
+# Tanzania summary
+#-----------------------------
+dksum <- dk %>%
+  group_by(antigenf) %>%
+  summarize(Nchild=length(unique(id[is.na(mfi)==F])),
+            Nobs=sum(is.na(mfi)==F),
+            roccut=max(roccut,na.rm=T),
+            mixcut=max(mixcut,na.rm=T)  )
+```
+
+# Print the table
+```{r table, warning=FALSE, results="html"}
+dtab <- bind_rows(dhsum,dasum,dksum) %>%
+  mutate(roccut=ifelse(is.infinite(roccut),NA,roccut),
+         mixcut=ifelse(is.infinite(mixcut),NA,mixcut),
+         unexpcut=ifelse(is.infinite(unexpcut),NA,unexpcut)
+         )
+
+# add custom footnotes (careful, this is fragile!)
+dtab$antigenf[c(27,28,31,32)] <- paste0(dtab$antigenf[c(27,28,31,32)],footnote_marker_symbol(2))
+dtab$antigenf[c(30)] <- paste0(dtab$antigenf[c(30)],footnote_marker_symbol(3))
+
+options(knitr.kable.NA = "")
+knitr::kable(dtab,digits=2,escape=FALSE,
+             caption="Table 1. Number of children and samples tested, and estimated seropositivity cutoffs by country and antigen included in the seroepidemiologic analyses.",
+             col.names=c("","N\nchildren","N\nsamples","ROC","Mixture Model","Unexposed")) %>%
+  kable_styling(bootstrap_options = c("striped","condensed"),full_width = TRUE) %>%
+  add_header_above(c(" " = 3, "Seropositivity cutoff, log10(MFI) *" = 3)) %>%
+  group_rows("Leogane, Haiti", 1,10) %>%
+  group_rows("Asembo, Kenya", 11,22) %>%
+  group_rows("Kongwa, Tanzania", 23,34) %>%
+  footnote(
+    general=c("ROC: receiver operator characteristic curve."),
+    symbol=c("Seropositivity cutoffs determined using ROC curves based on external known positive and negative specimens, finite Gaussian mixture models, or distribution among the presumed unexposed (see Methods for details). Cutoff values are missing (na) if they could not be estimated in each method; cutoff values based on the presumed unexposed required longitudinal measurements within individual children and therefore could not be estimated for any antigen in the repeated cross-sectional design in Tanzania.",
+             "Measured only in year 1  of the study (2012)",
+             "Measured only in years 2-4 of the study (2013-2015)")
+  )
+
+
+```
+
+
+
+
+# Session Info
+```{r session info}
+sessionInfo()
+```
+
