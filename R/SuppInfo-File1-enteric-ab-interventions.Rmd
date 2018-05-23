@@ -1,0 +1,506 @@
+---
+title: "Insights into the seroepidemiology of enteric pathogens among children living in high transmission settings"
+subtitle: "Supplementary Information File 1"
+output: 
+  html_document:
+    highlight: haddock
+    theme: default
+    code_folding: show
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+  html_notebook:
+    theme: default
+    highlight: haddock
+    toc: true
+    toc_depth: 3
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+---
+
+# Notebook summary
+
+This notebook compares antibody measurements among children assigned to different treatment arms in the Asembo household water filter trial and in the Kongwa annual azithromycin distribution trial. For additional details on the interventions and design, please see the main text and previously published articles related to the trials:
+
+Morris JF, Murphy J, Fagerli K, Schneeberger C, Jaron P, Moke F, et al. A Randomized Controlled Trial to Assess the Impact of Ceramic Water Filters on Prevention of Diarrhea and Cryptosporidiosis in Infants and Young Children-Western Kenya, 2013. _Am J Trop Med Hyg._ 2018;98: 1260–1268. https://www.ncbi.nlm.nih.gov/pubmed/29611500
+
+**XX Citation for Kongwa, Tanzania to be added XX**
+
+# Script preamble
+```{r preamble}
+#-----------------------------
+# preamble
+#-----------------------------
+library(here)
+here()
+
+# load packages
+library(tidyverse)
+library(tmleAb) # development package: devtools::install_github("ben-arnold/tmleAb")
+library(mgcv)
+library(knitr)
+library(kableExtra)
+  options(knitr.table.format = "html") 
+
+# set up for parallel computing
+# configure for a laptop (use only 3 cores)
+library(foreach)
+library(doParallel)
+registerDoParallel(cores=3)
+
+
+# bright color blind palette:  https://personal.sron.nl/~pault/ 
+cblack <- "#000004FF"
+cblue <- "#3366AA"
+cteal <- "#11AA99"
+cgreen <- "#66AA55"
+cchartr <- "#CCCC55"
+cmagent <- "#992288"
+cred <- "#EE3333"
+corange <- "#EEA722"
+cyellow <- "#FFEE33"
+cgrey <- "#777777"
+
+```
+
+
+#Asembo, Kenya
+
+
+## Load the data and format
+```{r load data}
+#-----------------------------
+# load the formatted data
+# with seropositivity indicators
+# created with:
+# asembo-enteric-ab-data-format.Rmd -->
+# asembo-enteric-ab-distributions.Rmd
+#-----------------------------
+dl <- readRDS(here("data","asembo_analysis2.rds"))
+
+# list the enteric antigens and make formatted labels for them
+mbavars <- c("vsp3","vsp5","cp17","cp23","leca","rotavirus","salb","sald","p18","p39","etec","cholera")
+
+mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Rotavirus","Salmonella LPS B","Salmonella LPS D","Campylobacter p18","Campylobacter p39","ETEC toxin beta subunit","Cholera toxin beta subunit")
+```
+
+```{r composite antigens, warning=FALSE}
+#-----------------------------
+# create composite 
+# seropositivity indicators
+# that use information from
+# multiple antigens
+#-----------------------------
+
+dgi <- dl %>% 
+  filter(antigen %in% c("vsp3","vsp5")) %>%
+  select(childid,time,tr,sex,age,agediff,pathogen,antigen,seropos) %>%
+  spread(antigen,seropos) %>%
+  mutate(seropos=ifelse(vsp3==1|vsp5==1,1,0),
+         antigen="vsp3vsp5",
+         antigenf="Giardia VSP-3 + VSP-5") %>%
+  select(-vsp3,-vsp5)
+
+dcr <- dl %>% 
+  filter(antigen %in% c("cp17","cp23")) %>%
+  select(childid,time,tr,sex,age,agediff,pathogen,antigen,seropos) %>%
+  spread(antigen,seropos) %>%
+  mutate(seropos=ifelse(cp17==1|cp23==1,1,0),
+         antigen="cp17cp23",
+         antigenf="Cryptosporidium Cp17 + Cp23") %>%
+  select(-cp17,-cp23)
+
+ds <- dl %>% 
+  filter(antigen %in% c("salb","sald")) %>%
+  select(childid,time,tr,sex,age,agediff,pathogen,antigen,seropos) %>%
+  spread(antigen,seropos) %>%
+  mutate(seropos=ifelse(salb==1|sald==1,1,0),
+         antigen="salbsald",
+         antigenf="Salmonella LPS groups B + D") %>%
+  select(-salb,-sald)
+
+dcp <- dl %>% 
+  filter(antigen %in% c("p18","p39")) %>%
+  select(childid,time,tr,sex,age,agediff,pathogen,antigen,seropos) %>%
+  spread(antigen,seropos) %>%
+  mutate(seropos=ifelse(p18==1|p39==1,1,0),
+         antigen="p18p39",
+         antigenf="Campylobacter p18 + p39") %>%
+  select(-p18,-p39)
+
+
+
+dlp <- bind_rows(dl,dgi,dcr,ds,dcp) %>%
+  mutate(antigenf=factor(antigenf,
+                         levels=c("Giardia VSP-3 + VSP-5",
+                                  "Cryptosporidium Cp17 + Cp23",
+                                  "E. histolytica LecA",
+                                  "Rotavirus",
+                                  "Salmonella LPS groups B + D",
+                                  "ETEC toxin beta subunit",
+                                  "Cholera toxin beta subunit",
+                                  "Campylobacter p18 + p39")) ) %>%
+  filter(!is.na(antigenf)) %>%
+  select(pathogen,antigen,antigenf,
+         childid,time,tr,sex,age,agediff,
+         mfi,logmfi,logmfidiff,
+         roccut,mixcut,unexp,unexpcut,serocut,serocut_desc,
+         posroc,posmix,posunex,seropos) %>%
+  arrange(pathogen,antigenf,childid,time)
+```
+
+## Estimate curves in each treatment arm
+```{r age-curve by arm }
+#----------------------------------
+# simulataneous CIs for GAMs
+# estimated by resampling the 
+# Baysian posterior estimates of
+# the variance-covariance matrix
+# assuming that it is multivariate normal
+# the function below also estimates 
+# the unconditional variance-covariance
+# matrix, Vb=vcov(x,unconditional=TRUE), 
+# which allows for undertainty in the actual
+# estimated mean as well 
+# (Marra & Wood 2012 Scandinavian Journal of Statistics, 
+#  Vol. 39: 53–74, 2012, doi: 10.1111/j.1467-9469.2011.00760.x )
+# simultaneous CIs provide much better coverage than pointwise CIs
+# see: http://www.fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/
+#----------------------------------
+
+gamCI <- function(m,newdata,nreps=10000) {
+  require(mgcv)
+  require(dplyr)
+  Vb <- vcov(m,unconditional = TRUE)
+  pred <- predict(m, newdata, se.fit = TRUE)
+  fit <- pred$fit
+  se.fit <- pred$se.fit
+  BUdiff <- MASS::mvrnorm(n=nreps, mu = rep(0, nrow(Vb)), Sigma = Vb)
+  Cg <- predict(m, newdata, type = "lpmatrix")
+  simDev <- Cg %*% t(BUdiff)
+  absDev <- abs(sweep(simDev, 1, se.fit, FUN = "/"))
+  masd <- apply(absDev, 2L, max)
+  crit <- quantile(masd, prob = 0.95, type = 8)
+  pred <- data.frame(newdata,fit=pred$fit,se.fit=pred$se.fit)
+  pred <- mutate(pred,
+                 uprP = fit + (2 * se.fit),
+                 lwrP = fit - (2 * se.fit),
+                 uprS = fit + (crit * se.fit),
+                 lwrS = fit - (crit * se.fit)
+  )
+  return(pred)
+}
+
+
+#-----------------------------
+# fit cubic spline over age, separately for each 
+# treatment arm and antigen
+# estimate approximate simultaneous confidence intervals
+# for the fits
+#-----------------------------
+
+library(mgcv)
+pgamfits <- foreach(tri=levels(dlp$tr),.combine=rbind) %:%
+  foreach(ab=levels(dlp$antigenf),.combine=rbind) %dopar% {
+    pd <- filter(dlp, tr==tri & antigenf==ab)
+    gfit <- mgcv::gam(seropos~s(age, bs="cr"),data=pd,family="binomial")
+    gsci <- gamCI(m=gfit,newdata=pd,nreps=1000)
+    gsci <- gsci %>% mutate(tr=tri,antigenf=ab)
+    return(gsci)
+}
+
+# use antilogit to get back to prevalence from the logit link
+pgamfits <- pgamfits %>%
+  mutate(fit  = 1/(1+exp(-fit)),
+         uprP = 1/(1+exp(-uprP)),
+         lwrP = 1/(1+exp(-lwrP)),
+         uprS = 1/(1+exp(-uprS)),
+         lwrS = 1/(1+exp(-lwrS))) %>%
+  mutate(antigenf=factor(antigenf,levels=levels(dlp$antigenf)),
+         tr=factor(tr,levels=c("Cont","Int"),labels=c("Control","Intervention"))
+  )
+
+```
+
+## Estimate seroprevalence by treatment arm
+Estimate overall mean seroprevalence by treatment arm and compare arms. Standard errors account for repeated measurements within child using the influence curve.
+
+```{r tmle means,message=FALSE}
+#-----------------------------
+# estimate means by treatment
+# arm and difference between
+# arms using targeted maximum
+# likelihood estimation
+# get 95% CIs through the
+# influence curve clustered
+# on child ID
+# adjust for age with GLM
+#-----------------------------
+tmlemeans <- foreach(tri=levels(dlp$tr),.combine=rbind) %:% 
+  foreach(ab=levels(dlp$antigenf),.combine=rbind) %dopar% {
+    print(ab)
+    pd <- filter(dlp,tr==tri & antigenf==ab)
+    mu <- tmleAb(Y=pd$seropos,id=pd$childid,W=pd$age,
+                 SL.library=c("SL.glm"),
+                 family="binomial")
+    di <- data.frame(tr=tri,antigenf=ab,mean=mu$psi,se=mu$se,lb=mu$lb,ub=mu$ub)
+    return(di)
+  }
+
+tmlediffs <- foreach(ab=levels(dlp$antigenf),.combine=rbind) %dopar% {
+    pd <- filter(dlp,antigenf==ab) %>% mutate(tr01=ifelse(tr=="Int",1,0))
+    diffmu <- tmleAb(Y=pd$seropos,X=pd$tr01,W=pd$age,
+                     id=pd$childid,SL.library=c("SL.glm"),
+                     family="binomial")
+    di <- data.frame(antigenf=ab,diff=diffmu$psi,lb=diffmu$lb,ub=diffmu$ub,p=diffmu$p)
+    return(di)
+  }
+
+#-----------------------------
+# report estimates in tables
+#-----------------------------
+
+# seroprevalence among control
+# knitr::kable(filter(tmlemeans,tr=="Cont"),digits=2,caption="Seroprevalence in the control arm")
+
+# seroprevalence among intervention and control
+tmlemeans %>%
+  arrange(antigenf,tr) %>%
+  knitr::kable(digits=2,caption="Seroprevalence by intervention group (Intervention, control)") %>%
+  kable_styling(bootstrap_options = "striped",full_width = TRUE)
+  
+
+# difference between arms
+knitr::kable(tmlediffs,digits=2,caption="Difference in seroprevalence (Intervention minus Control)")  %>%
+  kable_styling(bootstrap_options = "striped",full_width = TRUE)
+
+```
+
+No evidence for lower enteric antibody seroprevalence due to intervention.
+
+## Figure of seroprevlance curves
+
+```{r age-seroprevalence figure, fig.width=9 , fig.height=10}
+# bright color-blind palette defined in an earlier code chunk
+pcols <- c(cblack,cteal)
+
+ppcurve <- ggplot(data=pgamfits,aes(x=age,color=tr,fill=tr)) +
+  # approximate simultaneous CI from spline fit
+  geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA) +
+  # spline fit
+  geom_line(aes(y=fit)) +
+  # plot aesthetics
+  facet_wrap(~antigenf,nrow=7,ncol=2) +
+  scale_x_continuous(limits=c(4,17),breaks=seq(4,16,by=2))+
+  scale_y_continuous(breaks=seq(0,1,by=0.2),labels=sprintf("%1.0f",seq(0,1,by=0.2)*100))+
+  coord_cartesian(ylim=c(0,1))+
+  labs(x="Age in months",y="Seroprevalence (%)") +
+  scale_fill_manual(values=pcols) +
+  scale_color_manual(values=pcols) +
+  theme_minimal() +
+  theme(legend.position = "right")
+
+ppcurve
+
+```
+
+# Kongwa, Tanzania
+
+In Kongwa, Tanzania, antibody measurements were among children ages 1-9 years old. Without children <1, it was difficult to identify seropositivity cutoff values based on mixture models for any of the enteric pathogens (see main text). Therefore, there were only 3 pathogens (Giardia, Crypto, E. histolytica) where we could classify children as seropositive or seronegative becuase out-of-sample specimens were used to estimate cutoffs using an ROC curve. 
+
+In light of this limitation, below we compare the intervention and control groups using mean log MFI values, which is a reasonable alternative in this situation ([Arnold et al. 2017](http://journals.plos.org/plosntds/article?id=10.1371/journal.pntd.0005616).
+
+_Salmonella_ and _Campylobacter_ antibodies were not measured after the first year enrollment survey in 2012.  No clusters were treated at enrollment, therefore we cannot assess the effect of azithromycin treatment on these pathogens. Therefore, limit comparisons to years 2013-2015 to avoid any potential time trends, including those due to a change in bead lots from 2012 until the later years.
+
+```{r load kongwa data}
+#-----------------------------
+# load the formatted data
+# for enteric pathogens
+# with seropositivity indicators
+#-----------------------------
+dl <- readRDS(here("data","kongwa_analysis2.rds"))
+
+dl <- dl %>%
+  filter(!antigen %in% c("salb","sald","p18","p39","pgp3")) %>%
+  filter(!year %in% c(2012)) %>%
+  mutate(antigenf=droplevels(antigenf),
+         pathogen=droplevels(pathogen),
+         tr=factor(ifelse(aztr==0,"Control","Intervention"),levels=c("Control","Intervention"))
+  )
+```
+
+
+```{r kongwa composite antigens, include=FALSE,eval=FALSE}
+#-----------------------------
+# create composite 
+# seropositivity indicators
+# that use information from
+# multiple antigens
+#-----------------------------
+dl <- dl %>%
+  mutate(seropos=posroc)
+
+dgi <- dl %>% 
+  filter(antigen %in% c("vsp3","vsp5")) %>%
+  select(svy,year,vilid,clusterid,id,aztr,age,pathogen,antigen,seropos) %>%
+  spread(antigen,seropos) %>%
+  mutate(seropos=ifelse(vsp3==1|vsp5==1,1,0),
+         antigen="vsp3vsp5",
+         antigenf="Giardia VSP-3 + VSP-5") %>%
+  select(-vsp3,-vsp5)
+
+dcr <- dl %>% 
+  filter(antigen %in% c("cp17","cp23")) %>%
+  select(svy,year,vilid,clusterid,id,aztr,age,pathogen,antigen,seropos) %>%
+  spread(antigen,seropos) %>%
+  mutate(seropos=ifelse(cp17==1|cp23==1,1,0),
+         antigen="cp17cp23",
+         antigenf="Cryptosporidium Cp17 + Cp23") %>%
+  select(-cp17,-cp23)
+
+
+dlp <- bind_rows(dl,dgi,dcr) %>%
+  mutate(antigenf=factor(antigenf,
+                         levels=c("Giardia VSP-3 + VSP-5",
+                                  "Cryptosporidium Cp17 + Cp23",
+                                  "E. histolytica LecA")) ) %>%
+  filter(!is.na(antigenf)) %>%
+  select(pathogen,antigen,antigenf,
+         svy,year,vilid,clusterid,id,aztr,age,
+         mfi,logmfi,
+         roccut,mixcut,
+         posroc,posmix,seropos) %>%
+  arrange(pathogen,antigenf,svy,year,vilid,clusterid)
+```
+
+
+## Estimate curves in each treatment arm
+```{r kongwa age-curve by arm }
+#-----------------------------
+# fit cubic spline over age, separately for each 
+# treatment arm and antigen
+# estimate approximate simultaneous confidence intervals
+# for the fits
+#-----------------------------
+gamfits <- foreach(tri=levels(dl$tr),.combine=rbind) %:%
+  foreach(ab=levels(dl$antigenf),.combine=rbind) %dopar% {
+    pd <- filter(dl, tr==tri & antigenf==ab)
+    gfit <- mgcv::gam(logmfi~s(age, bs="cr",k=9),data=pd,family="gaussian")
+    gsci <- gamCI(m=gfit,newdata=pd,nreps=1000)
+    gsci <- gsci %>% mutate(tr=tri,antigenf=ab)
+    return(gsci)
+  }
+
+gamfits <- gamfits %>%
+  mutate(antigenf=factor(antigenf,levels=levels(dl$antigenf)),
+         tr=factor(tr,levels=levels(dl$tr))
+  )
+
+```
+
+## Estimate means by treatment arm
+Estimate overall mean log MFI by treatment arm and compare arms. Standard errors account for repeated measurements within clusters using the influence curve.
+
+```{r kongwa tmle means,message=FALSE}
+#-----------------------------
+# estimate means by treatment
+# arm and difference between
+# arms using targeted maximum
+# likelihood estimation
+# get 95% CIs through the
+# influence curve clustered
+# on child ID
+# adjust for age with glm
+#-----------------------------
+ktmlemeans <- foreach(tri=levels(dl$tr),.combine=rbind) %:% 
+  foreach(ab=levels(dl$antigenf),.combine=rbind) %dopar% {
+    pd <- filter(dl,tr==tri & antigenf==ab)
+    mu <- tmleAb(Y=pd$logmfi,id=pd$clusterid,W=select(pd,age),
+                 SL.library=c("SL.glm"))
+    di <- data.frame(tr=tri,antigenf=ab,mean=mu$psi,se=mu$se,lb=mu$lb,ub=mu$ub)
+    return(di)
+  }
+
+ktmlediffs <- foreach(ab=levels(dl$antigenf),.combine=rbind) %dopar% {
+    pd <- filter(dl,antigenf==ab) %>% mutate(tr01=ifelse(tr=="Control",0,1))
+    diffmu <- tmleAb(Y=pd$logmfi,X=pd$tr01,W=select(pd,age),
+                     id=pd$clusterid,SL.library=c("SL.glm"))
+    di <- data.frame(antigenf=ab,diff=diffmu$psi,se=diffmu$se,lb=diffmu$lb,ub=diffmu$ub,p=diffmu$p)
+    return(di)
+  }
+
+#-----------------------------
+# report estimates in tables
+#-----------------------------
+
+# seroprevalence among intervention and control
+knitr::kable(arrange(ktmlemeans,antigenf,tr),digits=2,caption="Seroprevalence in the Intervention and Control groups")  %>%
+  kable_styling(bootstrap_options = "striped",full_width = TRUE)
+
+# difference between groups
+knitr::kable(ktmlediffs,digits=2,caption="Difference in seroprevalence (Intervention minus Control)")  %>%
+  kable_styling(bootstrap_options = "striped",full_width = TRUE)
+
+```
+These results suggest that IgG values for _E. histolytica_ LecA were slightly _higher_ in intervention clusters than control clusters (difference = 0.25, 95% CI = 0.09, 0.42).  This is consistent with age dependent mean curves (below) that show the intervention clusters that received annual azithromycin distribution consistently had slightly higher mean LecA levels. 
+
+Below, estimate the difference between arms in LecA seroprevalence, which suggests a higher seroprevalence in the intervention clusters that received annual azythromycin distribution (21% relative increase).
+
+```{r kongwa leca seroprev, message=FALSE}
+leca_serop <- foreach(tri=levels(dl$tr),.combine=rbind) %dopar% {
+    pd <- filter(dl,tr==tri & antigenf=="E. histolytica LecA")
+    mu <- tmleAb(Y=pd$posroc,id=pd$clusterid,W=select(pd,age),
+                 SL.library=c("SL.glm"),family="binomial")
+    di <- data.frame(tr=tri,antigenf="E. histolytica LecA", mean=mu$psi,se=mu$se,lb=mu$lb,ub=mu$ub)
+    return(di)
+}
+
+
+pd <- dl %>%
+  filter(antigenf=="E. histolytica LecA") %>%
+  mutate(tr01=ifelse(tr=="Control",0,1))
+leca_diff <- tmleAb(Y=pd$posroc,X=pd$tr01,W=select(pd,age),
+                     id=pd$clusterid,SL.library=c("SL.glm"),
+                    family="binomial")
+
+
+```
+
+
+## Figure of mean curves
+
+```{r kongwa age-mean figure, fig.width=9, fig.height=10}
+# bright color-blind palette defined in an earlier code chunk
+pcols <- c(cblack,cteal)
+
+mucurve <- ggplot(data=gamfits,aes(x=age,color=tr,fill=tr)) +
+  # approximate simultaneous CI from spline fit
+  geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA) +
+  # spline fit
+  geom_line(aes(y=fit)) +
+  # plot aesthetics
+  facet_wrap(~antigenf,nrow=7,ncol=2) +
+  scale_x_continuous(limits=c(1,9),breaks=1:9)+
+  scale_y_continuous(breaks=seq(0,4,by=1))+
+  coord_cartesian(ylim=c(0,4.5))+
+  labs(x="Age in years",y="log10 Luminex Response (MFI-bg)") +
+  scale_fill_manual(values=pcols) +
+  scale_color_manual(values=pcols) +
+  theme_minimal() +
+  theme(legend.position = "right")
+
+mucurve
+
+```
+
+
+
+# Session Info
+```{r session info}
+sessionInfo()
+```
+
