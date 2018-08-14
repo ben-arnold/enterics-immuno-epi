@@ -54,7 +54,7 @@ cgrey <- "#777777"
 # asembo-enteric-ab-data-format.Rmd -->
 # asembo-enteric-ab-distributions.Rmd
 #-----------------------------
-dl <- readRDS("~/enterics-immuno-epi/data/asembo_analysis2.rds")
+dl <- readRDS("~/enterics-seroepi/data/asembo_analysis2.rds")
 
 # list the enteric antigens and make formatted labels for them
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","rotavirus","salb","sald","p18","p39","etec","cholera")
@@ -191,7 +191,9 @@ log10labs <- c(
 )
 
 # bright color-blind palette defined in an earlier code chunk
-pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
+# pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
+pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
+
 
 pcurve <- ggplot(data=gamfits,aes(x=age,group=pathogen,color=pathogen,fill=pathogen)) +
   # approximate simultaneous CI from spline fit
@@ -216,7 +218,7 @@ pcurve <- ggplot(data=gamfits,aes(x=age,group=pathogen,color=pathogen,fill=patho
 pcurve
 
 # save a PDF version 
-ggsave("~/enterics-immuno-epi/figs/asembo-ab-agecurves-mean-allestimates.pdf",plot=pcurve,device="pdf",width=7,height=14)
+ggsave("~/enterics-seroepi/figs/asembo-ab-agecurves-mean-allestimates.pdf",plot=pcurve,device="pdf",width=7,height=14)
 
 ```
 Create a more parsimonius plot, that only includes the spline fits but also includes the actual points. Only plot through age 17 months (since n=1 at 18 months)
@@ -232,7 +234,9 @@ log10labs <- c(
 )
 
 # bright color-blind palette defined in an earlier code chunk
-pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
+# pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
+pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
+
 
 pcurve <- ggplot(data=filter(gamfits,age<=17),aes(x=age,group=pathogen,color=pathogen,fill=pathogen)) +
   # approximate simultaneous CI from spline fit
@@ -255,7 +259,7 @@ pcurve <- ggplot(data=filter(gamfits,age<=17),aes(x=age,group=pathogen,color=pat
 pcurve
 
 # save a PDF version 
-ggsave("~/enterics-immuno-epi/figs/asembo-ab-agecurves-mean.pdf",plot=pcurve,device="pdf",width=7,height=14)
+ggsave("~/enterics-seroepi/figs/asembo-ab-agecurves-mean.pdf",plot=pcurve,device="pdf",width=7,height=14)
 ```
 
 #Estimate age-dependent seroprevalence
@@ -434,7 +438,9 @@ The spline fits are colored and the highly adaptive ensemble fits are black. The
 
 
 # bright color-blind palette defined in an earlier code chunk
-pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
+# pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
+pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
+
 
 ppcurve <- ggplot(data=pgamfits,aes(x=age,group=pathogen,color=pathogen,fill=pathogen)) +
   # approximate simultaneous CI from spline fit
@@ -461,7 +467,7 @@ ppcurve <- ggplot(data=pgamfits,aes(x=age,group=pathogen,color=pathogen,fill=pat
 ppcurve
 
 # save a PDF version
-ggsave("~/enterics-immuno-epi/figs/asembo-ab-agecurves-seroprev-allests.pdf",plot=ppcurve,device="pdf",width=7,height=14)
+ggsave("~/enterics-seroepi/figs/asembo-ab-agecurves-seroprev-allests.pdf",plot=ppcurve,device="pdf",width=7,height=14)
 
 ```
 Create a more parsimonius figure restricted to spline fits. Plot through age 17 months (since n=1 at 18 months).
@@ -470,7 +476,9 @@ Create a more parsimonius figure restricted to spline fits. Plot through age 17 
 
 
 # bright color-blind palette defined in an earlier code chunk
-pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
+# pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
+pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
+
 
 ppcurve2 <- ggplot(data=filter(pgamfits,age<=17),aes(x=age,color=antigenf,fill=antigenf)) +
   # approximate simultaneous CI from spline fit
@@ -493,7 +501,7 @@ ppcurve2 <- ggplot(data=filter(pgamfits,age<=17),aes(x=age,color=antigenf,fill=a
 ppcurve2
 
 # save a PDF version
-ggsave("~/enterics-immuno-epi/figs/asembo-ab-agecurves-seroprev.pdf",plot=ppcurve2,device="pdf",width=7,height=14)
+ggsave("~/enterics-seroepi/figs/asembo-ab-agecurves-seroprev.pdf",plot=ppcurve2,device="pdf",width=7,height=14)
 
 ```
 
@@ -508,7 +516,9 @@ plabs <- pgamfits %>%
          fit=ifelse(antigenf=="Cholera toxin beta subunit",fit-0.02,fit))
 
 # bright color-blind palette defined in an earlier code chunk
-pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
+# pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
+pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
+
 
 ppcurve3 <- ggplot(data=filter(pgamfits,age<=17),aes(x=age,group=antigenf,color=antigenf,fill=antigenf)) +
   # approximate simultaneous CI from spline fit
@@ -538,20 +548,20 @@ library(grid)
 grid.draw(ppcurve4)
 
 # save a PDF version
-ggsave("~/enterics-immuno-epi/figs/asembo-ab-agecurves-seroprev-small.pdf",plot=ppcurve4,device="pdf",width=9,height=7)
+ggsave("~/enterics-seroepi/figs/asembo-ab-agecurves-seroprev-small.pdf",plot=ppcurve4,device="pdf",width=9,height=7)
 
 ```
 
 # Save fitted estimates for later use
 ```{r save estimates}
 # spline fits of geometric means
-saveRDS(gamfits,file="~/enterics-immuno-epi/output/asembo-enteric-ab-gamfits-means.rds")
+saveRDS(gamfits,file="~/enterics-seroepi/output/asembo-enteric-ab-gamfits-means.rds")
 # ensemble fits of geometric means
-saveRDS(slfits,file="~/enterics-immuno-epi/output/asembo-enteric-ab-slfits-means.rds")
+saveRDS(slfits,file="~/enterics-seroepi/output/asembo-enteric-ab-slfits-means.rds")
 # spline fits of age-dependent seroprevalence
-saveRDS(pgamfits,file="~/enterics-immuno-epi/output/asembo-enteric-ab-gamfits-seroprev.rds")
+saveRDS(pgamfits,file="~/enterics-seroepi/output/asembo-enteric-ab-gamfits-seroprev.rds")
 # spline fits of age-dependent seroprevalence
-saveRDS(pslfits,file="~/enterics-immuno-epi/output/asembo-enteric-ab-slfits-seroprev.rds")
+saveRDS(pslfits,file="~/enterics-seroepi/output/asembo-enteric-ab-slfits-seroprev.rds")
 ```
 
 # Session Info
