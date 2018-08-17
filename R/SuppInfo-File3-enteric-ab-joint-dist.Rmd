@@ -95,14 +95,27 @@ dall <- bind_rows(dh,dk,dt)
 # drop obs not contributing
 #--------------------------------
 d <- dall %>%
-  mutate(comp= ifelse(antigen %in% c("vsp3","vsp5"),"Giardia\nVSP-5 (y-axis)\nVSP-3 (x-axis)",NA),
-         comp= ifelse(antigen %in% c("cp17","cp23"),"Cryptosporidium\nCp23 (y-axis)\nCp17 (x-axis)",comp),
-         comp= ifelse(antigen %in% c("p18","p39"),"Campylobacter\np39 (y-axis)\np18 (x-axis)",comp),
-         comp= ifelse(antigen %in% c("sald","salb"),"Salmonella\nLPS Group D (y-axis)\nLPS Group B (x-axis)",comp),
-         comp= ifelse(antigen %in% c("cholera","etec"),"ETEC toxin beta subunit (y-axis)\nV. cholerae toxin beta subunit (x-axis)",comp),
-         comp= ifelse(antigen %in% c("norogi","norogii"),"Norovirus\nGI (y-axis)\nGII (x-axis)",comp),
+  mutate(comp= ifelse(antigen %in% c("vsp3","vsp5"),"Giardia",NA),
+         comp= ifelse(antigen %in% c("cp17","cp23"),"Cryptosporidium",comp),
+         comp= ifelse(antigen %in% c("p18","p39"),"Campylobacter",comp),
+         comp= ifelse(antigen %in% c("sald","salb"),"Salmonella",comp),
+         comp= ifelse(antigen %in% c("cholera","etec"),"ETEC\nV. cholerae",comp),
+         comp= ifelse(antigen %in% c("norogi","norogii"),"Norovirus",comp),
          comp= ifelse(country=="Haiti" & antigen =="etec",NA,comp),
-         comp= factor(comp,levels=c("Giardia\nVSP-5 (y-axis)\nVSP-3 (x-axis)","Cryptosporidium\nCp23 (y-axis)\nCp17 (x-axis)","Campylobacter\np39 (y-axis)\np18 (x-axis)","Salmonella\nLPS Group D (y-axis)\nLPS Group B (x-axis)","ETEC toxin beta subunit (y-axis)\nV. cholerae toxin beta subunit (x-axis)","Norovirus\nGI (y-axis)\nGII (x-axis)"))
+         comp= factor(comp,levels=c("Giardia","Cryptosporidium","Campylobacter","Salmonella","ETEC\nV. cholerae","Norovirus"))
+         ) %>% 
+  mutate(xlab=ifelse(antigen %in% c("vsp3","vsp5"),"VSP-3",NA),
+         ylab=ifelse(antigen %in% c("vsp3","vsp5"),"VSP-5",NA),
+         xlab=ifelse(antigen %in% c("cp17","cp23"),"Cp17",xlab),
+         ylab=ifelse(antigen %in% c("cp17","cp23"),"Cp23",ylab),
+         xlab=ifelse(antigen %in% c("p18","p39"),"p18",xlab),
+         ylab=ifelse(antigen %in% c("p18","p39"),"p39",ylab),
+         xlab=ifelse(antigen %in% c("salb","sald"),"LPS Group B",xlab),
+         ylab=ifelse(antigen %in% c("salb","sald"),"LPS Group D",ylab),
+         xlab=ifelse(antigen %in% c("cholera","etec"),"V. cholerae toxin beta subunit",xlab),
+         ylab=ifelse(antigen %in% c("cholera","etec"),"ETEC toxin beta subunit",ylab),
+         xlab=ifelse(antigen %in% c("norogi","norogii"),"GII",xlab),
+         ylab=ifelse(antigen %in% c("norogi","norogii"),"GI",ylab)
          ) %>%
   filter(!is.na(comp))
 
@@ -113,7 +126,7 @@ d <- dall %>%
 #--------------------------------
 dw <- d %>%
   mutate(xy=ifelse(antigen %in% c("vsp3","cp17","sald","p18","cholera","norogii"),"x","y")) %>%
-  select(country,comp,id,sid,xy,logmfi) %>%
+  select(country,comp,xlab,ylab,id,sid,xy,logmfi) %>%
   spread(xy,logmfi) %>%
   mutate(country=factor(country,levels=c("Haiti","Kenya","Tanzania")))
 
@@ -157,13 +170,18 @@ dsmooths <- foreach(countryi=levels(dw$country),.combine=rbind) %:%
 # Summary Figure
 ```{r composite figure,fig.width=7,fig.height=9 }
 
+# grab labels
+dlabs <- dw %>% select(country,comp,xlab,ylab) %>% group_by(country,comp) %>% slice(1)
+
 complot <- ggplot(data=dw,aes(x=x,y=y)) +
   facet_grid(comp~country) +
   geom_point(pch=19,color="black",alpha=0.1) +
   geom_line(data=dsmooths,aes(x=x,y=y),col=cblue,size=1.2)+
   geom_text(data=dcorr,
-            aes(x=0.5,y=4,label=paste("rho ==",sprintf("%1.2f",corxy)) ),
+            aes(x=0.5,y=4.3,label=paste("rho ==",sprintf("%1.2f",corxy)) ),
             parse=TRUE, col=cblue)   +
+  geom_text(data=dlabs,aes(x=2.3,y=0.1,label=xlab),color="gray40",angle=0)+
+  geom_text(data=dlabs,aes(x=0.1,y=2.3,label=ylab),color="gray40",angle=90)+
   scale_x_continuous(limits=c(0,4.6),breaks=0:4,labels = log10labs)+
   scale_y_continuous(limits=c(0,4.6),breaks=0:4,labels = log10labs)+
   coord_equal() +
