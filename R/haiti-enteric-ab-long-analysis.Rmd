@@ -181,10 +181,10 @@ dl2pp <- dl2 %>%
     sero_chng = ifelse(is.na(sero_chng),lag(sero_chng),sero_chng),
     sero_chng = factor(sero_chng,levels=c(">4-fold increase to above cutoff",">4-fold decrease from above cutoff","<4-fold change")),
     
-    sero_comp = ifelse(lead(seroi)==1 & lead(seroi4fold==1),"4-fold increase, across cutoff","<4-fold increase, across cutoff"),
-    sero_comp = ifelse(lead(seroi)==0 & lead(seroi4fold==1),"4-fold increase, not across cutoff",sero_comp),
-    sero_comp = ifelse(lead(seroi)==0 & lead(seroi4fold==0),"No seroconversion",sero_comp),
-    sero_comp = factor(sero_comp,levels=c("4-fold increase, across cutoff","<4-fold increase, across cutoff","4-fold increase, not across cutoff","No seroconversion")),
+    sero_comp = ifelse(lead(seroi)==1 & lead(seroi4fold==1),">4-fold increase, across cutoff","<4-fold change"),
+    sero_comp = ifelse(lead(seroi)==0 & lead(seroi4fold==1),">4-fold increase, above cutoff",sero_comp),
+    sero_comp = ifelse(lead(seror4fold)==1,">4-fold decrease",sero_comp),
+    sero_comp = factor(sero_comp,levels=c(">4-fold increase, across cutoff",">4-fold decrease",">4-fold increase, above cutoff","<4-fold change")),
     
     everseroi = max(seroi,na.rm=TRUE)
     
