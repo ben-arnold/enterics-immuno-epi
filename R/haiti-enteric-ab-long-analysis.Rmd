@@ -146,10 +146,192 @@ dl2 <- dl %>%
          posroc,posmix,seropos,seroi,seroin,seror,serorn,
          -logmfi_lag,-logmfi_lead,-seropos_lag)
 
+# incident seroconversions based on a 4-fold increase in MFI
+# with a second measure above the seropositivity cutoff
+# incident seroreversions based on a 4-fold decrease in MFI
+# with the first measure above the seropositivity cutoff
+dl2 <- dl2 %>%
+  mutate(seroi4fold = ifelse(logmfi_dlag>log10(4) & logmfi>serocut,1,0),
+         seroin4fold = cumsum(ifelse(is.na(seroi4fold),0,seroi4fold)),
+         seroin4fold = ifelse(seroi4fold==1,seroin4fold,0),
+         
+         seror4fold=ifelse(logmfi_dlag< -log10(4) & lag(logmfi)>serocut,1,0),
+         serorn4fold = cumsum(ifelse(is.na(seror4fold),0,seror4fold)),
+         serorn4fold = ifelse(seror4fold==1,serorn4fold,0)
+         )
+
+
+```
+
+Create labels for different seroconversion patterns
+```{r seroconversion patterns}
+dl2pp <- dl2 %>%
+  arrange(antigen,id,sdate,sampleid) %>%
+  group_by(antigen,id) %>%
+  mutate(measnum=row_number()) %>%
+  mutate(
+    logmfi_chng = ifelse(logmfi_dlag>0,"Increasing","Decreasing"),
+    logmfi_chng = ifelse(is.na(logmfi_chng) & logmfi_dlead>0,"Increasing",logmfi_chng),
+    logmfi_chng = ifelse(is.na(logmfi_chng) & logmfi_dlead<0,"Decreasing",logmfi_chng),
+    logmfi_chng = factor(logmfi_chng,levels=c("Increasing","Decreasing")),
+    
+    sero_chng = ifelse(lead(seroi4fold)==1,">4-fold increase to above cutoff","<4-fold change"),
+    sero_chng = ifelse(lead(seror4fold)==1,">4-fold decrease from above cutoff",sero_chng),
+    sero_chng = ifelse(is.na(sero_chng),lead(sero_chng),sero_chng),
+    sero_chng = ifelse(is.na(sero_chng),lag(sero_chng),sero_chng),
+    sero_chng = factor(sero_chng,levels=c(">4-fold increase to above cutoff",">4-fold decrease from above cutoff","<4-fold change")),
+    
+    sero_comp = ifelse(lead(seroi)==1 & lead(seroi4fold==1),"4-fold increase, across cutoff","<4-fold increase, across cutoff"),
+    sero_comp = ifelse(lead(seroi)==0 & lead(seroi4fold==1),"4-fold increase, not across cutoff",sero_comp),
+    sero_comp = ifelse(lead(seroi)==0 & lead(seroi4fold==0),"No seroconversion",sero_comp),
+    sero_comp = factor(sero_comp,levels=c("4-fold increase, across cutoff","<4-fold increase, across cutoff","4-fold increase, not across cutoff","No seroconversion")),
+    
+    everseroi = max(seroi,na.rm=TRUE)
+    
+  ) %>%
+  mutate(antigenf=factor(antigenf,levels=mbalabs)) # re-level the factor to put Salmonella on same row
+
+# custom log labels
+log10labs <- c( 
+  expression(10^0),
+  expression(10^1),
+  expression(10^2),
+  expression(10^3),
+  expression(10^4)
+)
 
 ```
 
 # Longitudinal child trajectories
+
+
+```{r figure of individual MFI trajectories by age}
+# Individual trajectories by age
+indivp_age <- ggplot(filter(dl2pp,!is.na(sero_chng)), aes(x=age, y=logmfi, group=factor(id),color=sero_chng) ) +
+    facet_wrap(~antigenf,nrow=6,ncol=2)+
+    geom_line(alpha=0.3) +
+    geom_hline(aes(yintercept=serocut),linetype="dashed") +
+    scale_color_manual(values=c(corange,cteal,"gray70"),
+                       guide=guide_legend(title="MFI change:", 
+                                          override.aes = list(alpha=1),
+                                          ncol=2,nrow=2
+                                          ))+
+    xlab("Age in years") +
+    ylab("Luminex Response (MFI-bg)") +
+    coord_cartesian(ylim=c(0, 4.5),xlim=c(0,11))+
+    scale_y_continuous(breaks=0:4,labels=log10labs) +
+    scale_x_continuous(breaks=0:11) +
+    theme_minimal() +
+    theme(
+      legend.position="top",
+      panel.grid.minor=element_blank(),
+      panel.grid.major.y=element_blank(),
+      axis.ticks.y=element_line(color="gray40")
+    )
+  
+indivp_age
+
+# save PDF version
+ggsave(filename=here("figs","haiti-indiv-ab-age.pdf"),plot = indivp_age, device='pdf', width=5,height=14)
+```
+
+```{r figure of individual MFI trajectories by age compare class}
+# Individual trajectories by age, comparison of classifications
+indivp_age <- ggplot(filter(dl2pp,!is.na(sero_comp)), aes(x=age, y=logmfi, group=factor(id),color=sero_comp) ) +
+    facet_wrap(~antigenf,nrow=6,ncol=2)+
+    geom_line(alpha=0.3) +
+    geom_hline(aes(yintercept=serocut),linetype="dashed") +
+    scale_color_manual(values=c(corange,cteal,cmagent,"gray70"),
+                       guide=guide_legend(title="MFI change:",
+                                          override.aes = list(alpha=1),
+                                          nrow=2,ncol=2
+                                          ))+
+    xlab("Age in years") +
+    ylab("Luminex Response (MFI-bg)") +
+    coord_cartesian(ylim=c(0, 4.5),xlim=c(0,11))+
+    scale_y_continuous(breaks=0:4,labels=log10labs) +
+    scale_x_continuous(breaks=0:11) +
+    theme_minimal() +
+    theme(
+      legend.position="top",
+      panel.grid.minor=element_blank(),
+      panel.grid.major.y=element_blank(),
+      axis.ticks.y=element_line(color="gray40")
+    )
+  
+indivp_age
+
+# save PDF version
+ggsave(filename=here("figs","haiti-indiv-ab-age-comp.pdf"),plot = indivp_age, device='pdf', width=6,height=12)
+```
+
+```{r figure of individual MFI trajectories by measurement}
+# Individual trajectories by measurement (1 to 6)
+# since only 29 children were measured 7+ times
+table(dl2pp$measnum[dl2pp$antigen=="vsp3"])
+# summarize age distribution among measurements 1-6
+summary(dl2pp$age[dl2pp$antigen=="vsp3" & dl2pp$measnum<=6])
+indivp_meas <- ggplot(filter(dl2pp,!is.na(sero_chng) & measnum<=6), aes(x=measnum, y=logmfi, group=factor(id),color=sero_chng) ) +
+    facet_wrap(~antigenf,nrow=6,ncol=2)+
+    geom_line(alpha=0.3) +
+    geom_hline(aes(yintercept=serocut),linetype="dashed") +
+    scale_color_manual(values=c(corange,cteal,"gray70"),
+                       guide=guide_legend(title="MFI change:",
+                                          override.aes = list(alpha=1),
+                                          nrow=2,ncol=2
+                                          ))+
+    xlab("Measurement number") +
+    ylab("Luminex Response (MFI-bg)") +
+    coord_cartesian(ylim=c(0, 4.5),xlim=c(1,6))+
+    scale_y_continuous(breaks=0:4,labels=log10labs) +
+    scale_x_continuous(breaks=1:6) +
+    theme_minimal() +
+    theme(
+      legend.position="top",
+      panel.grid.minor=element_blank(),
+      panel.grid.major.y=element_blank(),
+      axis.ticks.y=element_line(color="gray40")
+    )
+  
+indivp_meas
+
+# save PDF version
+ggsave(filename=here("figs","haiti-indiv-ab-measurement.pdf"),plot = indivp_meas, device='pdf', width=6,height=12)
+```
+
+```{r figure of individual MFI trajectories by measurement compare class}
+# Individual trajectories by measurement (1 to 6)
+# since only 29 children were measured 7+ times
+# compare seroconversion classification
+indivp_meas2 <- ggplot(filter(dl2pp,!is.na(sero_comp) & measnum<=6), aes(x=measnum, y=logmfi, group=factor(id),color=sero_comp) ) +
+    facet_wrap(~antigenf,nrow=6,ncol=2)+
+    geom_line(alpha=0.3) +
+    geom_hline(aes(yintercept=serocut),linetype="dashed") +
+    scale_color_manual(values=c(corange,cteal,cmagent,"gray70"),
+                       guide=guide_legend(title="MFI change:",
+                                          override.aes = list(alpha=1),
+                                          nrow=2,ncol=2
+                                          ))+
+    xlab("Measurement number") +
+    ylab("Luminex Response (MFI-bg)") +
+    coord_cartesian(ylim=c(0, 4.5),xlim=c(1,6))+
+    scale_y_continuous(breaks=0:4,labels=log10labs) +
+    scale_x_continuous(breaks=1:6) +
+    theme_minimal() +
+    theme(
+      legend.position="top",
+      panel.grid.minor=element_blank(),
+      panel.grid.major.y=element_blank(),
+      axis.ticks.y=element_line(color="gray40")
+    )
+  
+indivp_meas2
+
+# save PDF version
+ggsave(filename=here("figs","haiti-indiv-ab-measurement-comp.pdf"),plot = indivp_meas2, device='pdf', width=6,height=12)
+
+```
+
 
 ```{r figure of individual MFI trajectories}
 
@@ -239,58 +421,111 @@ for(iid in c(20,24,30,34,35,38,43,47,72,76,77,119,135)) {
 
 ```
 
-# Analysis of change in MFI
 
 
-```{r create serostatus indicators}
+# Method agreement for identifying seroconversion
+
+Compare the agreement in the identification of seroconversions based on two approaches: crossing the seropositivity threshold, and a 4-fold increase in MFI.  Compare the approaches separately for the primary seroconversion and subsequent seroconversions
+
+```{r indicators of seroconversion}
 #----------------------------------
 # Create a factor that summarizes 
-# seroconversion status, with 4 categories:
+# seroconversion status based 
+# on seropositivity cutoff, with 4 categories:
 # seroreversion, no change, 1st seroconversion, 
 # 2nd or 3rd seroconversion
 #----------------------------------
 dl3 <- dl2 %>%
   mutate(seroinf=cut(seroin,breaks=c(-1,0,1,5),
                      labels=c("No change", 
-                              "1st\nseroconversion", 
-                              "2nd or 3rd\nseroconversion")),
+                              "Primary seroconversion", 
+                              "Secondary seroconversion")),
          serostat = seroinf
   )
 
 dl3$serostat = factor(dl3$serostat,levels=c("Seroreversion",levels(dl3$seroinf))) 
 dl3$serostat[dl3$seror==1] <- "Seroreversion"
+
+
+#----------------------------------
+# Create a factor that summarizes 
+# seroconversion status based on a 4-fold increase in MFI
+# with 4 categories:
+# seroreversion, no change, 1st seroconversion, 
+# 2nd to 4th seroconversion
+#----------------------------------
+dl3 <- dl3 %>%
+  mutate(seroinf4fold=cut(seroin4fold,breaks=c(-1,0,1,5),
+                     labels=c("No change", 
+                              "Primary seroconversion", 
+                              "Secondary seroconversion")),
+         serostat4fold = seroinf4fold
+  )
+
+dl3$serostat4fold = factor(dl3$serostat4fold,levels=c("Seroreversion",levels(dl3$seroinf4fold))) 
+dl3$serostat4fold[dl3$seror4fold==1] <- "Seroreversion"
 ```
 
-## Fig 3 Distribution of changes in MFI by seroconversion status
-```{r change in MFI by episode, fig.width=7,fig.height=7}
+Compare classification of incident seroconversions
+```{r seroconversion agreement}
+dclass <- foreach(ab=levels(dl3$antigenf),.combine=rbind) %do% {
+  dcompi <- dl3 %>% filter(antigenf==ab)
+  tabi <- as.vector(table(dcompi$seroi,dcompi$seroi4fold))
+  names(tabi) <- c("sp04f0","sp14f0","sp04f1","sp14f1")
+  kappai <- psych::cohen.kappa(table(dcompi$seroi,dcompi$seroi4fold))$kappa
+  tabi <- data.frame(t(tabi))
+  tabi <- tabi %>%
+    mutate(Nobs=sp04f0+sp14f0+sp04f1+sp14f1,
+           agreement=(sp04f0+sp14f1)/Nobs,
+           kappa=kappai,
+           antigenf=ab) %>%
+    select(antigenf,Nobs,everything())
+  tabi
+
+}
+
+
+knitr::kable(dclass,digits=3,caption="Classification agreement of seroconversion by based on seropositivity cutoffs and a 4-fold increase in MFI",
+             col.names = c("Antigen","N", "Seropos 0\n4-fold incr. 0","Seropos 1\n4-fold incr. 0","Seropos 0\n4-fold incr. 1","Seropos 1\n4-fold incr. 1","Agreement","Kappa")) %>%
+  kable_styling(bootstrap_options = "striped",full_width = TRUE)
+
+
+```
+
+# Distribution of change in MFI
+
+## Distribution of changes in MFI by seroconversion status
+```{r change in MFI by episode 4-fold def, fig.width=7,fig.height=7}
 
 dl3plot <- dl3
                           
 # calculate Ns in each seroconversion category to print in the figure
 epiNs <- dl3plot %>%
-  group_by(pathogen,antigenf,serostat) %>%
+  group_by(pathogen,antigenf,serostat4fold) %>%
   summarize(n=n()) %>%
-  filter(!is.na(serostat)) %>%
+  filter(!is.na(serostat4fold)) %>%
   mutate(nlab=paste("(n=",n,")",sep=""))
 
 
 # custom color blind color palette is in the preamble chunck
-# pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
-pcols <- c(corange,cred,cmagent,cblue,cteal,cgreen)
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+# pcols <- c(corange,cred,cmagent,cblue,cteal,cgreen)
 
 set.seed(123)
-diffmfi_byepisode <- ggplot(data=filter(dl3plot,!is.na(serostat)),aes(x=serostat,y=logmfi_dlag,fill=pathogen,color=pathogen)) +
+diffmfi_byepisode <- ggplot(data=filter(dl3plot,!is.na(serostat4fold)),aes(x=serostat4fold,y=logmfi_dlag,fill=pathogen,color=pathogen)) +
   facet_wrap(~antigenf,nrow=6,ncol=4)+ 
-  geom_jitter(position = position_jitter(width = 0.2), alpha = 0.2,pch=19) +
+  geom_jitter(position = position_jitter(width = 0.2), alpha = 0.2,pch=19,size=0.5) +
   geom_boxplot(notch=FALSE,outlier.color=NA,width=0.5,alpha=0.5,fill=NA,color="grey20")+
-  geom_hline(aes(yintercept = log10(2)),lty="dashed") +
+  geom_hline(aes(yintercept = log10(4)),lty="dashed") +
+  geom_hline(aes(yintercept = -log10(4)),lty="dashed") +
+
   geom_hline(aes(yintercept = 0)) +
   # add Ns
-  geom_text(data=epiNs,aes(x=serostat,y=-3.25,label=nlab),col="gray40",size=2) +
+  geom_text(data=epiNs,aes(x=serostat4fold,y=-3.25,label=nlab),col="gray40",size=2) +
   scale_y_continuous(expand=c(0,0),limits=c(-3.5,4.5),breaks=-3:4) +
   scale_fill_manual(values=pcols)+
   scale_color_manual(values=pcols)+
-  labs(title="",x="Seroconversion status",y="Change in log10 Luminex Response (MFI-bg) between measurements") +
+  labs(title="",x="Seroconversion status based on 4-fold change in MFI",y="Change in log10 Luminex Response (MFI-bg) between measurements") +
   theme_minimal(base_size=12)+
   theme(
     panel.grid.minor.x = element_blank(),
@@ -301,7 +536,7 @@ diffmfi_byepisode <- ggplot(data=filter(dl3plot,!is.na(serostat)),aes(x=serostat
 diffmfi_byepisode
 
 # save a PDF version
-ggsave(here("figs","haiti-ab-mfidiff-byepisode.pdf"),plot=diffmfi_byepisode,device="pdf",width=9,height=8)
+ggsave(here("figs","haiti-ab-mfidiff-byepisode-4fold.pdf"),plot=diffmfi_byepisode,device="pdf",width=9,height=8)
 
 
 ```
@@ -349,210 +584,7 @@ ggsave(here("figs","haiti-ab-mfidiff-byage.pdf"),plot=diffmfi_byage,device="pdf"
 
 ```
 
-# Evaluate classification based on increase in antibody levels
 
-For each increase in antibody levels, estimate the true positive rate (sensitivity), false positive rate (1-specificity), the area under the curve (AUC) of the receiver operator characteristic curve, and the optimal increase based on the Youden index, which maximizes the difference between the true positive rate and the false positive rate. 
-
-
-
-```{r rocr estimates }
-rocr_ests <- foreach(ab=levels(dl3$antigenf)) %dopar% {
-  datai <- dl3 %>% filter(antigenf==ab)
-  
-  # Summary statistics for a 4-fold increase in Ab levels
-  incr4_tp <- sum( (datai$logmfi_dlag >log10(4) ) & datai$seroi,na.rm=TRUE )
-  incr4_fp <- sum( (datai$logmfi_dlag >log10(4) ) & (!datai$seroi),na.rm=TRUE )
-  incr4_tn <- sum( (datai$logmfi_dlag<=log10(4) ) & (!datai$seroi),na.rm=TRUE )
-  incr4_fn <- sum( (datai$logmfi_dlag<=log10(4) ) & (datai$seroi),na.rm=TRUE )
-  incr4sens <- incr4_tp / sum(datai$seroi,na.rm=TRUE)
-  incr4spec <- incr4_tn / sum(!datai$seroi,na.rm=TRUE)
-  incr4ppv <-  incr4_tp / (incr4_tp + incr4_fp)
-  incr4npv <-  incr4_tn / (incr4_tn + incr4_fn)
-  # Get full ROC curve
-  predi <- prediction(predictions=datai$logmfi_dlag,labels=datai$seroi)
-  # get PPV and NPV
-  pnvi  <- performance(predi,measure="ppv",x.measure="npv")
-  ppvi  <- pnvi@y.values[[1]]
-  npvi  <- pnvi@x.values[[1]]
-  # fit the ROC curve and its AUC
-  roci  <- performance(predi,measure="tpr",x.measure="fpr")
-  auci  <- performance(predi,measure="auc")@y.values[[1]]
-  # increase in antibody levels
-  cuti  <- roci@alpha.values[[1]]
-  # true positive rate for every increase in antibody levels
-  tpri  <- roci@y.values[[1]]
-  # false positive rate for every increase in antibody levels
-  fpri  <- roci@x.values[[1]]
-  # Youden index
-  youi  <- tpri - fpri
-  # Summary statistics for optimal cutoff based on Youden index
-  opti  <- cuti[youi==max(youi)]
-  optsens <- tpri[youi==max(youi)]
-  optspec <- 1-fpri[youi==max(youi)]
-  optppv  <- ppvi[youi==max(youi)]
-  optnpv  <- npvi[youi==max(youi)]
-  # return a list
-  list(antigenf=ab,auc=auci,incr4sens=incr4sens,incr4spec=incr4spec,incr4ppv=incr4ppv,incr4npv=incr4npv,optcut=opti,sens=optsens,spec=optspec,ppv=optppv,npv=optnpv,abincr=cuti,tpr=tpri,fpr=fpri,youden=youi)
-  
-}
-
-# collate the summary statistics into a single data frame
-rocr_sum <- foreach(i=1:10,.combine=rbind) %do% {
-  data.frame(rocr_ests[[i]][1:11])
-}
-
-# collate the ROC curve data and related ests into a single data frame
-d_rocr <- foreach(i=1:10,.combine=rbind) %do% {
-  di <- data.frame(rocr_ests[[i]][12:15])
-  di <- di %>% mutate(antigenf=factor(rocr_ests[[i]]$antigenf,levels(dl3$antigenf)))
-}
-
-```
-
-## Table 2 - supplement 1
-```{r rocr table }
-rocr_sum2 <- rocr_sum %>%
-  mutate(fold_incr = 10^optcut) %>%
-  select(antigenf,auc,starts_with("incr4"),fold_incr,sens,spec,ppv,npv)
-
-knitr::kable(rocr_sum2,digits=2,
-             col.names = c("Antigen","AUC", "Sens.","Spec.","PPV","NPV","Fold incr.","Sens.","Spec.","PPV","NPV")) %>%
-  kable_styling(bootstrap_options = c("striped"),full_width = TRUE) %>%
-  add_header_above(c(" " = 2, "4 Fold Increase in MFI" = 4, "Fold-Increase in MFI that Maximized Youden Index *" = 5)) %>%
-  footnote(general = "AUC: Area under the receiver-operator characteristic curve; Sens.: sensitivity; Spec.: specificity; PPV: positive predictive value; NPV: negative predictive value.",
-           symbol = c("Youden Index equals the difference between the true positive rate and the false positive rate (an optimal tradeoff between sensitivity and specificity). ")
-           )
-
-```
-
-## ROC curves
-```{r roc fig }
-proc <- ggplot(data=d_rocr,aes(x=fpr,y=tpr)) +
-  geom_line() +
-  geom_text(data=rocr_sum,aes(x=0.7,y=0.2,label=paste("AUC =",sprintf("%1.2f",auc))) )+
-  facet_wrap(~antigenf,ncol=4,nrow=3)+
-  scale_y_continuous(breaks=seq(0,1,by=0.2))+
-  scale_x_continuous(breaks=seq(0,1,by=0.2))+
-  labs(x="False Positive Rate (1-Specificity)",y="True Positive Rate (Sensitivity)")+
-  theme_minimal()
-
-proc
-```
-
-
-# Classification using only primary seroconversions
-
-As a sensitivity analysis, restrict the analysis to observations up until a child's primary seroconversion event.
-The rationale is that there is significant antibody boosting and waning that can occur above the seropositivity threshold.  This would be expected to reduce the specificity of the fold-change in antibody levels (and also reduce the positive predictive value).
-```{r rocr estimates primary seroconversion }
-
-# Identify children with a primary seroconversion 
-# Identify the sample ID (round) number when  it occurred
-dl4 <- dl3 %>%
-  group_by(antigen,id) %>%
-  mutate(psci=ifelse(serostat=="1st\nseroconversion",1,0),
-         sid_psci = ifelse(psci==1,as.numeric(sampleid),0)) %>%
-  summarize(psci=max(psci,na.rm=T),sid_psci=max(sid_psci,na.rm=T)) %>%
-  right_join(.,dl3,by=c("antigen","id"))
-
-# For children/antigens with a primary seroconversion, 
-#   filter to observations up until that point
-# For children without a primary serconversion,  
-#   filter to observations that are seronegative
-dl4 <- dl4 %>%
-  filter((psci==1 & as.numeric(sampleid)<=sid_psci) | (psci==0 & seropos==0) ) %>%
-  filter(seropos==0 | (seropos==1 & serostat=="1st\nseroconversion" ) )
-
-rocr_ests_psc <- foreach(ab=levels(dl4$antigenf)) %dopar% {
-  datai <- dl4 %>% filter(antigenf==ab)
-  
-  # Summary statistics for a 4-fold increase in Ab levels
-  incr4_tp <- sum( (datai$logmfi_dlag >log10(4) ) & datai$seroi,na.rm=TRUE )
-  incr4_fp <- sum( (datai$logmfi_dlag >log10(4) ) & (!datai$seroi),na.rm=TRUE )
-  incr4_tn <- sum( (datai$logmfi_dlag<=log10(4) ) & (!datai$seroi),na.rm=TRUE )
-  incr4_fn <- sum( (datai$logmfi_dlag<=log10(4) ) & (datai$seroi),na.rm=TRUE )
-  incr4sens <- incr4_tp / sum(datai$seroi,na.rm=TRUE)
-  incr4spec <- incr4_tn / sum(!datai$seroi,na.rm=TRUE)
-  incr4ppv <-  incr4_tp / (incr4_tp + incr4_fp)
-  incr4npv <-  incr4_tn / (incr4_tn + incr4_fn)
-  # Get full ROC curve
-  predi <- prediction(predictions=datai$logmfi_dlag,labels=datai$seroi)
-  # get PPV and NPV
-  pnvi  <- performance(predi,measure="ppv",x.measure="npv")
-  ppvi  <- pnvi@y.values[[1]]
-  npvi  <- pnvi@x.values[[1]]
-  # fit the ROC curve and its AUC
-  roci  <- performance(predi,measure="tpr",x.measure="fpr")
-  auci  <- performance(predi,measure="auc")@y.values[[1]]
-  # increase in antibody levels
-  cuti  <- roci@alpha.values[[1]]
-  # true positive rate for every increase in antibody levels
-  tpri  <- roci@y.values[[1]]
-  # false positive rate for every increase in antibody levels
-  fpri  <- roci@x.values[[1]]
-  # Youden index
-  youi  <- tpri - fpri
-  # Summary statistics for optimal cutoff based on Youden index
-  opti  <- cuti[youi==max(youi)]
-  optsens <- tpri[youi==max(youi)]
-  optspec <- 1-fpri[youi==max(youi)]
-  optppv  <- ppvi[youi==max(youi)]
-  optnpv  <- npvi[youi==max(youi)]
-  # return a list
-  list(antigenf=ab,auc=auci,incr4sens=incr4sens,incr4spec=incr4spec,incr4ppv=incr4ppv,incr4npv=incr4npv,optcut=opti,sens=optsens,spec=optspec,ppv=optppv,npv=optnpv,abincr=cuti,tpr=tpri,fpr=fpri,youden=youi)
-  
-}
-
-# collate the summary statistics into a single data frame
-rocr_sum_psc <- foreach(i=1:10,.combine=rbind) %do% {
-  data.frame(rocr_ests_psc[[i]][1:11])
-}
-
-# collate the ROC curve data and related ests into a single data frame
-d_rocr_psc <- foreach(i=1:10,.combine=rbind) %do% {
-  di <- data.frame(rocr_ests_psc[[i]][12:15])
-  di <- di %>% mutate(antigenf=factor(rocr_ests_psc[[i]]$antigenf,levels(dl4$antigenf)))
-}
-
-```
-
-## Table of alternate estimates based on primary seroconversions
-```{r rocr table primary seroconversion}
-rocr_sum_psc2 <- rocr_sum_psc %>%
-  mutate(fold_incr = 10^optcut) %>%
-  select(antigenf,auc,starts_with("incr4"),fold_incr,sens,spec,ppv,npv)
-
-knitr::kable(rocr_sum_psc2,digits=2,
-             col.names = c("Antigen","AUC", "Sens.","Spec.","PPV","NPV","Fold incr.","Sens.","Spec.","PPV","NPV")) %>%
-  kable_styling(bootstrap_options = c("striped"),full_width = TRUE) %>%
-  add_header_above(c(" " = 2, "4 Fold Increase in MFI" = 4, "Fold-Increase in MFI that Maximized Youden Index *" = 5)) %>%
-  footnote(general = "AUC: Area under the receiver-operator characteristic curve; Sens.: sensitivity; Spec.: specificity; PPV: positive predictive value; NPV: negative predictive value.",
-           symbol = c("Youden Index equals the difference between the true positive rate and the false positive rate (an optimal tradeoff between sensitivity and specificity). ")
-           )
-
-```
-
-## ROC curves
-```{r roc fig primary seroconverion }
-
-# bind the ROC curve data together to plot both curves on the same figure
-d_rocr <- d_rocr %>% mutate(population="All seroconversions")
-d_rocr_psc <- d_rocr_psc %>% mutate(population="Primary seroconversions")
-d_rocr_combo <- bind_rows(d_rocr,d_rocr_psc) %>%
-  mutate(population=factor(population,levels=c("Primary seroconversions","All seroconversions")))
-
-proc_combo <- ggplot(data=d_rocr_combo,aes(x=fpr,y=tpr,color=population)) +
-  geom_line(alpha=0.8) +
-  facet_wrap(~antigenf,ncol=4,nrow=3)+
-  scale_y_continuous(breaks=seq(0,1,by=0.2))+
-  scale_x_continuous(breaks=seq(0,1,by=0.2))+
-  scale_color_manual(values=c(cblue,corange))+
-  labs(x="False Positive Rate (1-Specificity)",y="True Positive Rate (Sensitivity)")+
-  theme_minimal() +
-  theme(legend.position = "top")
-
-proc_combo
-```
 
 # Session Info
 ```{r session info}
