@@ -80,25 +80,6 @@ Identify children whose status changed  between enrollment and follow-up. Those 
 
 
 ```{r long incidence}
-#-----------------------------
-# identify incident 
-# seroconversions and reversions
-# based on crossing the
-# seropositivity cutoff
-#-----------------------------
-# spread the data to wide format to 
-# identify incident sero-conversions and sero-reversions
-# subset to the individuals measured at both timepoints
-dlpw <- dl %>%
-  select(childid,antigen,time,serocut,seropos) %>%
-  spread(time,seropos) %>% 
-  filter(!is.na(A) & !is.na(B)) %>%
-  mutate(seroi=ifelse(B==1 & A==0,1,0),
-         seror=ifelse(B==0 & A==1,1,0)) %>%
-  select(childid,antigen,seroi,seror)
-
-#  merge these new variables back to the main data
-dlp <- left_join(dl,dlpw,by=c("childid","antigen"))
 
 #-----------------------------
 # identify incident 
@@ -110,14 +91,14 @@ dlp <- left_join(dl,dlpw,by=c("childid","antigen"))
 # to above the cutoff (seroconversion)
 # or starting above cutoff (seroreversion)
 #-----------------------------
-dlp <- dlp %>%
+dlp <- dl %>%
   group_by(antigen,antigenf,childid) %>%
   mutate(seroposA=ifelse(time=="A",seropos,NA),
          seroposA=max(seroposA,na.rm=TRUE),
          seroposB=ifelse(time=="B",seropos,NA),
          seroposB=max(seroposB,na.rm=TRUE),
-         seroi2=ifelse(seroposB==1 & seroposA==0,1,0),
-         seror2=ifelse(seroposB==0 & seroposA==1,1,0),
+         seroi=ifelse(seroposB==1 & seroposA==0,1,0),
+         seror=ifelse(seroposB==0 & seroposA==1,1,0),
          
          mfiA=ifelse(time=="A",logmfi,NA),
          mfiA=max(mfiA,na.rm=TRUE),
