@@ -1,6 +1,6 @@
 ---
 title: Enteropathogen seroepidemiology among children in high transmission settings
-subtitle: Supplementary Information File 6. Sensitivity analysis of change in IgG used to identify presumed unexposed measurements in Haiti and Kenya.
+subtitle: Supplementary Information File 5. Sensitivity analysis of change in IgG used to identify presumed unexposed measurements in Haiti and Kenya.
 output: 
   html_notebook:
     theme: default
@@ -306,7 +306,7 @@ gridmix <- foreach(ab=levels(dmix$antigenf),.combine=rbind) %:%
              abcutoff=dmu$ucut) 
       
     } else{
-      tabi <- data.frame(mix0cuti0=NA,mix1cuti0=NA,mix0cuti1=NA,mix1cuti1=NA,Nobs=NA,discordance=NA,agreement=NA,kappa=NA,antigenf=ab,abchange=icut,abcutoff=NA)
+      tabi <- data.frame(mix0cuti0=NA,mix1cuti0=NA,mix0cuti1=NA,mix1cuti1=NA,Nobs=NA,agreement=NA,kappa=NA,antigenf=ab,abchange=icut,abcutoff=NA)
       
       }
 
@@ -402,7 +402,6 @@ gridroc <- foreach(ab=levels(droc$antigenf),.combine=rbind) %:%
     tabi <- data.frame(t(tabi))
     tabi <- tabi %>%
       mutate(Nobs=roc0cuti0+roc1cuti0+roc0cuti1+roc1cuti1,
-             discordance=(roc1cuti0+roc0cuti1)/Nobs,
              agreement=(roc0cuti0+roc1cuti1)/Nobs,
              kappa=kappai,
              antigenf=ab,
@@ -480,7 +479,6 @@ gridmix <- foreach(ab=levels(dmix$antigenf),.combine=rbind) %:%
       tabi <- data.frame(t(tabi))
       tabi <- tabi %>%
         mutate(Nobs=mix0cuti0+mix1cuti0+mix0cuti1+mix1cuti1,
-             discordance=(mix1cuti0+mix0cuti1)/Nobs,
              agreement=(mix0cuti0+mix1cuti1)/Nobs,
              kappa=kappai,
              antigenf=ab,
@@ -488,7 +486,7 @@ gridmix <- foreach(ab=levels(dmix$antigenf),.combine=rbind) %:%
              abcutoff=dmu$ucut) 
       
     } else{
-      tabi <- data.frame(mix0cuti0=NA,mix1cuti0=NA,mix0cuti1=NA,mix1cuti1=NA,Nobs=NA,discordance=NA,agreement=NA,kappa=NA,antigenf=ab,abchange=icut,abcutoff=NA)
+      tabi <- data.frame(mix0cuti0=NA,mix1cuti0=NA,mix0cuti1=NA,mix1cuti1=NA,Nobs=NA,agreement=NA,kappa=NA,antigenf=ab,abchange=icut,abcutoff=NA)
       
       }
 
