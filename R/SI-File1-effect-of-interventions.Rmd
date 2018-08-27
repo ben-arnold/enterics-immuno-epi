@@ -1,6 +1,6 @@
 ---
-title: "Insights into the seroepidemiology of enteric pathogens among children living in high transmission settings"
-subtitle: "Supplementary Information File 1"
+title: Enteropathogen seroepidemiology among children in high transmission settings
+subtitle: Supplementary Information File 1. Effect of Kenya and Tanzania interventions on enteropathogen antibody response.
 output: 
   html_document:
     highlight: haddock
@@ -151,6 +151,16 @@ dlp <- bind_rows(dl,dgi,dcr,ds,dcp) %>%
          roccut,mixcut,unexp,unexpcut,serocut,serocut_desc,
          posroc,posmix,posunex,seropos) %>%
   arrange(pathogen,antigenf,childid,time)
+
+#-----------------------------
+# create a dummy variable equal
+# to 1 for all obs as a trick to
+# get marginal predictions by
+# age while still including REs
+# for child
+#-----------------------------
+dlp <- dlp %>%
+  mutate(dummy=1)
 ```
 
 ## Estimate curves in each treatment arm
@@ -201,14 +211,20 @@ gamCI <- function(m,newdata,nreps=10000) {
 # treatment arm and antigen
 # estimate approximate simultaneous confidence intervals
 # for the fits
+# set the dummy to 0 to 
+# zero out all of the random effects
+# see posts on Stack Exchange for explanation:
+# https://stats.stackexchange.com/questions/131106/predicting-with-random-effects-in-mgcv-gam/131116#131116
+# https://stats.stackexchange.com/questions/189384/predicting-mean-smooth-in-gam-with-smooth-by-random-factor-interaction
 #-----------------------------
 
 library(mgcv)
 pgamfits <- foreach(tri=levels(dlp$tr),.combine=rbind) %:%
   foreach(ab=levels(dlp$antigenf),.combine=rbind) %dopar% {
     pd <- filter(dlp, tr==tri & antigenf==ab)
-    gfit <- mgcv::gam(seropos~s(age, bs="cr"),data=pd,family="binomial")
-    gsci <- gamCI(m=gfit,newdata=pd,nreps=1000)
+    gfit <- mgcv::gam(seropos~s(age, bs="cr")+s(childid,bs="re",by=dummy), data=pd,family="binomial")
+    newd <- pd %>% mutate(dummy=0)
+    gsci <- gamCI(m=gfit,newdata=newd,nreps=1000)
     gsci <- gsci %>% mutate(tr=tri,antigenf=ab)
     return(gsci)
 }
@@ -375,6 +391,8 @@ dlp <- bind_rows(dl,dgi,dcr) %>%
          roccut,mixcut,
          posroc,posmix,seropos) %>%
   arrange(pathogen,antigenf,svy,year,vilid,clusterid)
+
+
 ```
 
 
@@ -388,9 +406,11 @@ dlp <- bind_rows(dl,dgi,dcr) %>%
 #-----------------------------
 gamfits <- foreach(tri=levels(dl$tr),.combine=rbind) %:%
   foreach(ab=levels(dl$antigenf),.combine=rbind) %dopar% {
-    pd <- filter(dl, tr==tri & antigenf==ab)
-    gfit <- mgcv::gam(logmfi~s(age, bs="cr",k=9),data=pd,family="gaussian")
-    gsci <- gamCI(m=gfit,newdata=pd,nreps=1000)
+    pd <- filter(dl, tr==tri & antigenf==ab) %>%
+      mutate(dummy=1)
+    gfit <- mgcv::gam(logmfi~s(age, bs="cr",k=9)+s(clusterid,bs="re",by=dummy) ,data=pd,family="gaussian")
+    newd <- pd %>% mutate(dummy=0)
+    gsci <- gamCI(m=gfit,newdata=newd,nreps=1000)
     gsci <- gsci %>% mutate(tr=tri,antigenf=ab)
     return(gsci)
   }

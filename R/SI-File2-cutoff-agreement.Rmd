@@ -1,7 +1,6 @@
 ---
-title: Insights into the seroepidemiology of enteric pathogens among children living
-  in high transmission settings
-subtitle: Supporting Information File 2
+title: Enteropathogen seroepidemiology among children in high transmission settings
+subtitle: Supplementary Information File 2. Classification agreement between different seropositivity cutoff approaches.
 output:
   html_document:
     highlight: haddock
@@ -220,7 +219,6 @@ dclass3 <- foreach(ab=levels(dcomp$antigen),.combine=rbind) %do% {
   tabi <- data.frame(t(tabi))
   tabi <- tabi %>%
     mutate(Nobs=mix0unexp0+mix1unexp0+mix0unexp1+mix1unexp1,
-           discordance=(mix1unexp0+mix0unexp1)/Nobs,
            agreement=(mix0unexp0+mix1unexp1)/Nobs,
            kappa=kappai,
            antigen=ab) %>%
@@ -423,7 +421,8 @@ dplot <- dl %>%
   group_by(antigen) %>%
   mutate(plotroc=min(roccut))
 
-pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cgrey)
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cgrey,cchartr)
+
 
 log10labs <- c( 
   expression(10^0),
