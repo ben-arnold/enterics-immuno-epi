@@ -1,0 +1,843 @@
+---
+title: Enteropathogen seroepidemiology among children in high transmission settings
+subtitle: Supplementary Information File 4. Estimation of seroconversion rates assuming cross-sectional ("current status") data in Kenya.
+output:
+  html_document:
+    highlight: haddock
+    theme: default
+    code_folding: show
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+  html_notebook:
+    citation_package: natbib
+    highlight: haddock
+    theme: default
+    toc: yes
+    toc_depth: 3
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+---
+
+# Summary
+
+For enteric antibodies with defined cutoffs for seropositivity and approximately monotonically increasing age-dependent seroprevalence, estimate the hazard of seroconversion, or seroconversion rate, which is one measure of the force of infection.
+
+
+# Script preamble
+```{r preamble}
+#-----------------------------
+# preamble
+#-----------------------------
+library(here)
+here()
+# load packages
+library(tidyverse)
+library(mgcv)
+library(grid)
+
+# set up for parallel computing
+# configure for a laptop (use only 3 cores)
+library(foreach)
+library(doParallel)
+registerDoParallel(cores=3)
+
+# bright color blind palette:  https://personal.sron.nl/~pault/ 
+cblack <- "#000004FF"
+cblue <- "#3366AA"
+cteal <- "#11AA99"
+cgreen <- "#66AA55"
+cchartr <- "#CCCC55"
+cmagent <- "#992288"
+cred <- "#EE3333"
+corange <- "#EEA722"
+cyellow <- "#FFEE33"
+cgrey <- "#777777"
+
+```
+
+
+```{r load data}
+#-----------------------------
+# load the formatted data
+# with seropositivity indicators
+# that are grouped into 
+# composite antigens
+# created with:
+# asembo-enteric-ab-data-format.Rmd -->
+# asembo-enteric-ab-distributions.Rmd -->
+# asembo-enteric-ab-agecurves.Rmd
+#-----------------------------
+d <- readRDS(here("output","asembo-enteric-ab-gamfits-seroprev.rds"))
+
+
+```
+
+# Force of infection from cross-sectional seroprevalence curves
+
+Suppose $T_1$ denotes the time of actual seroconversion. For enteric infections it is possible and in some cases likely for antibody response to wane over time and for individuals to sero-revert (move from being seropositive to seronegative). Let $T_2$ denote the time of seroreversion with $T_2 > T_1$. We never observe $T_1$ or $T_2$ in a cross-sectional survey, but we do observe $Y = I(T_1 ≤ A < T_2)$, an indicator that the person seroconverted before age $A$ but has not sero-reverted. Let $W$ be a set of additional characteristics. For a single individual we thus observe the following random variable: $O = (Y= I(T_1 ≤ A ≤ T_2) , A, W)$. 
+
+Note that:
+\begin{eqnarray*}
+P(Y = 1 | A, X, W) & = &  P(T_1 \leq A < T_2 | A, X, W) \\
+ & = & P(T_1 \leq A, T_2 > A | A, X, W) \\
+  & = & [ P(T_1 \leq A, T_2 > A | A, X, W) +  \\
+  & & \qquad P(T_1 < A, T_2 \leq A | A, X, W) ] -  P(T_1 < A, T_2 \leq A | A, X, W)\\
+  & = & P(T_1 \leq A | A, X, W) - P(T_2 \leq A | A, X, W) 
+\end{eqnarray*}
+
+Thus the age-dependent seroprevalence curve is the difference between the cumulative distribution functions of seroconversion times and seroreversion times. In the special case where seroreversion is unlikely during the age window,  $P(Y=1 | A, W) = P(T_1 ≤ A | A, W)$. This is classic "current status" data – an extreme example of interval censored data in survival analysis. If an individual has seroconverted $(Y= 1)$ we know the event happened sometime between birth and their observed age $A$ (left censored); if the individual has not seroconverted $(Y= 0)$, they are right-censored.
+
+The age-specific force of infection is estimated as the hazard of seroconverting at age $A=a$: $\lambda(a) = \frac{F'(a)}{1-F(a)}$, where $F(a) = P(Y|A=a)$ is the proportion of the population who are seropositive at age $a$ and $F'(a)$ is the derivative of $F(a)$ with respect to $a$. Key assumptions include stationarity/homogeneity (i.e., no cohort effects) and that there is no sero-reversion. We know the latter to be false in some cases of enteric pathogens, so estimates in that case would be lower-bounds of seroconversion rates.
+
+### Confirm approximate monotonicity
+
+Quick plot to confirm approximate monotonicity assumptions that lead us to exclude rotavirus (since the age-prevalence curve is dominated by sero-reversion).
+```{r seroprevalence curves, fig.width=6,fig.height=6}
+pcurve <- ggplot(data=d,aes(x=age)) +
+  geom_smooth(aes(y=seropos),se=FALSE,method="loess")+
+  # plot aesthetics
+  facet_wrap(~antigenf,nrow=6,ncol=2) +
+  scale_x_continuous(breaks=seq(4,18,by=2))+
+  scale_y_continuous(breaks=seq(0,1,by=0.2))+
+  labs(x="Age in months",y="Seroprevalence") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+pcurve
+
+#--------------------------------
+# restrict the data to antigens
+# with increasing seroprevalence
+# exclude rotavirus (decreasing)
+#--------------------------------
+dfoi <- d %>%
+  filter(!antigen %in% c("rotavirus")) %>%
+  mutate(antigenf=droplevels(antigenf))
+
+```
+
+# Parametric estimators
+
+## Exponential model
+
+If we assume a constant force of infection ($\lambda$), equivalent to assuming an exponential model, then it can be shown that a generalized linear model with a complementary log-log link fit with current status, age-prevalence data is equivalent to an exponential proportional hazards model (*Jewell and van der Laan 1995*). 
+
+$\log - \log(1-P(Y|A,W)) = \log \lambda + \log A + \beta W$
+
+Moroever, this model is also equivalent to a catalytic, SIR model with a single, constant rate parameter (*Hens et al. 2010*; *Hens et al. 2012*).
+
+```{r foi from constant rate model}
+
+glmfoi <- foreach(ab=levels(dfoi$antigenf),.combine=rbind) %dopar% {
+    pd <- filter(dfoi, antigenf==ab)
+    gfit <- glm(seropos~1,offset=log(age),data=pd,family=binomial(link="cloglog"))
+    gsum <- summary(gfit)
+    lambda <- as.numeric(exp(gfit$coefficients))
+    log_lambda_se  <- sqrt(gsum$cov.unscaled)
+    lambda_lb <- as.numeric(exp(gfit$coefficients - 1.96*log_lambda_se))
+    lambda_ub <- as.numeric(exp(gfit$coefficients + 1.96*log_lambda_se))
+    di <- data.frame(antigenf=ab,lambda,lambda_lb,lambda_ub)
+    return(di)
+}
+
+knitr::kable(glmfoi,digits=3,
+             caption="Average incidence rate per child month estimated from a cross-sectional seroprevalence curve, exponential (constant rate) model",
+             col.names = c("Antigen","Incidence per month","min95","max95"),
+             row.names = FALSE)
+
+
+```
+
+## Estimates from a reversible catalytic model
+
+For some infectious diseases, like malaria, it is common to fit a reversible catalytic model to the age-seroprevalence curve (*Corran et al 2007*). The model assumes a constant rate of seroconversion, $\lambda$, (akin to an parametric exponential survival model), but also allows for a constant seroreversion rate, $\rho$. 
+\begin{equation}
+  P(Y=1|A)  =  \frac{\lambda}{\lambda + \rho} \left[1 - \exp( - (\lambda + \rho)\cdot A ) \right] 
+\end{equation}
+
+Above, we showed that a cross-sectional seroprevalence measurement is equal to the difference in the cumulative distribution functions of seroconversion times and seroreversion times: $P(Y=1 | A, W) = P(T_1 ≤ A | A, W) - P(T_2 ≤ A | A, W)$. This means there is no information about the joint distribution of $T_2$ and $T_1$, which is required to estimate seroreversion. Therefore, we will estimate the seroconversion rate under the model assuming a range of fixed seroreversion rates (to our knowledge, there are no good estimates of seroreversion rates for the enteric pathogens included in this study).  We use the sero-reversion rates estimated prospectively in the cohort.
+
+```{r RC model}
+#--------------------------------
+# log likelihood function for reversible catalytic 
+# model with a fixed seroreversion rate
+#--------------------------------
+Lrcm <- function(h,r,data) {
+	# h    : \lambda seroconversion rate (to be estimtated)
+	# r    : \rho seroreversion rate (fixed)
+	# data  : data frame with 1 row per age group. cols = age / n / k
+	h <- rep(h,nrow(data))
+	r <- rep(r,nrow(data))
+	t <- data[,1]
+	n <- data[,2]
+	k <- data[,3]
+	p <- h/(r+h)*(1-exp(-(r+h)*t))
+	# negative log likelihood function (to minimize with optim)
+	sum( - (k)*log(p) - (n-k)*log(1-p) )
+}
+
+# reverse catalytic model probability function
+# (not used)
+rcp <- function(h,r,t) h/(r+h)*(1-exp(-(r+h)*t))
+
+#--------------------------------
+# estimates of the sero-reversion
+# rate from prospective analysis
+# of the data
+#--------------------------------
+est_r <- readRDS("~/enterics-seroepi/output/asembo-enteric-ab-ests-incidencerates.rds") %>%
+  filter(outcome=="Seroreversion" & !antigenf %in% "Rotavirus") %>%
+  mutate(antigenf=droplevels(antigenf)) %>%
+  # convert rates to per-month (rather than per-year)
+  mutate(rate=rate/12,rate_lb=rate_lb/12,rate_ub=rate_ub/12) %>%
+  select(antigenf,rev_rate=rate)
+est_r
+drcm <- left_join(dfoi,est_r,by="antigenf")
+
+#--------------------------------
+# estimate seroconversion rates
+# under a reversible catalytic
+# model with assumed 
+# seroconversion rate the 
+# empirical rate from the study
+# (thus inference under-estimates
+# the variability since there is
+# uncertainty in the seroreversion
+# rate)
+#--------------------------------
+rcmests <- foreach(ab=levels(dfoi$antigenf),.combine=rbind) %dopar%  {
+    pd <- filter(drcm, antigenf==ab & age<=17) 
+    ri <- pd$rev_rate[1]
+    pd <- pd %>%
+      select(age,seropos) %>%
+      mutate(n=1) %>%
+      group_by(age) %>%
+      summarize_all(sum) %>%
+      select(age,n,seropos)
+    
+    # maximum likelihood solution
+    # with fixed sero-reversion rate
+    minll <- optim(c(0.1),fn=Lrcm,r=ri,data=pd,
+    hessian=TRUE,method="Brent",lower=0,upper=1)
+    lambda_hat <- minll$par
+    # retrieve SE and CI from the inverse information matrix
+    I <- solve(minll$hessian)
+    lambda_se <- sqrt(diag(I))
+    lambda_lb <- lambda_hat-1.96*lambda_se
+    lambda_ub <- lambda_hat+1.96*lambda_se
+    di <- data.frame(antigenf=ab,rho=ri,lambda=lambda_hat,lambda_lb,lambda_ub)
+    return(di)
+}
+
+knitr::kable(rcmests,digits=3,
+             caption="Average incidence rate per child month estimated from a cross-sectional seroprevalence curve, reversible catalytic model",
+             col.names = c("Antigen","Sero-reversion rate","Incidence per month","min95","max95"),
+             row.names = FALSE)
+
+
+```
+
+# Semiparametric estimates of force of infection
+
+
+## Spline estimation of FOI with approximate simultaneous CIs
+
+Cubic splines are one, flexible approach to model age-dependent seroprevalence, which we have used in the main text. An advantage of using cubic splines in a GAM model to estimate the age-dependent seroprevalence curve is that under the model we can obtain approximate point-wise inference for the curve and functions of the curve (including its derivative).  Pointwise intervals for fully nonparametric fits of the curve, such as those obtained with ensemble machine learning, is much more difficult. Below we derive approximate pointwise and simultaneous confidence intervals for the force of infection under a GAM with data-adaptive cubic splines fit to age. We use finite differences to estimate the derivative of the seroprevalence curve $F'(a)$, and a parametric bootstrap of the posterior estimates of smoothing coefficients to obtain inference. 
+
+Below is a function to estimate the age-specific FOI under a GAM model with cubic splines for age. It also estimates approximate point-wise and simultaneous confidence intervals for the FOI.  We have derived this estimator from methods inspired by Prof. Gavin Simpson's approach to estimate simultaneous confidence intervals for the derivatives of smooths (https://www.fromthebottomoftheheap.net/2017/03/21/simultaneous-intervals-for-derivatives-of-smooths/). 
+
+The basic insight -- originally articulated by *Schkedy 2003* and published with more elaboration in *Hens et al. 2012* -- is that within generalized linear models, we can express the force of infection (hazard of seroconversion) as the derivative of the linear predictor multiplied by the predicted response.  The relationships for a variety of link functions are summarized in Table 5.1 of Hens et al. 2012 ( _Modeling Infectious Disease Parameters Based on Serological and Social Contact Data_. Springer), and can be derived using basic calculus.  Here, we focus on the logit transformation. 
+
+Let $\eta[ P(Y=1|A)] = \textrm{logit}~P(Y=1|A) = g(A)$ for seropositivity indicator $Y$ and age $A$, where $g(A)$ is an arbitrary function (here, estimated semiparametrically with cubic splines). The age specific prevalence predicted from the model is: $\hat E(Y|A=a) = \frac{\exp[\hat\eta(a)]}{1+\exp[\hat\eta(a)]}$ and the age-specific force of infection is: $\lambda(a) = \eta'(a)\frac{\exp[\hat\eta(a)]}{1+\exp[\hat\eta(a)]}$, where $\eta'(a)$ is the first derivative of the linear predictor from the logit model. We estimate $\eta'(a)$ using finite differences, which requires predicting prevalence over a fine grid of ages and then differncing the predictions to estimate the derivative. Although this study rounded age in months, the prediction grid needs to be at high resolution (much finer than months) to accurately estimate the derivative using finite differences. Below, we predict over a grid of ages in 0.01 months.
+
+```{r foi simultaneous CI}
+
+#----------------------------
+# function to estimate the
+# age-specific FOI under a
+# GAM model smooth
+#----------------------------
+foiCI <- function(m,newdata,eps=1e-07,level=0.95,nreps=10000) {
+  
+  # variance-covariance matrix from the spline fit
+  # unconditional on the fit of the mean
+  # this is slightly more conservative and with better coverage
+  # properties. 
+  # See Marra G, Wood SN. 
+  # Coverage Properties of Confidence Intervals 
+  # for Generalized Additive Model Components.   
+  # Scand Stat Theory Appl. 2012;39: 53–74.
+  Vb <- vcov(m,unconditional = TRUE)
+  
+  # calculate the linear predictor, g(Ft), and its pointwise SE
+  pred <- predict(m, newdata, se.fit = TRUE)
+  Ft <- pred$fit
+  Ft.se <- pred$se.fit
+  
+  # simulate from the posterior distrivbution
+  # with mean zero and variance from the posterior
+  # assuming multivariate normal coefficients
+  BUdiff <- MASS::mvrnorm(n = nreps, mu = rep(0, nrow(Vb)), Sigma = Vb)
+  
+  # get a critical value for the
+  # simultaneous confidence interval of g(Ft)
+  X0 <- predict(m, newdata, type = "lpmatrix")
+  Ft.simDev <- X0 %*% t(BUdiff)
+  Ft.absDev <- abs(sweep(Ft.simDev, 1, Ft.se, FUN = "/"))
+  Ft.masd <- apply(Ft.absDev, 2L, max)
+  Ft.crit <- quantile(Ft.masd, prob = 0.95, type = 8)
+  
+  # calculate the derivative, g'(Ft), using
+  # finite differences and its pointwise SE
+  # ?mgcv::predict.gam includes an example of this
+  newdata2 <- newdata+eps
+  X1 <- predict(m,newdata2,type='lpmatrix')
+  Xp <- (X1 - X0) / eps
+  ft <- Xp %*% coef(m)
+  ft.se <- rowSums(Xp %*% Vb * Xp)^0.5
+  
+  # get a critical value for the
+  # simultaneous confidence interval of the derivative
+  ft.simDev <- Xp %*% t(BUdiff)
+  ft.absDev <- abs(sweep(ft.simDev, 1, ft.se, FUN = "/"))
+  ft.masd <- apply(ft.absDev, 2L, max)
+  ft.crit <- quantile(ft.masd, prob = level, type = 8)
+  
+  # parametric bootstrap simulation from the
+  # model coefficient estimates, assuming the model is true
+  # FOI is the derivative of the linear predictor
+  # multiplied by the predicted probability, Ft
+  sims<- MASS::mvrnorm(n = nreps, mu = coef(m), Sigma = Vb)
+  Ft.bs <- X0 %*% t(sims)
+  ft.bs <- Xp %*% t(sims)
+  foi.bs <- ft.bs*(exp(Ft.bs)/(1+exp(Ft.bs)))
+  
+  # estimate age-specific force of infection
+  # averaged over the bootstrap replicates
+  # along with SE and confidence intervals for FOI
+  # use whichever critical value is larger for Ft or ft
+  # for the simultaneous CIs
+  foi <- rowMeans(foi.bs)
+  foi.crit <- max(Ft.crit,ft.crit)
+  foi.se <- apply(foi.bs,1,function(x) sd(x))
+  foi.ci <- t(apply(foi.bs,1,function(x) quantile(x,probs=c(0.025,0.975))) )
+  foi.Sci <- cbind(foi - foi.crit*foi.se, foi + foi.crit*foi.se)
+  
+  # return objects
+  list(foi=foi,foi.se=foi.se,foi.ci=foi.ci,foi.ciS=foi.Sci,Ft=Ft,Ft.se=Ft.se,Ft.crit=Ft.crit,ft=ft,ft.se=ft.se,ft.crit=ft.crit,model=m,data=newdata)
+  
+}
+```
+
+Ensure that the FOI estimation procedure is doing what it should be -- namely that the simultaneous CIs have correct coverage. Use _Campylobacter_ p18 + p39 as an example.
+```{r test foi}
+#----------------------------
+# subset the data to 
+# campylobacter to test
+#----------------------------
+dd <- d %>%
+  filter(antigen=="p18p39")
+
+# fit a GAM model
+m <- gam(seropos~s(age,bs="cr"),data=dd,family="binomial")
+
+# Model predictions of FOI, with age grid newd
+set.seed(123)
+newd <- data.frame(age=seq(4,17,by=0.01))
+foi_ests <- foiCI(m=m,newdata=newd)
+foipd <- data.frame(age=foi_ests$data,foi=foi_ests$foi,foi_lb=foi_ests$foi.ciS[,1],foi_ub=foi_ests$foi.ciS[,2])
+
+foiplot <- ggplot(data=foipd,aes(x=age,y=foi,ymin=foi_lb,ymax=foi_ub)) +
+  geom_ribbon(fill=cgrey,color=NA,alpha=0.5) +
+  geom_line() +
+  coord_cartesian(ylim=c(0,1))+
+  theme_minimal()
+foiplot
+```
+
+Simulate 1000 draws from the posterior distribution to ensure there is correct coverage
+```{r foi coverage}
+#----------------------------
+# simulate 1000 estimates of the prevalence
+# and its derivatives from the posterior
+# distribution 
+#----------------------------
+eps <- 1e-07
+Vb <- vcov(m, unconditional = TRUE)
+set.seed(24)
+sims <- MASS::mvrnorm(1000, mu = coef(m), Sigma = Vb)
+X0 <- predict(m, newd, type = "lpmatrix")
+newd <- newd + eps
+X1 <- predict(m, newd, type = "lpmatrix")
+Xp <- (X1 - X0) / eps
+gprevs  <- X0 %*% t(sims)
+derivs <- Xp %*% t(sims)
+
+#----------------------------
+# get the simulated 
+# FOI estimates from the 
+# linear predictor + its derivative
+#----------------------------
+fois <- derivs*(exp(gprevs)/(1+exp(gprevs)))
+
+```
+
+Plot a random sample of bootstrap replications from the posterior distribution, and overlay the mean plus simultaneous CI for visual inspection
+
+```{r foi coverage plot}
+set.seed(23)
+matplot(foipd$age,fois[, sample(1000, 50)], type = "l", lty = "solid",col="grey80")
+lines(foipd$age,foipd$foi,type="l",lwd=2)
+lines(foipd$age,foipd$foi_lb,lty=2)
+lines(foipd$age,foipd$foi_ub,lty=2)
+```
+
+Calculate the coverage probability: this is the proportion of smooths that fall _entirely_ within the simultaneous confidence interval (should be close to 95% if have correct coverage).
+```{r foi coverage est}
+inCI <- function(x, upr, lwr) {
+    all(x >= lwr & x <= upr)
+}
+fitsInCI <- with(foipd, apply(fois, 2L, inCI, upr = foi_ub, lwr = foi_lb))
+sum(fitsInCI)/length(fitsInCI)
+```
+
+Compare the estimates using the finite differences on the GAM fit with a separate R function from Hens et al. 2012 to ensure the GAM approach derived above is consistent.  Below is a function for the semiparametric estimation of the force of infection from any age-dependent seroprevalence curve, from Hens et al 2012, Chapter 8 (Hens N, Shkedy Z, Aerts M, Damme CFPV, Beutels P. _Modeling Infectious Disease Parameters Based on Serological and Social Contact Data_. Springer; 2012.).  
+
+```{r foinp function}
+#--------------------------------
+# non parametric FOI estimation
+# using age and predicted probabilities
+#--------------------------------
+# original function from Hens 2012 ch8 drops both the first and last 
+# age category. But, see no reason to drop the first age category and
+# so have modified this calculation to just drop the last obs
+# this is the substituted line:
+# foi   <- approx((grid[-1]+grid[-length(grid)])/2, dp, grid[c(-1,-length(grid))])$y / (1-pgrid[c(-1,-length(grid))])
+#  and in the return object grid=grid[c(-1,-length(grid))]
+
+foinp <-function(x,p) {
+  grid  <- sort(unique(x))
+  pgrid <- (p[order(x)])[duplicated(sort(x))==F]
+  psus  <- 1-pgrid
+  dp    <- diff(pgrid)/diff(grid)
+  midpt <- (grid[-1]+grid[-length(grid)])/2
+  foi <- approx(midpt,dp,midpt)$y/psus[-c(length(psus))]
+  return(list(grid=grid[c(-length(grid))],foi=foi))
+
+}
+```
+
+Now compare the GAM finite difference FOI with that estimated using the Hens et al. 2012 function (an internal consistency check).  There is excellent agreement.
+```{r foi comp fig}
+
+# GAM model fit and predictions over the FOI age grid (newd)
+campd <- data.frame(newd,fit=predict(m,newdata=newd,type="response"))
+foicamp <- foinp(x=campd$age,p=campd$fit)
+foicamp <- data.frame(age=foicamp$grid,foi=foicamp$foi)
+
+foicompp <- ggplot(data=foicamp,aes(x=age,y=foi)) +
+  geom_line(color=cteal,lwd=1.5,alpha=0.8) +
+  geom_line(data=foipd,aes(x=age,y=foi),color=corange,lwd=1.5,alpha=0.8) +
+  coord_cartesian(ylim=c(0,0.5))+
+  theme_minimal()
+foicompp
+```
+## Estimate FOI for each pathogen
+
+Estimate semiparamteric age-specific seroconversion rate (force of infection) using splines
+
+```{r foi estimates}
+
+# FOI from spline fits
+newd <- data.frame(age=seq(4,17,by=0.01))
+gamfoi <- foreach(ab=levels(dfoi$antigenf),.combine=rbind) %dopar% {
+    pd <- filter(dfoi, antigenf==ab) 
+    mi <- gam(seropos~s(age,bs="cr"),data=pd,family="binomial")
+    foii <- foiCI(mi,newd)
+    di <- data.frame(antigenf=ab,
+                       age=newd,
+                       foi=foii$foi,
+                       foi_lwrS=foii$foi.ciS[,1],foi_uprS=foii$foi.ciS[,2],
+                       foi_lwrP=foii$foi.ci[,1],foi_uprP=foii$foi.ci[,2])
+    return(di)
+}
+
+```
+
+## Figures of results
+
+Faceted figure that includes 95% CIs
+```{r foi figure}
+# bright color-blind palette defined in an earlier code chunk
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cgrey)
+# pcols <- c(corange,cred,cmagent,cblue,cteal,cgreen,cgrey)
+
+
+pfoi <- ggplot(data=gamfoi,aes(x=age,fill=antigenf,color=antigenf)) +
+  # foi estimate from splines with simultaneous 95% CI
+  geom_ribbon(aes(ymin=foi_lwrS,ymax=foi_uprS),color=NA,alpha=0.2)+
+  geom_line(aes(y=foi)) +
+  # horizontal line at 0
+  geom_hline(aes(yintercept=0)) +
+  # plot aesthetics
+  facet_wrap(~antigenf,ncol=2,nrow=6)+
+  scale_x_continuous(breaks=seq(4,16,by=2))+
+  # scale_y_continuous(breaks=seq(0,1,by=0.2),labels=sprintf("%1.0f",seq(0,1,by=0.2)*100))+
+  coord_cartesian(ylim=c(0,1),xlim=c(4,17))+
+  labs(x="Age in months",y="Age-specific seroconversion rate (incidence per child-month)") +
+  scale_fill_manual(values=pcols) +
+  scale_color_manual(values=pcols) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+pfoi
+
+# save a PDF version
+ggsave("~/enterics-seroepi/figs/asembo-ab-agecurves-foi.pdf",plot=pfoi,device="pdf",width=5,height=7)
+```
+
+Compact figure with all pathogens on the same panel
+```{r foi figure small}
+# bright color-blind palette defined in an earlier code chunk
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cgrey)
+# pcols <- c(corange,cred,cmagent,cblue,cteal,cgreen,cgrey)
+
+
+
+plabs <- gamfoi %>%
+  filter(age==17) %>%
+  mutate(foi=ifelse(antigenf=="E. histolytica LecA",foi-0.002,foi),
+         foi=ifelse(antigenf=="Salmonella LPS groups B + D",foi+0.002,foi))
+
+pfoi2 <- ggplot(data=gamfoi,aes(x=age,group=antigenf,color=antigenf,fill=antigenf)) +
+  # foi estiamte from splines
+  geom_line(aes(y=foi)) +
+  # horizontal line at 0
+  geom_hline(aes(yintercept=0)) +
+  # plot aesthetics
+  scale_x_continuous(breaks=seq(4,16,by=2))+
+  # scale_y_continuous(breaks=seq(0,1,by=0.2),labels=sprintf("%1.0f",seq(0,1,by=0.2)*100))+
+  coord_cartesian(ylim=c(0,0.5),xlim=c(4,17))+
+  labs(x="Age in months",y="Seroconversion rate") +
+  scale_fill_manual(values=pcols) +
+  scale_color_manual(values=pcols) +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "right"
+        )
+
+pfoi2
+
+
+```
+
+Compact figure with all pathogens on the same panel and nicer labels
+```{r foi figure small with labels}
+# bright color-blind palette defined in an earlier code chunk
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cgrey)
+# pcols <- c(corange,cred,cmagent,cblue,cteal,cgreen,cgrey)
+
+
+plabs <- gamfoi %>%
+  filter(age==17) %>%
+  mutate(foi=ifelse(antigenf=="E. histolytica LecA",foi-0.002,foi),
+         foi=ifelse(antigenf=="Salmonella LPS groups B + D",foi+0.002,foi))
+
+pfoi2 <- ggplot(data=gamfoi,aes(x=age,group=antigenf,color=antigenf,fill=antigenf)) +
+  # foi estiamte from splines
+  geom_line(aes(y=foi)) +
+  # horizontal line at 0
+  geom_hline(aes(yintercept=0)) +
+  # pathogen labels
+  geom_text(data=plabs,aes(x=age+0.5,y=foi,label=antigenf),
+            hjust=0)+
+  # plot aesthetics
+  scale_x_continuous(breaks=seq(4,16,by=2))+
+  # scale_y_continuous(breaks=seq(0,1,by=0.2),labels=sprintf("%1.0f",seq(0,1,by=0.2)*100))+
+  coord_cartesian(ylim=c(0,0.5),xlim=c(4,17))+
+  labs(x="Age in months",y="Seroconversion rate") +
+  scale_fill_manual(values=pcols) +
+  scale_color_manual(values=pcols) +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "none",
+        plot.margin = unit(c(1,6,1,1),"cm")
+        )
+
+# Code to override clipping for labels
+pfoi3 <- ggplot_gtable(ggplot_build(pfoi2))
+pfoi3$layout$clip[pfoi3$layout$name == "panel"] <- "off"
+grid.draw(pfoi3)
+# pdf(file="~/enterics-seroepi/figs/asembo-ab-agecurves-foi-small.pdf",width=9,height=8)
+# grid.draw(pfoi3)
+# dev.off()
+
+
+
+```
+
+
+## Semiparametric average FOI, weighted by P(A=a)
+
+Semiparametric estimates above provide age-specific rates. To compare the estimator with constant rate models, we can average over the empirical distribution of age in the study population.  This average is also most directly comparable to the average seroconversion rates estimated prospectively in the cohort.
+$\hat{\lambda} = \int_a \lambda(a) P(A=a)$
+
+```{r pop avg foi from gam}
+#----------------------------
+# function to estimate the
+# average FOI over empirical
+# age distribution
+# the predictions are based
+# on a spline fit and its
+# derivative
+# the gridA is the empirical
+# age distribution
+#----------------------------
+pAfoi <- function(m,gridA,pA,eps=1e-07,level=0.95,nreps=10000) {
+  
+  # variance-covariance matrix from the spline fit
+  # unconditional on the fit of the mean
+  # this is slightly more conservative and with better coverage
+  # properties. 
+  # See Marra G, Wood SN. 
+  # Coverage Properties of Confidence Intervals 
+  # for Generalized Additive Model Components.   
+  # Scand Stat Theory Appl. 2012;39: 53–74.
+  Vb <- vcov(m,unconditional = TRUE)
+  
+  # calculate the linear predictor, g(Ft), and its pointwise SE
+  pred <- predict(m, gridA, se.fit = TRUE)
+  Ft <- pred$fit
+  Ft.se <- pred$se.fit
+
+  # calculate the derivative, g'(Ft), using
+  # finite differences and its pointwise SE
+  # ?mgcv::predict.gam includes an example of this
+  X0 <- predict(m, gridA, type = "lpmatrix")
+  gridA2 <- gridA+eps
+  X1 <- predict(m,gridA2,type='lpmatrix')
+  Xp <- (X1 - X0) / eps
+  ft <- Xp %*% coef(m)
+  ft.se <- rowSums(Xp %*% Vb * Xp)^0.5
+  
+  # parametric bootstrap simulation from the
+  # model coefficient estimates, assuming the model is true
+  # FOI is the derivative of the linear predictor
+  # multiplied by the predicted probability, Ft
+  sims<- MASS::mvrnorm(n = nreps, mu = coef(m), Sigma = Vb)
+  Ft.bs <- X0 %*% t(sims)
+  ft.bs <- Xp %*% t(sims)
+  foi.bs <- ft.bs*(exp(Ft.bs)/(1+exp(Ft.bs)))
+  
+  # merge the parametric bootstrap draws to the empirical 
+  # distribution
+  foi.bs <- data.frame(age=gridA$age,foi.bs)
+  pA_foi.bs <- left_join(data.frame(age=pA),foi.bs,by="age") %>%
+    select(-age)
+  
+  # Average over age for each bootstrap replication
+  foi_bs <- colMeans(pA_foi.bs,na.rm=T)
+  
+  # estimate mean and 
+  # percentile based 95% CIs
+  foi <- mean(foi_bs)
+  foi.se <- sd(foi_bs)
+  foi.ci <- quantile(foi_bs,probs=c(0.025,0.975))  
+
+  # return objects
+  list(foi=foi,foi.se=foi.se,foi.ci=foi.ci,model=m,gridA=gridA,pA=pA)
+  
+}
+
+
+# FOI from spline fits
+agegrid <- data.frame(age=seq(4,17,by=0.01))
+popavgfoi <- foreach(ab=levels(dfoi$antigenf),.combine=rbind) %dopar% {
+    pd <- filter(dfoi, antigenf==ab) 
+    mi <- gam(seropos~s(age,bs="cr"),data=pd,family="binomial")
+    foii <- pAfoi(mi,gridA=agegrid,pA=pd$age)
+    di <- data.frame(antigenf=ab,
+                     foi=foii$foi,
+                     foi_se=foii$foi.se,
+                     foi_lb=foii$foi.ci[1],
+                     foi_ub=foii$foi.ci[2])
+    return(di)
+}
+
+knitr::kable(select(popavgfoi,-foi_se),digits=3,
+             caption="Population-average incidence rate per child month estimated from a cross-sectional seroprevalence curve",
+             col.names = c("Antigen","Incidence per month","min95","max95"),
+             row.names = FALSE)
+
+
+```
+
+## Semiparametric average FOI, integrating over age
+
+Another way to estimate the average force of infection from the seroprevalence curve is to use the basic relationship between the hazard (force of infection) and the cumulative hazard. This ignores the distribution of age in the study population -- in this particular study, the age distriution is fairly uniform so this estimator should be very similar to the previous estimator that averages over the empirical age distribution.
+
+The hazard or force of infection at age $a$ is: $\lambda(a) = F'(a)/(1-F(a))$. From the basic definition of the hazard rate, we have: 
+
+$1- F(a) = \exp [ - \int_0^a \lambda(a) da ]$ and $\int_0^a \lambda(a) da = - \log [1-F(a)]$.
+
+This is the cumulative hazard. The average hazard per month or year (units of $a$) also divided $-\log[1-F(a)]$ by $a$.  So, all of the information is embedded in the cumulative distribution function, $F(a)$, which here is the age-dependent seroprevalence curve. 
+
+The average hazard over the age period $a_1=4$ to $a_2=17$ months is:
+
+\begin{equation}
+  \int_{a_1}^{a_2} \lambda(a) da = \frac{\log[1-F(a_1)]-\log[1-F(a_2)]}{a_2 - a_1}
+\end{equation}
+
+We estimate its variance from a parametric bootstrap simulation of the posterior distributions of the spline parameters (above).
+
+```{r average foi}
+avgFOI <- function(m,newdata,a1,a2,nreps=10000) {
+  require(mgcv)
+  require(dplyr)
+  
+  # limit the prediction data to the two time points
+  newdata <- newdata %>%
+    filter(age %in% c(a1,a2)) %>%
+    arrange(age)
+  
+  # get predicted seroprevalence, Ft, from GAM model
+  gFt <- predict(m, newdata)
+  Ft <- exp(gFt)/(1+exp(gFt))
+  
+  # average FOI over a1 to a2 is: 
+  # foi = [log(1-F(a1))-log(1-F(a2))] / (a2-a1)
+  mufoi <- (log(1-Ft[1]) - log(1-Ft[2])) / (a2-a1) 
+
+  # parametric bootstrap simulation from the
+  # model coefficient estimates, assuming the model is true
+  X0 <- predict(m, newdata, type = "lpmatrix")
+  Vb <- vcov(m,unconditional = TRUE)
+  sims<- MASS::mvrnorm(n = nreps, mu = coef(m), Sigma = Vb)
+  gFt.bs <- X0 %*% t(sims)
+  Ft.bs <- exp(gFt.bs)/(1+exp(gFt.bs))
+  mufoi.bs <- (log(1-Ft.bs[1,]) - log(1-Ft.bs[2,])) / (a2-a1)
+  
+  # estimate approximate bs SE and percentile-based 95% credible interval
+  mufoi.se <- sd(mufoi.bs)
+  mufoi.ci <- quantile(mufoi.bs,probs=c(0.025,0.975))
+  res <- data.frame(mufoi,mufoi_se=mufoi.se,mufoi_lb=mufoi.ci[1],mufoi_ub=mufoi.ci[2])
+  return(res)
+}
+
+
+# average FOI from a GAM model
+newd <- data.frame(age=c(4,17))
+avgfoi <- foreach(ab=levels(dfoi$antigenf),.combine=rbind) %dopar% {
+    pd <- filter(dfoi, antigenf==ab) 
+    mi <- gam(seropos~s(age,bs="cr"),data=pd,family="binomial")
+    foii <- avgFOI(mi,newd,a1=4,a2=17)
+    di <- data.frame(antigenf=ab,foii)
+    return(di)
+}
+
+knitr::kable(select(avgfoi,-mufoi_se),digits=3,
+             caption="Average incidence rate per child month estimated from a cross-sectional seroprevalence curve",
+             col.names = c("Antigen","Incidence per month","min95","max95"),
+             row.names = FALSE)
+
+```
+
+Indeed the estimates are very similar with those above, averaged over the empirical distribution of age.  Given this similarity, the population-averaged estimates will be used below in the comparison across methods.
+
+# Comparison of estimates
+
+Retrieve the results from the longitudinal analysis of the data and compare estimates with those estimated above from the seroprevalence curves, which assume the data are cross-sectional.
+```{r incidence long xc comp, warning=FALSE}
+#--------------------------------
+# load the prospective estimates
+# these are incidence per year
+# from asembo-enteric-ab-long-analysis.Rmd
+#--------------------------------
+est_long <- readRDS("~/enterics-seroepi/output/asembo-enteric-ab-ests-incidencerates.rds") %>%
+  filter(outcome=="Seroconversion") %>%
+  mutate(method="Longitudinal") %>%
+  select(method,antigenf,starts_with("rate")) %>%
+  # convert rates to per-month (rather than per-year)
+  mutate(rate=rate,rate_lb=rate_lb,rate_ub=rate_ub)
+
+# rename columns and stack the data for plotting
+# re-scale monthly rates to per year
+est_xc <- popavgfoi %>%
+  mutate(method="Cross sectional, spline",foi=foi*12,foi_lb=foi_lb*12,foi_ub=foi_ub*12) %>%
+  select(method,antigenf,rate=foi,rate_lb=foi_lb,rate_ub=foi_ub)
+
+# estimates from constant rate (exponential) model
+est_cr <- glmfoi %>%
+  mutate(method="Cross sectional, exponential",
+         lambda=lambda*12,lambda_lb=lambda_lb*12,lambda_ub=lambda_ub*12) %>%
+  select(method,antigenf,rate=lambda,rate_lb=lambda_lb,rate_ub=lambda_ub)
+
+# estimates from RC model
+est_rcm <- rcmests %>%
+  mutate(method="Cross sectional, RCM",
+         lambda=lambda*12,lambda_lb=lambda_lb*12,lambda_ub=lambda_ub*12) %>%
+  select(method,antigenf,rate=lambda,rate_lb=lambda_lb,rate_ub=lambda_ub)
+
+
+#--------------------------------
+# append the longitudinal and
+# cross sectional estimates
+#--------------------------------
+rate_comp <- bind_rows(est_long,est_xc,est_cr,est_rcm) %>%
+  mutate(antigenf=factor(antigenf,levels=levels(est_long$antigenf)),
+         method=factor(method,levels=c("Longitudinal","Cross sectional, spline","Cross sectional, exponential","Cross sectional, RCM"))) %>%
+  arrange(antigenf,method)
+
+```
+Create a figure to summarize the comparison
+
+**This is Figure 6 - supplement 1**
+
+```{r incidence long xc comp figure}
+
+# pcols <- c(cblack,corange,cteal,cmagent)
+pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
+# pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
+
+
+
+ratecomp_plot <- ggplot(data=rate_comp,aes(x=antigenf,y=rate,color=antigenf,fill=method,shape=method)) +
+  geom_pointrange(aes(ymin=rate_lb,ymax=rate_ub),
+                  fill="white",size=0.5,
+                  position=position_nudge(x=c(rep(c(-0.3,-0.1,0.1,0.3),3),
+                                              0,
+                                              rep(c(-0.3,-0.1,0.1,0.3),4)))) +
+  
+  labs(x="",y="seroconversion rate per child-year") +
+  scale_y_continuous(breaks=0:7)+
+  # scale_fill_manual(values=pcols) +
+  scale_color_manual(values=pcols,guide=FALSE) +
+  scale_shape_manual(values=c(21,22,23,24),guide_legend(title="Estimation method"))+
+  coord_cartesian(ylim=c(0,7.5))+
+  theme_minimal() +
+  theme(legend.position = "right",
+        axis.text.x=element_text(size=8,angle=45,hjust = 1,color=pcols),
+        strip.text = element_text(size=12),)
+
+ratecomp_plot
+
+# save a PDF version
+ggsave("~/enterics-seroepi/figs/asembo-ab-seroincidence-rate-comparison.pdf",plot=ratecomp_plot,device="pdf",width=8.5,height=4)
+
+```
+
+For most pathogens, the semiparametric estimate of seroconversion rates using splines was close to the rate estimated prospectively. In all cases uncertainty in spline-based estimates of the seroconversion rate derived from seroprevalence was much higher than the prospective rate estimates, as reflected by wider 95% credible intervals.   As Jewell and Emerson (**2013**) demonstrate under a parametric exponential survival model, the asymptotic relative efficiency of a cross-sectional, current-status analysis compared to a longitudinal analysis is 96.1% if the cumulative proportion of failures is 0.5, but only 65.5% if the proportion of failures is 0.9. These results are broadly consistent with that analysis, with the loss in efficiency much higher among ETEC, _V. cholerae_ and _Campylobacter_ with seroprevalence that approached 100% by ages 10-12 months in this cohort.
+
+For most pathogens, seroconversion rate estimates from cross-sectional analysis were biased downward compared to the longitudinal analysis -- a result that would be expected in the case of seroreversion, which was common in this cohort for all but ETEC, _V. cholerae_, and _Campylobacter_.  The parametric cross-sectional analyses assumed a constant rate without seroreversion (exponential survival model, SIR model) or with seroreversion (reversible catalytic model, SIS model), and were genearlly further from the longitudinal estimates than the semiparametric spline; exceptions include _E. histolytica_ and _Salmonella_. Age-specific estimates of the seroconversion rate under the spline model suggest that the rates were not constant over age, so this suggests the parametric models could be slightly more biased. Allowing for sero-reversion in the reversible catalytic model did not remove the bias.
+
+# Session Info
+```{r session info}
+sessionInfo()
+```
+
+
+
+
