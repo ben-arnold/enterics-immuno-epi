@@ -50,25 +50,17 @@ mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptospori
 #-----------------------------
 # filter to just the relevant
 # variables
+# rename childid -> id
 #-----------------------------
 d2 <- d %>% 
-  select(svy,year,vilid,clusterid,hhid,seroid,aztr,age,mbavars)
-
-#-----------------------------
-# create a unique individual
-# observation id
-#-----------------------------
-d2 <- d2 %>%
-  arrange(svy,vilid,clusterid,hhid,aztr) %>%
-  mutate(id = row_number()) %>%
-  select(svy,year,vilid,clusterid,hhid,seroid,id,aztr,age,mbavars)
+  select(svy,year,vilid,clusterid,hhid,id=childid,long,seroid,aztr,age,mbavars)
 
 #-----------------------------
 # reshape long and convert
 # to log10 values
 #-----------------------------
 dl <- d2 %>%
-  gather(antigen,mfi,-svy,-year,-vilid,-clusterid,-hhid,-seroid,-id,-aztr,-age)
+  gather(antigen,mfi,-svy,-year,-vilid,-clusterid,-hhid,-seroid,-id,-long,-aztr,-age)
 
 # set negative and zero values to 1 before the log10 transform
 dl <- dl %>%
