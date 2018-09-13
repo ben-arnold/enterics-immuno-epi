@@ -219,13 +219,14 @@ gamCI <- function(m,newdata,nreps=10000) {
 #-----------------------------
 
 library(mgcv)
-pgamfits <- foreach(tri=levels(dlp$tr),.combine=rbind) %:%
-  foreach(ab=levels(dlp$antigenf),.combine=rbind) %dopar% {
-    pd <- filter(dlp, tr==tri & antigenf==ab)
-    gfit <- mgcv::gam(seropos~s(age, bs="cr")+s(childid,bs="re",by=dummy), data=pd,family="binomial")
-    newd <- pd %>% mutate(dummy=0)
-    gsci <- gamCI(m=gfit,newdata=newd,nreps=1000)
-    gsci <- gsci %>% mutate(tr=tri,antigenf=ab)
+pgamfits <- foreach(ab=levels(dlp$antigenf),.combine=rbind) %dopar% {
+    pd <- filter(dlp, antigenf==ab)
+    gfit <- mgcv::gam(seropos~s(age, bs="cr")+s(childid,bs="re",by=dummy)+tr, data=pd,family="binomial")
+    newd0 <- pd %>% mutate(dummy=0,tr="Cont")
+    newd1 <- pd %>% mutate(dummy=0,tr="Int")
+    gsci0 <- gamCI(m=gfit,newdata=newd0,nreps=1000)
+    gsci1 <- gamCI(m=gfit,newdata=newd1,nreps=1000)
+    gsci <- bind_rows(gsci0,gsci1) %>% mutate(antigenf=ab)
     return(gsci)
 }
 
@@ -399,19 +400,22 @@ dlp <- bind_rows(dl,dgi,dcr) %>%
 ## Estimate curves in each treatment arm
 ```{r kongwa age-curve by arm }
 #-----------------------------
-# fit cubic spline over age, separately for each 
-# treatment arm and antigen
+# fit cubic spline over age
 # estimate approximate simultaneous confidence intervals
 # for the fits
+# include random effects for
+# cluster to account for repeated
+# observations
 #-----------------------------
-gamfits <- foreach(tri=levels(dl$tr),.combine=rbind) %:%
-  foreach(ab=levels(dl$antigenf),.combine=rbind) %dopar% {
-    pd <- filter(dl, tr==tri & antigenf==ab) %>%
+gamfits <- foreach(ab=levels(dl$antigenf),.combine=rbind) %dopar% {
+    pd <- filter(dl, antigenf==ab) %>%
       mutate(dummy=1)
-    gfit <- mgcv::gam(logmfi~s(age, bs="cr",k=9)+s(clusterid,bs="re",by=dummy) ,data=pd,family="gaussian")
-    newd <- pd %>% mutate(dummy=0)
-    gsci <- gamCI(m=gfit,newdata=newd,nreps=1000)
-    gsci <- gsci %>% mutate(tr=tri,antigenf=ab)
+    gfit <- mgcv::gam(logmfi~s(age, bs="cr",k=9)+s(clusterid,bs="re",by=dummy)+tr ,data=pd,family="gaussian")
+    newd0 <- pd %>% mutate(dummy=0,tr="Control")
+    newd1 <- pd %>% mutate(dummy=0,tr="Intervention")
+    gsci0 <- gamCI(m=gfit,newdata=newd0,nreps=1000)
+    gsci1 <- gamCI(m=gfit,newdata=newd1,nreps=1000)
+    gsci <- bind_rows(gsci0,gsci1) %>% mutate(antigenf=ab)
     return(gsci)
   }
 
@@ -458,11 +462,11 @@ ktmlediffs <- foreach(ab=levels(dl$antigenf),.combine=rbind) %dopar% {
 #-----------------------------
 
 # seroprevalence among intervention and control
-knitr::kable(arrange(ktmlemeans,antigenf,tr),digits=2,caption="Seroprevalence in the Intervention and Control groups")  %>%
+knitr::kable(arrange(ktmlemeans,antigenf,tr),digits=2,caption="Mean MFI in the Intervention and Control groups")  %>%
   kable_styling(bootstrap_options = "striped",full_width = TRUE)
 
 # difference between groups
-knitr::kable(ktmlediffs,digits=2,caption="Difference in seroprevalence (Intervention minus Control)")  %>%
+knitr::kable(ktmlediffs,digits=2,caption="Difference in MFI (Intervention minus Control)")  %>%
   kable_styling(bootstrap_options = "striped",full_width = TRUE)
 
 ```
