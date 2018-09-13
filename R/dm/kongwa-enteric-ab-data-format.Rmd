@@ -51,9 +51,21 @@ mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptospori
 # filter to just the relevant
 # variables
 # rename childid -> id
+# Note: there has been some
+# attempt at CDC to identify indiv
+# children across survey rounds
+# using names. This affects a small
+# number (n=153). However, some of
+# these data appear inconsistent
+# based on sex and village,
+# so the present analyses will
+# simply assume that each measurement
+# is a separate child
 #-----------------------------
 d2 <- d %>% 
-  select(svy,year,vilid,clusterid,hhid,id=childid,long,seroid,aztr,age,mbavars)
+  select(svy,year,vilid,clusterid,hhid,id=childid,long,seroid,aztr,age,mbavars) %>%
+  mutate(id=row_number())
+
 
 #-----------------------------
 # reshape long and convert
