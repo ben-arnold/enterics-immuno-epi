@@ -88,8 +88,8 @@ mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptospori
 ```{r Ab distribution figure, fig.height=12, fig.width=6}
 
 # custom color blind color palette is in the preamble chunck
-# pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
-pcols <- c(corange,cred,cmagent,cblue,cteal,cgreen)
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+# pcols <- c(corange,cred,cmagent,cblue,cteal,cgreen)
 
 
 # custom log labels
