@@ -299,7 +299,7 @@ dlplot <- dl %>%
 
 # custom color blind color palette is in the preamble chunck
 pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cgrey)
-pcols <- c(corange,cred,cmagent,cblue,cteal,cgreen,cgrey)
+# pcols <- c(corange,cred,cmagent,cblue,cteal,cgreen,cgrey)
 
 
 # custom log labels
@@ -354,7 +354,7 @@ dlplot <- dl %>%
 
 
 # custom color blind color palette is in the preamble chunck
-pcols <- c(corange,cgrey)
+pcols <- c(cred,cgrey)
 
 # custom log labels
 log10labs <- c( 
