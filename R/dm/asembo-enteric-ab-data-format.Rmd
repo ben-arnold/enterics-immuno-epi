@@ -41,9 +41,9 @@ d <- d %>%
   filter(!is.na(age))
 
 # list the enteric antigens and make formatted labels for them
-mbavars <- c("vsp3","vsp5","cp17","cp23","leca","rotavirus","salb","sald","etec","cholera","p18","p39")
+mbavars <- c("vsp3","vsp5","cp17","cp23","salb","sald","etec","cholera","p18","p39","leca")
 
-mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Rotavirus","Salmonella LPS B","Salmonella LPS D","ETEC toxin beta subunit","Cholera toxin beta subunit","Campylobacter p18","Campylobacter p39")
+mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","Salmonella LPS B","Salmonella LPS D","ETEC toxin beta subunit","Cholera toxin beta subunit","Campylobacter p18","Campylobacter p39","E. histolytica LecA")
 
 
 #-----------------------------
@@ -96,14 +96,13 @@ dl$pathogen <- NA
 dl$pathogen[dl$antigen %in% c("vsp3","vsp5")] <- "Giardia"
 dl$pathogen[dl$antigen %in% c("cp17","cp23")] <- "Cryptosporidium"
 dl$pathogen[dl$antigen %in% c("leca")] <- "E. histolytica"
-dl$pathogen[dl$antigen %in% c("rotavirus")] <- "Rotavirus"
 dl$pathogen[dl$antigen %in% c("salb","sald")] <- "Salmonella"
 dl$pathogen[dl$antigen %in% c("etec")] <- "ETEC"
 dl$pathogen[dl$antigen %in% c("cholera")] <- "V. cholerae"
 dl$pathogen[dl$antigen %in% c("p18","p39")] <- "Campylobacter"
 
 dl <- dl %>%
-  mutate(pathogen = factor(pathogen,levels=c("Giardia","Cryptosporidium","E. histolytica","Rotavirus","Salmonella","ETEC","V. cholerae","Campylobacter")),
+  mutate(pathogen = factor(pathogen,levels=c("Giardia","Cryptosporidium","Salmonella","ETEC","V. cholerae","Campylobacter","E. histolytica")),
          antigenf=factor(antigen,levels=mbavars,labels=mbalabs))
      
 #-----------------------------
@@ -111,7 +110,7 @@ dl <- dl %>%
 # dataset for all future 
 # analyses
 #-----------------------------
-saveRDS(dl,file="~/enterics-immuno-epi/data/asembo_analysis.rds")
+saveRDS(dl,file="~/enterics-seroepi/data/asembo_analysis.rds")
 ```
 # Session Info
 ```{r session info}

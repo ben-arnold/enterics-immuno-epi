@@ -63,9 +63,9 @@ cgrey <- "#777777"
 dl <- readRDS(here("data","asembo_analysis.rds"))
 
 # list the enteric antigens and make formatted labels for them
-mbavars <- c("vsp3","vsp5","cp17","cp23","leca","rotavirus","salb","sald","etec","cholera","p18","p39")
+mbavars <- c("vsp3","vsp5","cp17","cp23","salb","sald","etec","cholera","p18","p39","leca")
 
-mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Rotavirus","Salmonella LPS B","Salmonella LPS D","ETEC toxin beta subunit","Cholera toxin beta subunit","Campylobacter p18","Campylobacter p39")
+mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","Salmonella LPS B","Salmonella LPS D","ETEC toxin beta subunit","Cholera toxin beta subunit","Campylobacter p18","Campylobacter p39","E. histolytica LecA")
 
 ```
 
@@ -74,8 +74,8 @@ mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptospori
 ```{r Ab distribution figure, fig.height=12, fig.width=6}
 
 # custom color blind color palette is in the preamble chunck
-# pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
-pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
+pcols <- c(cred,corange,cteal,cblue,cmagent,cgrey,cgreen)
+# pcols <- c(corange,cred,cmagent,cblue,cteal,cgreen,cgrey)
 
 
 # custom log labels
@@ -199,8 +199,8 @@ plotmixdens <- mixdens %>%
 # and custom log10 labels (log10labs)
 # defined in a previous code chunk
 #-----------------------------
-# pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
-pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
+pcols <- c(cred,corange,cteal,cblue,cmagent,cgrey,cgreen)
+# pcols <- c(corange,cred,cmagent,cblue,cteal,cgreen,cgrey)
 
 pmix <- ggplot(data=dl,aes(x=logmfi,group=pathogen,color=pathogen,fill=pathogen)) +
   facet_wrap(~antigenf,nrow=6,ncol=2,scales="free_y") +
@@ -288,8 +288,8 @@ dl <- left_join(dl,dlunexp2,by="antigen")
 # create a figure of the
 # unexposed distributions
 #-----------------------------
-# pcols <- c(cred,corange,cblue,cmagent,cgrey)
-pcols <- c(corange,cred,cteal,cgreen,cgrey)
+pcols <- c(cred,corange,cblue,cmagent,cgrey)
+# pcols <- c(corange,cred,cteal,cgreen,cgrey)
 
 punexp <- ggplot(data=filter(dl,unexp=="Presumed unexposed" & !is.na(unexpcut)), aes(x=logmfi,group=pathogen,color=pathogen,fill=pathogen)) +
   facet_wrap(~antigenf,nrow=6,ncol=2,scales="free_y") +
@@ -336,8 +336,8 @@ plotmixdens <- plotmixdens %>%
 # create a figure of the
 # unexposed distributions
 #-----------------------------
-# pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
-pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
+pcols <- c(cred,corange,cteal,cblue,cmagent,cgrey,cgreen)
+# pcols <- c(corange,cred,cmagent,cblue,cteal,cgreen,cgrey)
 
 pall <- ggplot(data=dl,aes(x=logmfi,group=pathogen,color=pathogen,fill=pathogen)) +
   facet_wrap(~antigenf,nrow=6,ncol=2,scales="free_y") +
