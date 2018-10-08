@@ -1,5 +1,5 @@
 ---
-title: Enteropathogen seroepidemiology among children in high transmission settings
+title: Enteropathogen seroepidemiology among children in low-resource settings
 subtitle: Supplementary Information File 3. Joint distributions of antibody response.
 output: 
   html_notebook:
