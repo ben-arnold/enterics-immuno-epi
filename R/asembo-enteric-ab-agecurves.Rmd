@@ -56,10 +56,6 @@ cgrey <- "#777777"
 #-----------------------------
 dl <- readRDS("~/enterics-seroepi/data/asembo_analysis2.rds")
 
-# list the enteric antigens and make formatted labels for them
-mbavars <- c("vsp3","vsp5","cp17","cp23","leca","rotavirus","salb","sald","p18","p39","etec","cholera")
-
-mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Rotavirus","Salmonella LPS B","Salmonella LPS D","Campylobacter p18","Campylobacter p39","ETEC toxin beta subunit","Cholera toxin beta subunit")
 ```
 
 #Estimate age-dependent mean antibody levels
@@ -191,8 +187,8 @@ log10labs <- c(
 )
 
 # bright color-blind palette defined in an earlier code chunk
-# pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
-pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
+pcols <- c(cred,corange,cteal,cblue,cmagent,cgrey,cgreen)
+# pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
 
 
 pcurve <- ggplot(data=gamfits,aes(x=age,group=pathogen,color=pathogen,fill=pathogen)) +
@@ -234,8 +230,8 @@ log10labs <- c(
 )
 
 # bright color-blind palette defined in an earlier code chunk
-# pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
-pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
+pcols <- c(cred,corange,cteal,cblue,cmagent,cgrey,cgreen)
+# pcols <- c(corange,cred,cmagent,cblue,cteal,cgreen,cgrey)
 
 
 pcurve <- ggplot(data=filter(gamfits,age<=17),aes(x=age,group=pathogen,color=pathogen,fill=pathogen)) +
@@ -281,7 +277,7 @@ dgi <- dl %>%
   spread(antigen,seropos) %>%
   mutate(seropos=ifelse(vsp3==1|vsp5==1,1,0),
          antigen="vsp3vsp5",
-         antigenf="Giardia VSP-3 + VSP-5") %>%
+         antigenf="Giardia VSP-3 or VSP-5") %>%
   select(-vsp3,-vsp5)
 
 dcr <- dl %>% 
@@ -290,7 +286,7 @@ dcr <- dl %>%
   spread(antigen,seropos) %>%
   mutate(seropos=ifelse(cp17==1|cp23==1,1,0),
          antigen="cp17cp23",
-         antigenf="Cryptosporidium Cp17 + Cp23") %>%
+         antigenf="Cryptosporidium Cp17 or Cp23") %>%
   select(-cp17,-cp23)
 
 ds <- dl %>% 
@@ -299,7 +295,7 @@ ds <- dl %>%
   spread(antigen,seropos) %>%
   mutate(seropos=ifelse(salb==1|sald==1,1,0),
          antigen="salbsald",
-         antigenf="Salmonella LPS groups B + D") %>%
+         antigenf="Salmonella LPS groups B or D") %>%
   select(-salb,-sald)
 
 dcp <- dl %>% 
@@ -308,21 +304,20 @@ dcp <- dl %>%
   spread(antigen,seropos) %>%
   mutate(seropos=ifelse(p18==1|p39==1,1,0),
          antigen="p18p39",
-         antigenf="Campylobacter p18 + p39") %>%
+         antigenf="Campylobacter p18 or p39") %>%
   select(-p18,-p39)
 
 
 
 dlp <- bind_rows(dl,dgi,dcr,ds,dcp) %>%
   mutate(antigenf=factor(antigenf,
-                         levels=c("Giardia VSP-3 + VSP-5",
-                                  "Cryptosporidium Cp17 + Cp23",
+                         levels=c("Giardia VSP-3 or VSP-5",
+                                  "Cryptosporidium Cp17 or Cp23",
                                   "E. histolytica LecA",
-                                  "Rotavirus",
-                                  "Salmonella LPS groups B + D",
+                                  "Salmonella LPS groups B or D",
                                   "ETEC toxin beta subunit",
                                   "Cholera toxin beta subunit",
-                                  "Campylobacter p18 + p39")) ) %>%
+                                  "Campylobacter p18 or p39")) ) %>%
   filter(!is.na(antigenf)) %>%
   select(pathogen,antigen,antigenf,
          childid,time,tr,sex,age,agediff,
@@ -438,11 +433,11 @@ The spline fits are colored and the highly adaptive ensemble fits are black. The
 
 
 # bright color-blind palette defined in an earlier code chunk
-# pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
-pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cgrey)
+# pcols <- c(corange,cred,cmagent,cblue,cteal,cgreen,cgrey)
 
 
-ppcurve <- ggplot(data=pgamfits,aes(x=age,group=pathogen,color=pathogen,fill=pathogen)) +
+ppcurve <- ggplot(data=pgamfits,aes(x=age,color=antigenf,fill=antigenf)) +
   # approximate simultaneous CI from spline fit
   geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA) +
   # actual measurements
@@ -470,17 +465,19 @@ ppcurve
 ggsave("~/enterics-seroepi/figs/asembo-ab-agecurves-seroprev-allests.pdf",plot=ppcurve,device="pdf",width=7,height=14)
 
 ```
-Create a more parsimonius figure restricted to spline fits. Plot through age 17 months (since n=1 at 18 months).
+Create a more parsimonius figure restricted to spline fits. 
+Plot through age 17 months (since n=1 at 18 months).
+Excluded Cholera due to cross-reactivity with ETEC and no suggestion that there was cholera transmission in the population at the time of the study.
 
 ```{r age-curve seroprevalence figure, fig.height=9, fig.width=6}
 
 
 # bright color-blind palette defined in an earlier code chunk
-# pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
-pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+# pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
 
 
-ppcurve2 <- ggplot(data=filter(pgamfits,age<=17),aes(x=age,color=antigenf,fill=antigenf)) +
+ppcurve2 <- ggplot(data=filter(pgamfits,age<=17 & antigen!="cholera"),aes(x=age,color=antigenf,fill=antigenf)) +
   # approximate simultaneous CI from spline fit
   geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA) +
   # actual measurements
@@ -501,7 +498,7 @@ ppcurve2 <- ggplot(data=filter(pgamfits,age<=17),aes(x=age,color=antigenf,fill=a
 ppcurve2
 
 # save a PDF version
-ggsave("~/enterics-seroepi/figs/asembo-ab-agecurves-seroprev.pdf",plot=ppcurve2,device="pdf",width=7,height=14)
+ggsave("~/enterics-seroepi/figs/asembo-ab-agecurves-seroprev.pdf",plot=ppcurve2,device="pdf",width=7,height=12)
 
 ```
 
@@ -510,17 +507,17 @@ Compressed figure (1 panel). grid.draw(), required to avoid cropping at plot mar
 ```{r age-curve seroprevalence figure small, fig.height=5, fig.width=5}
 
 plabs <- pgamfits %>%
-  filter(age==17) %>% select(antigenf,age,fit) %>% 
+  filter(age==17 & antigen!="cholera") %>% select(antigenf,age,fit) %>% 
   group_by(antigenf) %>% summarize_all(mean) %>%
   mutate(fit=ifelse(antigenf=="Campylobacter p18 + p39",fit+0.02,fit),
-         fit=ifelse(antigenf=="Cholera toxin beta subunit",fit-0.02,fit))
+         fit=ifelse(antigenf=="ETEC toxin beta subunit",fit-0.02,fit))
 
 # bright color-blind palette defined in an earlier code chunk
-# pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
-pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+# pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
 
 
-ppcurve3 <- ggplot(data=filter(pgamfits,age<=17),aes(x=age,group=antigenf,color=antigenf,fill=antigenf)) +
+ppcurve3 <- ggplot(data=filter(pgamfits,age<=17 & antigen!="cholera"), aes(x=age,group=antigenf,color=antigenf,fill=antigenf)) +
   # approximate simultaneous CI from spline fit
   # geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA) +
   # spline fit
