@@ -42,10 +42,9 @@ library(tidyverse)
 d <- readRDS("~/dropbox/kongwa/data/final/kongwa-mba-kids.rds")
 
 # list the enteric antigens and make formatted labels for them
-mbavars <- c("vsp3","vsp5","cp17","cp23","salb","sald","etec","cholera","p18","p39","leca","pgp3")
+mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","etec","cholera","p18","p39","pgp3")
 
-mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23",
-             "Salmonella LPS B","Salmonella LPS D","ETEC toxin beta subunit","Cholera toxin beta subunit","Campylobacter p18","Campylobacter p39","E. histolytica LecA","C. trachomatis pgp3")
+mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Salmonella LPS B","Salmonella LPS D","ETEC toxin beta subunit","Cholera toxin beta subunit","Campylobacter p18","Campylobacter p39","C. trachomatis pgp3")
 
 #-----------------------------
 # filter to just the relevant
