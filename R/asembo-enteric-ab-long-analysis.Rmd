@@ -65,14 +65,10 @@ cgrey <- "#777777"
 #-----------------------------
 # load the formatted data
 # created with 
-# asembo-enteric-ab-data-format.Rmd
+# asembo-enteric-ab-data-format.Rmd -->
+# asembo-enteric-ab-distributions.Rmd
 #-----------------------------
 dl <- readRDS(here("data","asembo_analysis2.rds"))
-
-# list the enteric antigens and make formatted labels for them
-mbavars <- c("vsp3","vsp5","cp17","cp23","leca","rotavirus","salb","sald","p18","p39","etec","cholera")
-
-mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Rotavirus","Salmonella LPS B","Salmonella LPS D","Campylobacter p18","Campylobacter p39","ETEC toxin beta subunit","Cholera toxin beta subunit")
 ```
 
 # Identify incident changes
@@ -222,11 +218,47 @@ pp <- ggplot(data=filter(dl2,!is.na(icat)),aes(x=svy,y=logmfi,group=factor(child
 
 pp
 
-# save a PDF version
-ggsave(here("figs","asembo-ab-long-seroincidence.pdf"),plot=pp,device="pdf",width=6,height=12)
-
 ```
 
+```{r change in antibody seroincidence figure subset, fig.height=9, fig.width=6}
+#-----------------------------
+# final figure, excluding cholera
+# due to cross-reactivity with ETEC
+#-----------------------------
+relev <- levels(dl2$antigenf)[c(1:6,11,7,9,10)]
+dl3 <- dl2 %>%
+  filter(!is.na(icat) & antigen!="cholera") %>%
+  ungroup() %>%
+  mutate(antigenf=factor(antigenf,levels=relev))
+
+
+pp2 <- ggplot(data=dl3,aes(x=svy,y=logmfi,group=factor(childid),color=icat_comp)) +
+  # geom_point(alpha=0.2) +
+  geom_hline(aes(yintercept=serocut),linetype="dashed",size=0.3) +
+  geom_line(alpha=0.2) +
+  
+  scale_x_continuous(limits=c(-0.25,1.25),breaks=c(0,1),labels=c("Enrollment","Follow-up"))+
+  scale_y_continuous(breaks=0:4,labels=log10labs) +
+  scale_color_manual(values=c(corange,cteal,cmagent,"gray80"),
+                     guide=guide_legend(title="MFI change:", override.aes = list(alpha=1), ncol=2,nrow=2),
+                     ) +
+  facet_wrap(~antigenf,nrow=6,ncol=2) +
+  labs(x="Measurement",y="Luminex response (MFI-bg)") +
+  theme_minimal() +
+  theme(
+    panel.grid.minor.x = element_blank(),
+    panel.grid.minor.y = element_blank(),
+    panel.grid.major.y = element_blank(),
+    axis.ticks.y=element_line(color="gray40"),
+    legend.position = "top" 
+    )
+
+pp2
+
+# save a PDF version
+ggsave(here("figs","asembo-ab-long-seroincidence.pdf"),plot=pp2,device="pdf",width=6,height=10)
+
+```
 
 
 # Session Info
