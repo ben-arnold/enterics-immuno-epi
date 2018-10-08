@@ -28,6 +28,7 @@ here()
 # load packages
 library(tidyverse)
 library(scales)
+library(viridis)
 library(ellipse)
 library(RColorBrewer)
 
@@ -167,8 +168,11 @@ dsmooths <- foreach(countryi=levels(dw$country),.combine=rbind) %:%
 ```
 
 
-# Summary Figure
+# Figure 2
+Summary composite figure, **Figure 2 in the main text**
 ```{r composite figure,fig.width=7,fig.height=9 }
+
+pcol <- viridis(n=1,begin=0.3,end=0.4)
 
 # grab labels
 dlabs <- dw %>% select(country,comp,xlab,ylab) %>% group_by(country,comp) %>% slice(1)
@@ -176,29 +180,29 @@ dlabs <- dw %>% select(country,comp,xlab,ylab) %>% group_by(country,comp) %>% sl
 complot <- ggplot(data=dw,aes(x=x,y=y)) +
   facet_grid(comp~country) +
   geom_point(pch=19,color="black",alpha=0.1) +
-  geom_line(data=dsmooths,aes(x=x,y=y),col=cblue,size=1.2)+
+  geom_line(data=dsmooths,aes(x=x,y=y),col=pcol,size=1.2)+
   geom_text(data=dcorr,
             aes(x=0.5,y=4.3,label=paste("rho ==",sprintf("%1.2f",corxy)) ),
-            parse=TRUE, col=cblue)   +
+            parse=TRUE, col=pcol)   +
   geom_text(data=dlabs,aes(x=2.3,y=0.1,label=xlab),color="gray40",angle=0)+
   geom_text(data=dlabs,aes(x=0.1,y=2.3,label=ylab),color="gray40",angle=90)+
   scale_x_continuous(limits=c(0,4.6),breaks=0:4,labels = log10labs)+
   scale_y_continuous(limits=c(0,4.6),breaks=0:4,labels = log10labs)+
   coord_equal() +
   labs(x="Luminex Response (MFI-bg)",y="Luminex Response (MFI-bg)") +
-  theme_minimal() +
+  theme_minimal(base_size=12) +
   theme(
-    strip.text.x=element_text(face="bold",size=12),
-    strip.text.y=element_text(face="bold",size=12,angle=0),
+    strip.text.x=element_text(size=12),
+    strip.text.y=element_text(size=12,angle=0),
     legend.position="none"
   )
 
 
 complot
 
-# save a PDF version
-ggsave(here("figs","all-ab-scatter-composite.pdf"),plot=complot,device="pdf",width=13,height=15)
-
+# save PDF and TIFF versions
+ggsave(here("figs","Fig2-ab-scatter-composite.pdf"),plot=complot,device="pdf",width=13,height=15)
+ggsave(here("figs","Fig2-ab-scatter-composite.TIFF"),plot=complot,device="tiff",width=13,height=15)
 ```
 
 # Individual country pairs plots
@@ -216,9 +220,9 @@ myellipse<-function(x,y,...){
   midx <- (maxx+minx)/2
   midy <- (maxy+miny)/2
   corxy <- cor(x,y,method="spearman",use="pairwise.complete.obs")
-  colgroup<-cut(corxy,breaks=seq(-1,1,length=11),labels=F)
-  brewcols <- brewer.pal(11,"RdYlGn")
-  cols<-brewcols[colgroup]
+  colgroup<-cut(corxy,breaks=seq(-0.1,1,length=20),labels=F)
+  viridiscols <- viridis(20)
+  cols<-viridiscols[colgroup]
   xyc <-sprintf("%1.2f",corxy)
   xyc[grep("NA",xyc)]<-""
   exy <- ellipse(corxy,centre=c(midx,midy),scale=c((maxx-minx)/6,(maxy-miny)/6))
@@ -244,12 +248,12 @@ scatterloess<-function(x,y,cex=0.4,...){
   ld <- ld[complete.cases(ld),]
   if(nrow(ld)>0) {
     points(ld$x,ld$y,pch=19,cex=cex,col=alpha('black',alpha=0.2))
-    brewcols <- brewer.pal(11,"RdYlGn")
+    viridiscols <- viridis(11)
     lfit <- loess(y~x,data=ld)
     xqs <- quantile(x,probs=c(0.01,0.99),na.rm=TRUE)
     px <- seq(xqs[1],xqs[2],by=0.01)
     py <- predict(lfit,newdata=data.frame(x=px))
-    lines(px,py,col=brewcols[10],lwd=1.5)
+    lines(px,py,col=viridiscols[1],lwd=1.5)
   }
   
 }
@@ -288,9 +292,9 @@ dev.off()
 ## Kenya
 ```{r kenya pairs plot,fig.width=7,fig.height=7}
 # list the enteric antigens in Asembo Kenya and formatted labels for them
-mbavars <- c("vsp3","vsp5","cp17","cp23","leca","rotavirus","salb","sald","etec","cholera","p18","p39")
+mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","etec","cholera","p18","p39")
 
-mbalabs <- c("Giardia\nVSP-3","Giardia\nVSP-5","Cryptosporidium\nCp17","Cryptosporidium\nCp23","E. histolytica\nLecA","Rotavirus","Salmonella\nLPS B","Salmonella\nLPS D","ETEC\ntoxin beta subunit","Cholera\ntoxin beta subunit","Campylobacter\np18","Campylobacter\np39")
+mbalabs <- c("Giardia\nVSP-3","Giardia\nVSP-5","Cryptosporidium\nCp17","Cryptosporidium\nCp23","E. histolytica\nLecA","Salmonella\nLPS B","Salmonella\nLPS D","ETEC\ntoxin beta subunit","Cholera\ntoxin beta subunit","Campylobacter\np18","Campylobacter\np39")
 
 kmat <- dall %>%
   filter(country=="Kenya") %>%
@@ -314,6 +318,8 @@ mtext(expression(paste(log[10],"  Luminex response (MFI-bg)")),side=3,line=2.5)
 dev.off()
 ```
 ## Tanzania
+
+There are a few blank panels in this figure. The reason is that some antigens were included only in year 1, and the cholera beta toxin was only included in years 2-4.  Table 1 and the Methods of the article include additional details.
 ```{r tanzania pairs plot,fig.width=7,fig.height=7}
 
 # list the enteric antigens in Kongwa, Tanzania and formatted labels for them
