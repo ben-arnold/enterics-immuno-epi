@@ -1,5 +1,6 @@
 ---
-title: "Haiti enteric antibody analysis of age-dependent antibody curves"
+title: "Enteropathogen seroepidemiology among children in low-resource settings"
+subtitle: "Haiti age-dependent antibody curves, Figures 3 and 4"
 output: 
   html_notebook:
     theme: default
@@ -11,15 +12,18 @@ output:
       smooth_scroll: true
 ---
 
-#Summary
-This script estimates age-dependent mean antibody curves using cubic splines (in a GAM model from the `mgcv` package) and using ensemble machine learning (using super learning from the `tmleAb` package). 
+# Notebook Summary
+This notebook estimates age-dependent mean antibody and seroprevalence curves in the Hatian cohort. Estimators include cubic splines (in a GAM model from the `mgcv` package) and  ensemble machine learning (using stacked super learning from the `tmleAb` package).  Spline-based estimates are reported in the main text in Figures 3 and 4. 
 
 # Script preamble
 ```{r preamble}
 #-----------------------------
 # preamble
 #-----------------------------
-rm(list=ls())
+library(here)
+here()
+
+
 library(tidyverse)
 library(kableExtra) # devtools::install_github("haozhu233/kableExtra")
 library(mixtools)
@@ -55,9 +59,9 @@ cgrey <- "#777777"
 # with seropositivity indicators
 # created with:
 # haiti-enteric-ab-data-format.Rmd -->
-# haiti-enteric-ab-distributions.Rmd
+# Fig1-haiti-ab-distributions.Rmd
 #-----------------------------
-dl <- readRDS("~/enterics-immuno-epi/data/haiti_analysis2.rds")
+dl <- readRDS(here("data","haiti_analysis2.rds"))
 
 # list the enteric antigens and formatted labels for them
 # re-arrange the order slightly compared to other figures 
@@ -186,7 +190,7 @@ tmlemeans <- foreach(ab=levels(dl$antigenf),.combine=rbind) %:%
 
 ```
 
-##Plot age-dependent mean antibody curves
+## Age-dependent mean antibody curves, all estimates
 
 Plot all of the estimates together. The spline fits are colored and the highly adaptive ensemble fits are grey. Empirical means with 95% CIs (averaged by year) are black. The approximate simultaneous confidence bands for the spline fit are shaded. The plots are trimed at age 10 years to reduce edge effects because there are only 19 measurements older than 10 years.
 
@@ -227,13 +231,12 @@ pcurveall <- ggplot(data=gamfits,aes(x=age,group=pathogen,color=pathogen,fill=pa
 
 pcurveall
 
-# save a PDF version 
-ggsave("~/enterics-immuno-epi/figs/haiti-ab-agecurves-mean-allestimates.pdf",plot=pcurveall,device="pdf",width=7,height=14)
 
 ```
+## Figure 3, age dependent means
+Create a more parsimonius plot, that only includes the spline fits but also includes the actual points. 
 
-
-Create a more parsimonius plot, that only includes the spline fits but also includes the actual points.
+** This is Figure 3 in the manuscript **
 ```{r age-curve mean figure, fig.height=12, fig.width=6}
 
 log10labs <- c( 
@@ -264,18 +267,19 @@ pcurve <- ggplot(data=gamfits,aes(x=age,group=pathogen,color=pathogen,fill=patho
   labs(x="Age in years",y="Luminex Response (MFI-bg)") +
   scale_fill_manual(values=pcols) +
   scale_color_manual(values=pcols) +
-  theme_minimal() +
+  theme_minimal(base_size=16) +
   theme(legend.position = "none")
 
 pcurve
 
-# save a PDF version 
-ggsave("~/enterics-immuno-epi/figs/haiti-ab-agecurves-mean.pdf",plot=pcurve,device="pdf",width=7,height=14)
+# save PDF and TIFF versions
+ggsave(here("figs","Fig3-haiti-ab-agecurves-mean.pdf"),plot=pcurve,device="pdf",width=7,height=14)
+ggsave(here("figs","Fig3-haiti-ab-agecurves-mean.TIFF"),plot=pcurve,device="tiff",width=7,height=14)
 
 ```
 
 
-#Estimate age-dependent seroprevalence
+# Age-dependent seroprevalence
 
 ##Estimate seroprevalence curves using splines in a generalized additive model (GAM)
 
@@ -314,7 +318,7 @@ dgi <- dlp %>%
   spread(antigen,seropos) %>%
   mutate(seropos=ifelse(vsp3==1|vsp5==1,1,0),
          antigen="vsp3vsp5",
-         antigenf="Giardia VSP-3 + VSP-5") %>%
+         antigenf="Giardia VSP-3 or VSP-5") %>%
   select(-vsp3,-vsp5)
 
 dcr <- dlp %>% 
@@ -323,7 +327,7 @@ dcr <- dlp %>%
   spread(antigen,seropos) %>%
   mutate(seropos=ifelse(cp17==1|cp23==1,1,0),
          antigen="cp17cp23",
-         antigenf="Cryptosporidium Cp17 + Cp23") %>%
+         antigenf="Cryptosporidium Cp17 or Cp23") %>%
   select(-cp17,-cp23)
 
 ds <- dlp %>% 
@@ -332,18 +336,18 @@ ds <- dlp %>%
   spread(antigen,seropos) %>%
   mutate(seropos=ifelse(salb==1|sald==1,1,0),
          antigen="salbsald",
-         antigenf="Salmonella LPS groups B + D") %>%
+         antigenf="Salmonella LPS groups B or D") %>%
   select(-salb,-sald)
 
 
 
 dlp <- bind_rows(dlp,dgi,dcr,ds) %>%
   mutate(antigenf=factor(antigenf,
-                         levels=c("Giardia VSP-3 + VSP-5",
-                                  "Cryptosporidium Cp17 + Cp23",
+                         levels=c("Giardia VSP-3 or VSP-5",
+                                  "Cryptosporidium Cp17 or Cp23",
                                   "E. histolytica LecA",
+                                  "Salmonella LPS groups B or D",
                                   "ETEC toxin beta subunit",
-                                  "Salmonella LPS groups B + D",
                                   "Norovirus GI", 
                                   "Norovirus GII")) ) %>%
   filter(!is.na(antigenf)) %>%
@@ -452,16 +456,20 @@ prevests <- foreach(ab=levels(dlp$antigenf),.combine=rbind) %:%
 
 ```
 
-##Plot age-dependent seroprevalence curves
+## Age-dependent seroprevalence curves, all estimates
 
 Plot all of the estimates together. The spline fits are colored and the highly adaptive ensemble fits are grey. Empirical means with 95% CIs (averaged by year) are black. The approximate simultaneous confidence bands for the spline fit are shaded. The plots are trimed at age 10 years to reduce edge effects because there are only 19 measurements older than 10 years.
 
 ```{r age-curve seroprevalence figure all, fig.height=9, fig.width=6}
+# set ETEC confidence band to NA after it flatlines at 100%
+dplot <- pgamfits %>%
+  mutate(lwrS=ifelse(antigen=="etec" & fit==1,NA,lwrS))
+
 
 # bright color-blind palette defined in an earlier code chunk
-pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cmagent)
 
-ppcurve <- ggplot(data=pgamfits,aes(x=age,group=pathogen,color=pathogen,fill=pathogen)) +
+ppcurve <- ggplot(data=dplot,aes(x=age,color=antigenf,fill=antigenf)) +
   # approximate simultaneous CI from spline fit
   geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA,fill=cgrey) +
   # actual measurements
@@ -485,28 +493,24 @@ ppcurve <- ggplot(data=pgamfits,aes(x=age,group=pathogen,color=pathogen,fill=pat
 
 ppcurve
 
-# save a PDF version
-ggsave("~/enterics-immuno-epi/figs/haiti-ab-agecurves-seroprev-allests.pdf",plot=ppcurve,device="pdf",width=7,height=14)
 
 ```
 
+## Age-dependent seroprevalence curves, Figure 4
 Create a more parsimonius plot, that only includes the spline fits but also includes the actual points.
+
+** This is Figure 4 in the text **
 
 ```{r age-curve seroprevalence figure, fig.height=9, fig.width=6}
 
-# set ETEC confidence band to NA after it flatlines at 100%
-dplot <- pgamfits %>%
-  mutate(lwrS=ifelse(antigen=="etec" & fit==1,NA,lwrS))
-
-
 # re-arrange antigen factor to group noro on the same row
 dplot <- dplot %>%
-  mutate(antigenf=factor(antigenf,levels=c("Giardia VSP-3 + VSP-5","Cryptosporidium Cp17 + Cp23","Salmonella LPS groups B + D","ETEC toxin beta subunit","Norovirus GI","Norovirus GII","E. histolytica LecA")))
+  mutate(antigenf=factor(antigenf,levels=c("Giardia VSP-3 or VSP-5","Cryptosporidium Cp17 or Cp23","E. histolytica LecA","Salmonella LPS groups B or D","Norovirus GI","Norovirus GII","ETEC toxin beta subunit")))
 
 # bright color-blind palette defined in an earlier code chunk
-pcols <- c(cred,corange,cgreen,cblue,cteal,cmagent)
+pcols <- c(cred,corange,cgreen,cteal,cmagent,cmagent,cblue)
 
-ppcurve2 <- ggplot(data=dplot,aes(x=age,color=pathogen,fill=pathogen)) +
+ppcurve2 <- ggplot(data=dplot,aes(x=age,color=antigenf,fill=antigenf)) +
   # approximate simultaneous CI from spline fit
   geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA) +
   # actual measurements
@@ -521,13 +525,14 @@ ppcurve2 <- ggplot(data=dplot,aes(x=age,color=pathogen,fill=pathogen)) +
   labs(x="Age in years",y="Seroprevalence (%)") +
   scale_fill_manual(values=pcols) +
   scale_color_manual(values=pcols) +
-  theme_minimal() +
+  theme_minimal(base_size=16) +
   theme(legend.position = "none")
 
 ppcurve2
 
-# save a PDF version
-ggsave("~/enterics-immuno-epi/figs/haiti-ab-agecurves-seroprev.pdf",plot=ppcurve2,device="pdf",width=7,height=14)
+# save PDF and TIFF versions
+ggsave(here("figs","Fig4-haiti-ab-agecurves-seroprev.pdf"),plot=ppcurve2,device="pdf",width=7,height=14)
+ggsave(here("figs","Fig4-haiti-ab-agecurves-seroprev.TIFF"),plot=ppcurve2,device="tiff",width=7,height=14)
 
 ```
 
@@ -552,13 +557,13 @@ pests
 # Save fitted estimates for later use
 ```{r save estimates}
 # spline fits of geometric means
-saveRDS(gamfits,file="~/enterics-immuno-epi/output/haiti-enteric-ab-gamfits-means.rds")
+saveRDS(gamfits,file=here("output","haiti-enteric-ab-gamfits-means.rds"))
 # ensemble fits of geometric means
-saveRDS(slfits,file="~/enterics-immuno-epi/output/haiti-enteric-ab-slfits-means.rds")
+saveRDS(slfits,file=here("output","haiti-enteric-ab-slfits-means.rds"))
 # spline fits of age-dependent seroprevalence
-saveRDS(pgamfits,file="~/enterics-immuno-epi/output/haiti-enteric-ab-gamfits-seroprev.rds")
+saveRDS(pgamfits,file=here("output","haiti-enteric-ab-gamfits-seroprev.rds"))
 # spline fits of age-dependent seroprevalence
-saveRDS(pslfits,file="~/enterics-immuno-epi/output/haiti-enteric-ab-slfits-seroprev.rds")
+saveRDS(pslfits,file=here("output","haiti-enteric-ab-slfits-seroprev.rds"))
 ```
 
 # Session Info
