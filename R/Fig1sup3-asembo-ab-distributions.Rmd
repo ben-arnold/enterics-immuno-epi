@@ -1,6 +1,7 @@
 ---
-title: "Asembo enteric antibody distributions and seropositivity cutoffs"
-output:
+title: "Enteropathogen seroepidemiology among children in low-resource settings"
+subtitle: "Asembo, Kenya Antibody distributions, Figure 1 - supplement 3"
+  output:
   html_document:
     highlight: haddock
     theme: default

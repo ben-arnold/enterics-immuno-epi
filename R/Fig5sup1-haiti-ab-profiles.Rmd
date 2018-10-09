@@ -1,6 +1,6 @@
 ---
 title: "Enteropathogen seroepidemiology among children in low-resource settings"
-subtitle: "Haiti antibody profiles, Figure 5 - supplement 1, Table 2"
+subtitle: "Haiti antibody profiles, Figure 5 - supplement 1"
 output: 
   html_document:
     highlight: haddock
@@ -322,8 +322,8 @@ indivp_meas2 <- ggplot(filter(dl2pp,!is.na(sero_comp) & measnum<=6), aes(x=measn
 indivp_meas2
 
 # save PDF and TIFF versions
-ggsave(filename=here("figs","Fig5sup1-haiti-indiv-ab-trajectories-meas.pdf"),plot = indivp_meas, device='pdf', width=6,height=12)
-ggsave(filename=here("figs","Fig5sup1-haiti-indiv-ab-trajectories-meas.TIFF"),plot = indivp_meas, device='tiff', width=6,height=12)
+ggsave(filename=here("figs","Fig5sup1-haiti-indiv-ab-trajectories-meas.pdf"),plot = indivp_meas2, device='pdf', width=6,height=12)
+ggsave(filename=here("figs","Fig5sup1-haiti-indiv-ab-trajectories-meas.TIFF"),plot = indivp_meas2, device='tiff', width=6,height=12)
 
 ```
 
