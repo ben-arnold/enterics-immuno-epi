@@ -78,7 +78,7 @@ dl <- dl %>%
 
 #Estimate age-dependent mean antibody levels
 
-##Estimate curves using splines in a generalized additive model (GAM)
+## Estimate curves using splines in a generalized additive model (GAM)
 
 ```{r age-curve mean gam }
 #----------------------------------
@@ -135,7 +135,7 @@ gamfits <- foreach(ab=levels(dl$antigenf),.combine=rbind) %dopar% {
   }
 ```
 
-##Estimate curves using ensemble machine learning
+## Estimate curves using ensemble machine learning
 ```{r age-curve mean ensemble, echo=TRUE, message=FALSE, warning=FALSE}
 #-----------------------------
 # estimate curves with 
@@ -233,7 +233,7 @@ pcurveall
 
 
 ```
-## Figure 3, age dependent means
+# Figure 3, age dependent means
 Create a more parsimonius plot, that only includes the spline fits but also includes the actual points. 
 
 ** This is Figure 3 in the manuscript **
@@ -496,7 +496,7 @@ ppcurve
 
 ```
 
-## Age-dependent seroprevalence curves, Figure 4
+# Figure 4,  Age-dependent seroprevalence curves
 Create a more parsimonius plot, that only includes the spline fits but also includes the actual points.
 
 ** This is Figure 4 in the text **
