@@ -1,0 +1,205 @@
+---
+title: Enteropathogen seroepidemiology among children in low-resource settings
+subtitle: Comparison of seroprevalence with seroconversion rates (force of infection) in Haiti and Kenya, Figure 7
+output:
+  html_notebook:
+    highlight: haddock
+    theme: default
+    toc: yes
+    toc_depth: 3
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+---
+
+# Summary
+
+Create a composite figure that summarizes the relationship between seroconversion rates and seroprevalence in the Kenya and Haiti cohorts. 
+
+# Script preamble
+```{r preamble}
+#-----------------------------
+# preamble
+#-----------------------------
+library(here)
+here()
+
+# load packages
+library(tidyverse)
+library(gridExtra)
+
+# set up for parallel computing
+# configure for a laptop (use only 3 cores)
+library(foreach)
+library(doParallel)
+registerDoParallel(cores=3)
+
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+# bright color blind palette:  https://personal.sron.nl/~pault/ 
+cblack <- "#000004FF"
+cblue <- "#3366AA"
+cteal <- "#11AA99"
+cgreen <- "#66AA55"
+cchartr <- "#CCCC55"
+cmagent <- "#992288"
+cred <- "#EE3333"
+corange <- "#EEA722"
+cyellow <- "#FFEE33"
+cgrey <- "#777777"
+
+```
+
+
+```{r load estimates}
+#-----------------------------
+# load the estimates
+# created with 
+# Fig6-asembo-incidence-analysis.Rmd
+# Table2-haiti-incidence-analysis.Rmd
+#-----------------------------
+dk <- readRDS(here("output","asembo-enteric-ab-ests-seroprev-vs-rates.rds"))
+dh <- readRDS(here("output","haiti-enteric-ab-ests-seroprev-vs-rates.rds"))
+
+#-----------------------------
+# bind together and create
+# common factor variables
+# drop cholera estimates from
+# Kenya due to difficulty of 
+# interpretation due to cross-
+# reactivity with ETEC
+#-----------------------------
+dk <- dk %>% mutate(country="Kenya")
+dh <- dh %>% mutate(country="Haiti")
+d <- bind_rows(dk,dh) %>%
+  filter(antigen!="cholera") %>%
+  mutate(antigenf=factor(antigenf,levels=c("Giardia VSP-3 or VSP-5",
+                                           "Cryptosporidium Cp17 or Cp23",
+                                           "E. histolytica LecA",
+                                           "Salmonella LPS groups B or D",
+                                           "ETEC toxin beta subunit",
+                                           "Campylobacter p18 or p39",
+                                           "Norovirus GI",
+                                           "Norovirus GII"
+                                           )),
+         country=factor(country,levels=c("Kenya","Haiti")),
+         method=factor(method,levels=c("4-fold increase in MFI","Seropositivity cutoff"),labels=c("seroconversion definition:\n4-fold increase in IgG","seroconversion definition:\ncrossed seropositivity cutoff"))
+         )
+
+# 
+
+```
+
+# Composite figure, log-log scale
+```{r rates v seroprevalence}
+
+
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cchartr,cbPalette[c(8,5)])
+
+pserop <- ggplot(data=d,aes(x=log(seroprev),y=log(seroi))) +
+  geom_smooth(data=filter(d,antigen!="rotavirus"),aes(x=log(seroprev),y=log(seroi)),se=FALSE,color="gray50",size=0.5,method="glm",alpha=0.5,linetype="dashed")+
+  geom_pointrange(aes(ymin=log(seroi_lb),ymax=log(seroi_ub),color=antigenf)) +
+  facet_grid(method~country,scales="free_x")+
+  # scale_x_continuous(breaks=seq(0,1,by=0.2),labels=seq(0,100,by=20))+
+  # scale_y_continuous(breaks=0:10)+
+  scale_color_manual(values=pcols,guide=guide_legend(title="Pathogen")) +
+  coord_cartesian(ylim=c(-2.5,2.25))+
+  labs(x="log seroprevalence (%)",y="log seroconversion rate per child-year")+
+  theme_minimal() +
+  theme(
+    strip.text=element_text(size=10)
+  )
+
+pserop
+
+
+
+```
+
+# Composite figure, original scale
+```{r rates v seroprevalence2}
+
+
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cchartr,cbPalette[c(8,5)])
+
+
+pserop2 <- ggplot(data=d,aes(x=seroprev*100,y=seroi)) +
+  # geom_smooth(data=filter(pd,antigen!="rotavirus"),aes(x=seroprev,y=seroi),se=FALSE,color="gray50",size=0.5,method="glm",alpha=0.5,linetype="dashed")+
+  geom_pointrange(aes(ymin=seroi_lb,ymax=seroi_ub,color=antigenf)) +
+  geom_text(data=filter(d,antigen=="rotavirus"),aes(label=antigenf),nudge_x=15,size=3,color="gray40")+
+  facet_grid(method~country,scales="free")+
+  # scale_x_continuous(breaks=seq(0,1,by=0.1),labels=seq(0,100,by=10))+
+  # scale_y_continuous(breaks=0:10)+
+  scale_color_manual(values=pcols,guide=guide_legend(title="Pathogen")) +
+  # coord_cartesian(xlim=c(0.6,1))+
+  labs(x="seroprevalence (%)",y="seroconversion rate per child-year")+
+  theme_minimal() +
+  theme(
+     legend.position="right"
+  )
+
+pserop2
+
+
+
+```
+
+# Separate figures with separate axes
+
+```{r separate panels}
+
+# Kenya original scale
+kd <- d %>% filter(country=="Kenya" & method=="seroconversion definition:\n4-fold increase in IgG")
+pk <- ggplot(data=kd,aes(x=seroprev,y=seroi)) +
+  geom_smooth(data=filter(kd,antigen!="rotavirus"),aes(x=seroprev,y=seroi),se=FALSE,color="gray50",size=0.5,method="glm",alpha=0.5,linetype="dashed")+
+  geom_pointrange(aes(ymin=seroi_lb,ymax=seroi_ub,color=antigenf)) +
+  geom_text(data=filter(kd,antigen=="rotavirus"),aes(label=antigenf),nudge_x=0.11,size=3,color="gray40")+
+  scale_x_continuous(breaks=seq(0,1,by=0.2),labels=seq(0,100,by=20))+
+  scale_y_continuous(breaks=0:4)+
+  scale_color_manual(values=pcols,guide=guide_legend(title="Pathogen")) +
+  coord_cartesian(xlim=c(0,1),ylim=c(0,4))+
+  labs(title="Kenya, ages 4-17 months",x="seroprevalence (%)",y="seroconversion rate per child-year")+
+  theme_minimal() +
+  theme(
+     legend.position="right",
+     strip.text=element_text(size=12,hjust=0)
+  )
+
+
+
+
+# Haiti original scale
+hd <- d %>% filter(country=="Haiti" & method=="seroconversion definition:\n4-fold increase in IgG")
+ph <- ggplot(data=hd,aes(x=seroprev,y=seroi)) +
+  geom_smooth(data=hd,aes(x=seroprev,y=seroi),se=FALSE,color="gray50",size=0.5,method="glm",alpha=0.5,linetype="dashed")+
+  geom_pointrange(aes(ymin=seroi_lb,ymax=seroi_ub,color=antigenf)) +
+  scale_x_continuous(breaks=seq(0.6,1,by=0.1),labels=seq(60,100,by=10))+
+  scale_y_continuous(breaks=seq(0,1.5,by=0.5))+
+  scale_color_manual(values=pcols[c(1:5,8,9)],guide=guide_legend(title="Pathogen")) +
+  coord_cartesian(xlim=c(0.6,1),ylim=c(0,1.5))+
+  labs(title="Haiti, ages 0 - 11 years",x="seroprevalence (%)",y="seroconversion rate per child-year")+
+  theme_minimal() +
+  theme(
+     legend.position="right",
+     strip.text=element_text(size=12,hjust=0)
+  )
+
+# combined panel
+ivsp_composite <- grid.arrange(pk,ph,ncol=1,nrow=2)
+
+
+# save PDF and TIFF versions
+ggsave(file=here("figs","Fig7-asembo-haiti-seroincidence-vs-seroprev.pdf"),plot=ivsp_composite,device="pdf",height=8,width=6)
+ggsave(file=here("figs","Fig7-asembo-haiti-seroincidence-vs-seroprev.TIFF"),plot=ivsp_composite,device="tiff",height=8,width=6)
+
+  
+```
+
+# Session Info
+```{r session info}
+sessionInfo()
+```
+
+
+
+
