@@ -1,0 +1,616 @@
+---
+title: Enteropathogen seroepidemiology among children in low-resource settings
+subtitle: Rates of seroconversion and seroreversion in Asembo, Kenya, Figure 6
+output:
+  html_document:
+    highlight: haddock
+    theme: default
+    code_folding: show
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+  html_notebook:
+    highlight: haddock
+    theme: default
+    toc: yes
+    toc_depth: 3
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+---
+
+# Notebook Summary
+
+This script estimates prospective seroincidence rates and the incidence proportion (cumulative incidence) over a 6-7 month period of seroconversion and seroreversion.
+
+The Asembo study was longitudinal and followed children prospectively. We can estimate the average seroconversion rate among children who were at risk (seronegative) at enrollment and seroconverted during the study. We can also estimate the sero-reversion rate, albeit with much less precision since very few children were at risk (seropositive) at enrollment.
+
+# Script preamble
+```{r preamble}
+#-----------------------------
+# preamble
+#-----------------------------
+library(here)
+here()
+
+# load packages
+library(tidyverse)
+library(gridExtra)
+
+# set up for parallel computing
+# configure for a laptop (use only 3 cores)
+library(foreach)
+library(doParallel)
+registerDoParallel(cores=3)
+
+# bright color blind palette:  https://personal.sron.nl/~pault/ 
+cblack <- "#000004FF"
+cblue <- "#3366AA"
+cteal <- "#11AA99"
+cgreen <- "#66AA55"
+cchartr <- "#CCCC55"
+cmagent <- "#992288"
+cred <- "#EE3333"
+corange <- "#EEA722"
+cyellow <- "#FFEE33"
+cgrey <- "#777777"
+
+```
+
+
+```{r load data}
+#-----------------------------
+# load the formatted data
+# created with 
+# asembo-enteric-ab-data-format.Rmd -->
+# Fig1sup3-asembo-ab-distributions.Rmd
+#-----------------------------
+dl <- readRDS(here("data","asembo_analysis2.rds"))
+
+```
+
+# Identify incident changes
+Identify children whose status changed  between enrollment and follow-up. Those who changed from negative to positive are seroconverters (`seroi` below), and those who changed from positive to negative are seroreverters (`seror` below).
+
+```{r long incidence}
+
+#-----------------------------
+# identify incident 
+# seroconversions and reversions
+# based on a change in seropositivity
+# status and
+# based on a 4-fold change in MFI
+# to above the cutoff (seroconversion)
+# or starting above cutoff (seroreversion)
+#-----------------------------
+dlp <- dl %>%
+  group_by(antigen,antigenf,childid) %>%
+  mutate(measA=ifelse(time=="A",1,0),
+         measA=max(measA),
+         measB=ifelse(time=="B",1,0),
+         measB=max(measB),
+         seroposA=ifelse(time=="A",seropos,NA),
+         seroposA=max(seroposA,na.rm=TRUE),
+         seroposB=ifelse(time=="B",seropos,NA),
+         seroposB=max(seroposB,na.rm=TRUE),
+         seroi=ifelse(seroposB==1 & seroposA==0,1,0),
+         seror=ifelse(seroposB==0 & seroposA==1,1,0),
+         
+         mfiA=ifelse(time=="A",logmfi,NA),
+         mfiA=max(mfiA,na.rm=TRUE),
+         mfiB=ifelse(time=="B",logmfi,NA),
+         mfiB=max(mfiB,na.rm=TRUE),
+         seroi4fold=ifelse(logmfidiff>log10(4) & mfiB>serocut,1,0),
+         seror4fold=ifelse(logmfidiff< - log10(4) & mfiA>serocut,1,0)
+  ) 
+
+
+
+#-----------------------------
+# drop 41 children that were not 
+# measured at both time points
+#-----------------------------
+table(dlp$antigen,(dlp$measA==1 & dlp$measB==1))
+dlp <- dlp %>% filter(measA==1 & measB==1) %>%
+  select(-measA,-measB)
+
+
+```
+
+# Seroincidence rate estimates
+Estimates of the mean seroincidence rates during the study. The rates assume that incident sero-conversions and sero-reversions happened at the mid-point between measurements for each child.
+
+As with the age-prevalence curve analysis, use information across multiple recombinant antigens for each pathogen when identifying risk periods and incident seroconversions and seroreversions.
+
+```{r composite antigens}
+#-----------------------------
+# create composite 
+# seroincidence indicators
+# that use information from
+# multiple antigens for the
+# same pathogen
+#-----------------------------
+
+dlp2 <- dlp %>%
+  ungroup() %>% 
+  group_by(pathogen,childid) %>%
+  mutate(seroi=max(seroi),
+         seror=max(seror),
+         seroi4fold=max(seroi4fold),
+         seror4fold=max(seror4fold)
+  ) %>%
+  group_by(pathogen,childid,time) %>%
+  slice(1) %>%
+  mutate(antigenf=factor(antigenf,
+                         levels=c("Giardia VSP-3 or VSP-5",
+                                  "Cryptosporidium Cp17 or Cp23",
+                                   "E. histolytica LecA",
+                                  "Salmonella LPS groups B or D",
+                                  "ETEC toxin beta subunit",
+                                  "Cholera toxin beta subunit",
+                                  "Campylobacter p18 or p39")) 
+         ) 
+
+dlp2$antigen[dlp2$pathogen=="Giardia"] <- "vsp3vsp5"
+dlp2$antigen[dlp2$pathogen=="Cryptosporidium"] <- "cp17cp23"
+dlp2$antigen[dlp2$pathogen=="Salmonella"] <- "salbsald"
+dlp2$antigen[dlp2$pathogen=="Campylobacter"] <- "p18p39"
+
+dlp2$antigenf[dlp2$pathogen=="Giardia"] <- "Giardia VSP-3 or VSP-5"
+dlp2$antigenf[dlp2$pathogen=="Cryptosporidium"] <- "Cryptosporidium Cp17 or Cp23"
+dlp2$antigenf[dlp2$pathogen=="Salmonella"] <- "Salmonella LPS groups B or D"
+dlp2$antigenf[dlp2$pathogen=="Campylobacter"] <- "Campylobacter p18 or p39"
+
+dlp2 <- dlp2 %>%
+  filter(!is.na(antigenf)) %>%
+  select(pathogen,antigen,antigenf,
+         childid,time,tr,sex,age,agediff,
+         roccut,mixcut,unexp,unexpcut,serocut,serocut_desc,
+         posroc,posmix,posunex,seropos,seroi,seror,seroi4fold,seror4fold) %>%
+  arrange(pathogen,antigenf,childid,time)
+
+
+```
+
+## Estimate prospective incidence rates based on seropositivity 
+```{r long incidence rate estimates}
+#-----------------------------
+# estimate sero-incidence rates
+# for conversion and reversion
+# estimate SEs with a bootstrap
+#-----------------------------
+#-----------------------------
+# filter to just 1 obs per child
+# (enrolment information)
+#-----------------------------
+dp <- dlp2 %>% filter(time=="A")
+
+#-----------------------------
+# estimate time at risk
+# for seroconversion and reversion
+# assumed to be 1/2 of time
+# between measurements
+# if indivs are seropositive
+# at measurement 1 they are
+# not at risk for seroconversion
+# (and vice-versa for seroreversion)
+#-----------------------------
+dp <- dp %>%
+  mutate(ptc = ifelse(seropos==0,agediff,0),
+         ptc = ifelse(seropos==0 & seroi==1,agediff/2,ptc),
+         ptr = ifelse(seropos==1,agediff,0),
+         ptr = ifelse(seropos==1 & seror==1,agediff/2,ptr))
+
+#-----------------------------
+# estimate incidence rates
+# for each antibody
+# units are episodes per child-year
+# (dividing person time in months by 12)
+#-----------------------------
+rate_ests <- dp %>%
+  group_by(antigenf) %>%
+  summarize(ni=sum(seroi,na.rm=T),
+            nit=sum(ptc,na.rm=T)/12,
+            nr=sum(seror,na.rm=T),
+            nrt=sum(ptr,na.rm=T)/12) %>%
+  mutate(seroi=ni/nit,
+         seror=nr/nrt)
+
+#-----------------------------
+# get bootstrap CIs
+#-----------------------------
+dboot <- dp %>%
+  group_by(pathogen,antigen,antigenf) %>%
+  select(pathogen,antigen,antigenf,seroi,seror,ptc,ptr)
+
+set.seed(123)
+bootests <- foreach(brep=1:1000,.combine=rbind) %dopar% {
+    di <- sample_frac(dboot,size=1,replace=TRUE) %>%
+      summarize_all(function(x) sum(x,na.rm=TRUE))
+    }
+
+rate_cis <- bootests %>% 
+  group_by(pathogen,antigen,antigenf) %>%
+  mutate(sero_c=seroi/(ptc/12),sero_r=seror/(ptr/12)) %>%
+  summarize(seroi_lb = quantile(sero_c,probs=c(0.025)),
+            seroi_ub = quantile(sero_c,probs=c(0.975)),
+            seror_lb = quantile(sero_r,probs=c(0.025),na.rm=T),
+            seror_ub = quantile(sero_r,probs=c(0.975),na.rm=T)
+            )
+
+rate_ests <- left_join(rate_ests,rate_cis,by="antigenf") %>%
+  select(pathogen,antigen,antigenf,ni,nit,starts_with("seroi"),nr,nrt,starts_with("seror"))
+
+
+```
+
+### Table of results
+```{r long incidence rate tables}
+rate_ests %>%
+  select(antigenf,nit,ni,starts_with("seroi")) %>%
+  knitr::kable(digits=1,
+             caption="Incidence rates seroconversion per child year",
+             col.names = c("Antigen","Years at risk","n events","Incidence per year","min95","max95"),
+             row.names = FALSE)
+
+
+rate_ests %>%
+  select(antigenf,nrt,nr,starts_with("seror")) %>%
+  knitr::kable(digits=1,
+             caption="Incidence rates seroreversion per child year",
+             col.names = c("Antigen","Years at risk","n events","Incidence per year","min95","max95"),
+             row.names = FALSE)
+
+```
+
+
+## Estimate prospective incidence rates based on 4-fold IgG increase
+```{r long incidence rate estimates 4fold}
+#-----------------------------
+# estimate sero-incidence rates
+# for conversion and reversion
+# estimate SEs with a bootstrap
+#-----------------------------
+#-----------------------------
+# filter to just 1 obs per child
+# (enrolment information)
+#-----------------------------
+dp <- dlp2 %>% filter(time=="A")
+
+#-----------------------------
+# estimate time at risk
+# for seroconversion and reversion
+# assumed to be 1/2 of time
+# between measurements
+# if indivs are seropositive
+# at measurement 1 they are
+# not at risk for seroconversion
+# (and vice-versa for seroreversion)
+# the exception are individuals
+# who had a 4-fold increase in
+# IgG who were above the cutoff
+# This is admittedly a gray zone,
+# but this harmonizes it with
+# the definition used in the 
+# repeated measures analysis in
+# the Haiti cohort. If this change
+# were not made, then this definition
+# would be identical to the definition
+# used simply based on crossing 
+# the seroposivity cutoff
+#-----------------------------
+dp <- dp %>%
+  mutate(ptc = ifelse(seropos==0,agediff,0),
+         # ptc = ifelse(seropos==0 & seroi4fold==1,agediff/2,ptc), # not adding converters
+         ptc = ifelse(seroi4fold==1,agediff/2,ptc),
+         ptr = ifelse(seropos==1,agediff,0),
+         # ptr = ifelse(seropos==1 & seror4fold==1,agediff/2,ptr))# not adding converters
+         ptr = ifelse(seror4fold==1,agediff/2,ptr))
+
+#-----------------------------
+# estimate incidence rates
+# for each antibody
+# units are episodes per child-year
+# (dividing person time in months by 12)
+#-----------------------------
+rate_ests_4fold <- dp %>%
+  group_by(antigenf) %>%
+  summarize(ni=sum(seroi4fold,na.rm=T),
+            nit=sum(ptc,na.rm=T)/12,
+            nr=sum(seror4fold,na.rm=T),
+            nrt=sum(ptr,na.rm=T)/12) %>%
+  mutate(seroi=ni/nit,
+         seror=nr/nrt)
+
+#-----------------------------
+# get bootstrap CIs
+#-----------------------------
+dboot <- dp %>%
+  group_by(pathogen,antigen,antigenf) %>%
+  select(pathogen,antigen,antigenf,seroi4fold,seror4fold,ptc,ptr)
+
+set.seed(123)
+bootests <- foreach(brep=1:1000,.combine=rbind) %dopar% {
+    di <- sample_frac(dboot,size=1,replace=TRUE) %>%
+      summarize_all(function(x) sum(x,na.rm=TRUE))
+    }
+
+rate_cis <- bootests %>% 
+  group_by(pathogen,antigen,antigenf) %>%
+  mutate(sero_c=seroi4fold/(ptc/12),sero_r=seror4fold/(ptr/12)) %>%
+  summarize(seroi_lb = quantile(sero_c,probs=c(0.025)),
+            seroi_ub = quantile(sero_c,probs=c(0.975)),
+            seror_lb = quantile(sero_r,probs=c(0.025),na.rm=T),
+            seror_ub = quantile(sero_r,probs=c(0.975),na.rm=T)
+            )
+
+rate_ests_4fold <- left_join(rate_ests_4fold,rate_cis,by="antigenf") %>%
+  select(pathogen,antigen,antigenf,ni,nit,starts_with("seroi"),nr,nrt,starts_with("seror"))
+
+
+```
+
+### Table of results
+```{r long incidence rate tables 4fold}
+rate_ests_4fold %>%
+  select(antigenf,nit,ni,starts_with("seroi")) %>%
+  knitr::kable(digits=1,
+             caption="Incidence rates seroconversion per child year",
+             col.names = c("Antigen","Years at risk","n events","Incidence per year","min95","max95"),
+             row.names = FALSE)
+
+
+rate_ests_4fold %>%
+  select(antigenf,nrt,nr,starts_with("seror")) %>%
+  knitr::kable(digits=1,
+             caption="Incidence rates seroreversion per child year",
+             col.names = c("Antigen","Years at risk","n events","Incidence per year","min95","max95"),
+             row.names = FALSE)
+
+```
+
+# Cumulative incidence of seroconversion 
+Estimates of the cumulative incidence of sero-conversion and sero-reversion over a 6-7 month period, by antigen
+
+```{r long incidence proportion estimates}
+#-----------------------------
+# estimate sero-incidence
+# for conversion and reversion
+# using exact binomial CIs
+#-----------------------------
+
+#-----------------------------
+# drop 6 children that were
+# measured longitudinally but
+# not at 6- or 7 months between
+# measurements to ensure a
+# reasonably consistent risk 
+# period
+#-----------------------------
+table(dp$agediff[dp$antigen=="etec"])
+dp2 <- dp %>% filter(agediff>=6 & agediff<=7)
+
+#-----------------------------
+# function to estimate exact binomial CIs for
+# incident sero-conversion and sero-reversion
+#-----------------------------
+exactprev <- function(x) {
+  # x : a binary indicator of the outcome (1/0)
+  tabx <- table(x)
+  if(length(tabx)<2) {
+    if(names(tabx)=="1") {
+      tabx <- c(0,tabx)
+    } else{
+      tabx <- c(tabx,0)
+    }
+  } 
+  estx <- binom.test(x=tabx[2],n=sum(tabx))
+  res <- c(estx$parameter,estx$statistic,estx$estimate,estx$conf.int)
+  names(res) <- c("N","n","mean","min95","max95")
+  return(res)
+}
+
+#-----------------------------
+# incident sero-conversions
+# at risk conditional on
+# being sero-negative at the
+# first measurement (dp$seropos==0)
+#-----------------------------
+est_seroi <- foreach(ab=levels(dp2$antigenf),.combine=rbind) %do% {
+  res <- exactprev(dp2$seroi[dp2$antigenf==ab & dp2$seropos==0])
+  res <- data.frame(pathogen=dp2$pathogen[dp2$antigenf==ab][1],
+                    antigenf=ab,
+                    N=res[1],n=res[2],
+                    mean=res[3],min95=res[4],max95=res[5])
+  res
+}
+#-----------------------------
+# incident sero-reversions
+# at risk conditional on
+# being sero-positive at the
+# first measurement (dp$seropos==1)
+#-----------------------------
+est_seror <- foreach(ab=levels(dp2$antigenf),.combine=rbind) %do% {
+  res <- exactprev(dp2$seror[dp2$antigenf==ab & dp2$seropos==1])
+  res <- data.frame(pathogen=dp2$pathogen[dp2$antigenf==ab][1],
+                    antigenf=ab,
+                    N=res[1],n=res[2],
+                    mean=res[3],min95=res[4],max95=res[5])
+  res
+}
+```
+## Tables of results
+```{r  cumulative incidence tables}
+est_seroi %>%
+  select(-pathogen) %>%
+  mutate(mean=mean*100,min95=min95*100,max95=max95*100) %>%
+  knitr::kable(digits=0,
+             caption="Cumulative incidence of seroconversion over a 6-month period",
+             col.names = c("Antigen","N at risk","n events","Incidence per 100","min95","max95"),
+             row.names = FALSE)
+
+
+est_seror %>%
+  select(-pathogen) %>%
+  mutate(mean=mean*100,min95=min95*100,max95=max95*100) %>%
+  knitr::kable(digits=0,
+             caption="Cumulative incidence of seroreversion over a 6-month period",
+             col.names = c("Antigen","N at risk","n events","Incidence per 100","min95","max95"),
+             row.names = FALSE)
+
+```
+
+
+
+# Fig 6 Incidence rate figure
+**This is Figure 6 in the manuscript**
+```{r seroincidence rate figure}
+
+# reshape the incident rate estimates to long
+rate_ests_i <- rate_ests %>% 
+  select(pathogen,antigen,antigenf,n=ni,nt=nit,rate=seroi,rate_lb=seroi_lb,rate_ub=seroi_ub) %>%
+  mutate(outcome="Seroconversion")
+
+rate_ests_r <- rate_ests %>% 
+  select(pathogen,antigen,antigenf,n=nr,nt=nrt,rate=seror,rate_lb=seror_lb,rate_ub=seror_ub) %>%
+  mutate(outcome="Seroreversion")
+rate_ests_long <- bind_rows(rate_ests_i,rate_ests_r) %>%
+  arrange(antigenf,outcome)
+
+# Drop cholera because of potential cross-reactivity with ETEC heat labile toxin beta subunit
+rate_plot_d <- rate_ests_long %>%
+  filter(pathogen!="V. cholerae")
+
+# bright color-blind palette defined in an earlier code chunk
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cgrey)
+# pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
+
+rateplot <- ggplot(data=rate_plot_d,
+                 aes(x=antigenf,y=rate,
+                     color=antigenf,fill=antigenf, 
+                     shape=outcome)) +
+  geom_pointrange(aes(ymin=rate_lb,ymax=rate_ub,group=outcome),bg="white",
+                  position=position_nudge(x=rep(c(-0.1,0.1),6) ) ) +
+  labs(x="",y="Incidence rate per child-year\n") +
+  scale_y_continuous(breaks=0:6)+
+  scale_shape_manual(values=c(19,22)) +
+  scale_fill_manual(values=pcols) +
+  scale_color_manual(values=pcols) +
+  guides(color = FALSE, fill = FALSE)+
+  coord_cartesian(ylim=c(0,6))+
+  theme_minimal() +
+  theme(legend.position = "top", legend.title=element_blank(),
+        axis.text.x=element_blank()) 
+
+
+```
+
+```{r seroincidence proportion figure}
+
+
+# bind the incidence proportion estimates together for plot aesthetics
+est_sero <- est_seroi %>%
+  mutate(outcome="Seroconversion") %>%
+  bind_rows(est_seror) %>%
+  mutate(outcome=ifelse(is.na(outcome),"Seroreversion",outcome)) %>%
+  arrange(antigenf,outcome)
+
+# Drop cholera because of potential cross-reactivity with ETEC heat labile toxin beta subunit
+cuminc_plot_d <- est_sero %>%
+  filter(pathogen!="V. cholerae")
+
+# bright color-blind palette defined in an earlier code chunk
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cgrey)
+# pcols <- c(corange,cred,cmagent,cblue,cteal,cgreen,cgrey)
+
+seroip <- ggplot(data=cuminc_plot_d,
+                 aes(x=antigenf,y=mean,
+                     color=antigenf,fill=antigenf, 
+                     shape=outcome)) +
+  geom_pointrange(aes(ymin=min95,ymax=max95,group=outcome),bg="white",
+                  position=position_nudge(x=rep(c(-0.1,0.1),6) ) ) +
+  
+  # facet_wrap(~factor(outcome),nrow=2,ncol=1)+
+  labs(x="",y="Proportion seroconverted (6 month period)") +
+  scale_y_continuous(breaks=seq(0,1,by=0.2))+
+  scale_shape_manual(values=c(19,22)) +
+  scale_fill_manual(values=pcols) +
+  scale_color_manual(values=pcols) +
+  guides(color = FALSE, fill = FALSE)+
+  coord_cartesian(ylim=c(0,1))+
+  theme_minimal() +
+  theme(legend.position = "none", legend.title=element_blank(),
+        axis.text.x=element_text(size=8,angle=45,hjust = 1,color=pcols),
+        strip.text = element_text(size=12)) 
+
+
+
+```
+
+```{r composite rate figure}
+ratep <- grid.arrange(rateplot,seroip,ncol=1,nrow=2,heights=c(4,5))
+
+
+# save pdf and a TIFF version
+ggsave(file=here("figs","Fig6-asembo-seroincidence.pdf"),plot=ratep,device="pdf",height=8,width=4)
+ggsave(file=here("figs","Fig6-asembo-seroincidence.TIFF"),plot=ratep,device="tiff",height=8,width=4)
+
+```
+
+# Compare seroconversion rates with seroprevalence
+For pathogens without seroreversion, age-dependent seroprevalence is a measure of the cumulative distribution of exposure. In turn, this is a measure of the cumulative incidence of seroconversion. Since the seroreversion rate approahed zero for many pathogens studied, we would hypothesize there would be a strong relationship between seroprevalence and the average seroconversion rate over the period.  Examine this relationship for each pathogen.  Store results of this comparison for plotting in the separate Figure 7 notebook that also includes estimates from the Haiti cohort.
+
+```{r seroprevalence}
+serop <- dlp2 %>%
+  group_by(antigenf) %>%
+  summarize(seroprev=mean(seropos))
+
+d_seropi <- left_join(rate_ests,serop,by="antigenf") %>%
+  mutate(method="Seropositivity cutoff")
+d_serop4fold <- left_join(rate_ests_4fold,serop,by="antigenf")  %>%
+  mutate(method="4-fold increase in MFI")
+
+d_serop <- bind_rows(d_seropi,d_serop4fold) %>%
+  mutate(method=factor(method))
+
+
+pcols <- c(cred,corange,cgreen,cteal,cblue,cgrey,cmagent)
+
+pserop <- ggplot(data=d_serop,aes(x=seroprev,y=seroi,color=antigenf)) +
+  geom_pointrange(aes(,ymin=seroi_lb,ymax=seroi_ub),size=0.7) +
+  # geom_text(aes(label=antigenf),nudge_x = d_serop$nudge,hjust=d_serop$just,size=2)+
+  facet_grid(.~method)+
+  scale_x_continuous(breaks=seq(0,1,by=0.2),labels=seq(0,100,by=20))+
+  scale_y_continuous(breaks=0:10)+
+  scale_color_manual(values=pcols,guide=guide_legend(title="Pathogen")) +
+  coord_cartesian(xlim=c(0,1),ylim=c(0,10))+
+  labs(x="Seroprevalence (%)",y="Seroconversion rate per child-year")+
+  theme_minimal() 
+  # theme(legend.position="none")
+
+pserop
+
+
+```
+
+
+# Save incidence estimates
+```{r save estimates}
+saveRDS(rate_ests_long,file=here("output","asembo-enteric-ab-ests-incidencerates.rds"))
+saveRDS(est_seroi,file=here("output","asembo-enteric-ab-ests-seroconversion.rds"))
+saveRDS(est_seror,file=here("output","asembo-enteric-ab-ests-seroreversion.rds"))
+saveRDS(d_serop,file=here("output","asembo-enteric-ab-ests-seroprev-vs-rates.rds"))
+
+```
+
+# Session Info
+```{r session info}
+sessionInfo()
+```
+
+
+
+
