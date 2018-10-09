@@ -1,6 +1,6 @@
 ---
-title: Enteropathogen seroepidemiology among children in high transmission settings
-subtitle: Supplementary Information File 4. Estimation of seroconversion rates assuming cross-sectional ("current status") data in Kenya.
+title: Enteropathogen seroepidemiology among children in low-resource settings
+subtitle: Supplementary Information File 4. Estimation of seroconversion rates assuming cross-sectional ("current status") data in Kenya. Figure 6 - supplement 1
 output:
   html_document:
     highlight: haddock
@@ -69,10 +69,29 @@ cgrey <- "#777777"
 # composite antigens
 # created with:
 # asembo-enteric-ab-data-format.Rmd -->
-# asembo-enteric-ab-distributions.Rmd -->
+# Fig1sup3-asembo-ab-distributions.Rmd -->
 # asembo-enteric-ab-agecurves.Rmd
 #-----------------------------
 d <- readRDS(here("output","asembo-enteric-ab-gamfits-seroprev.rds"))
+
+#--------------------------------
+# exclude cholera beta toxin because
+# of difficulty in its interpretation
+# because of cross-reactivity with ETEC
+#--------------------------------
+dfoi <- d %>%
+  filter(!antigen %in% c("cholera")) %>%
+  mutate(antigenf=droplevels(antigenf))
+
+#--------------------------------
+# filter to children measured longitudinally
+# to ensure the identical analysis population
+#--------------------------------
+dfoi <- dfoi %>%
+  group_by(childid,antigen) %>%
+  mutate(nobs=n()) %>%
+  filter(nobs>1) %>%
+  ungroup()
 
 
 ```
@@ -96,9 +115,11 @@ The age-specific force of infection is estimated as the hazard of seroconverting
 
 ### Confirm approximate monotonicity
 
-Quick plot to confirm approximate monotonicity assumptions that lead us to exclude rotavirus (since the age-prevalence curve is dominated by sero-reversion).
+Quick plot to confirm approximate monotonicity assumptions.
 ```{r seroprevalence curves, fig.width=6,fig.height=6}
-pcurve <- ggplot(data=d,aes(x=age)) +
+
+
+pcurve <- ggplot(data=dfoi,aes(x=age)) +
   geom_smooth(aes(y=seropos),se=FALSE,method="loess")+
   # plot aesthetics
   facet_wrap(~antigenf,nrow=6,ncol=2) +
@@ -110,14 +131,7 @@ pcurve <- ggplot(data=d,aes(x=age)) +
 
 pcurve
 
-#--------------------------------
-# restrict the data to antigens
-# with increasing seroprevalence
-# exclude rotavirus (decreasing)
-#--------------------------------
-dfoi <- d %>%
-  filter(!antigen %in% c("rotavirus")) %>%
-  mutate(antigenf=droplevels(antigenf))
+
 
 ```
 
@@ -147,7 +161,7 @@ glmfoi <- foreach(ab=levels(dfoi$antigenf),.combine=rbind) %dopar% {
 
 knitr::kable(glmfoi,digits=3,
              caption="Average incidence rate per child month estimated from a cross-sectional seroprevalence curve, exponential (constant rate) model",
-             col.names = c("Antigen","Incidence per month","min95","max95"),
+             col.names = c("Pathogen","Incidence per month","min95","max95"),
              row.names = FALSE)
 
 
@@ -160,7 +174,7 @@ For some infectious diseases, like malaria, it is common to fit a reversible cat
   P(Y=1|A)  =  \frac{\lambda}{\lambda + \rho} \left[1 - \exp( - (\lambda + \rho)\cdot A ) \right] 
 \end{equation}
 
-Above, we showed that a cross-sectional seroprevalence measurement is equal to the difference in the cumulative distribution functions of seroconversion times and seroreversion times: $P(Y=1 | A, W) = P(T_1 ≤ A | A, W) - P(T_2 ≤ A | A, W)$. This means there is no information about the joint distribution of $T_2$ and $T_1$, which is required to estimate seroreversion. Therefore, we will estimate the seroconversion rate under the model assuming a range of fixed seroreversion rates (to our knowledge, there are no good estimates of seroreversion rates for the enteric pathogens included in this study).  We use the sero-reversion rates estimated prospectively in the cohort.
+Above, we showed that a cross-sectional seroprevalence measurement is equal to the difference in the cumulative distribution functions of seroconversion times and seroreversion times: $P(Y=1 | A, W) = P(T_1 ≤ A | A, W) - P(T_2 ≤ A | A, W)$. This means there is no information about the joint distribution of $T_2$ and $T_1$, which is required to estimate seroreversion. Therefore, we will estimate the seroconversion rate under the model assuming a range of fixed seroreversion rates (to our knowledge, there are no good estimates of seroreversion rates for the enteric pathogens included in this study).  We use the sero-reversion rates estimated prospectively in the cohort.  Notice that since the seroreversion rates are 0 for both ETEC and _Campylobacter_, that the rate estimates from the SIS model are essentially identical to the estimates from the exponential proportional hazards model (above), which is a useful internal validity check since they should be the same.
 
 ```{r RC model}
 #--------------------------------
@@ -236,7 +250,7 @@ rcmests <- foreach(ab=levels(dfoi$antigenf),.combine=rbind) %dopar%  {
 
 knitr::kable(rcmests,digits=3,
              caption="Average incidence rate per child month estimated from a cross-sectional seroprevalence curve, reversible catalytic model",
-             col.names = c("Antigen","Sero-reversion rate","Incidence per month","min95","max95"),
+             col.names = c("Pathogen","Sero-reversion rate","Incidence per month","min95","max95"),
              row.names = FALSE)
 
 
@@ -447,6 +461,7 @@ foicompp <- ggplot(data=foicamp,aes(x=age,y=foi)) +
   theme_minimal()
 foicompp
 ```
+
 ## Estimate FOI for each pathogen
 
 Estimate semiparamteric age-specific seroconversion rate (force of infection) using splines
@@ -497,8 +512,6 @@ pfoi <- ggplot(data=gamfoi,aes(x=age,fill=antigenf,color=antigenf)) +
 
 pfoi
 
-# save a PDF version
-ggsave("~/enterics-seroepi/figs/asembo-ab-agecurves-foi.pdf",plot=pfoi,device="pdf",width=5,height=7)
 ```
 
 Compact figure with all pathogens on the same panel
@@ -523,58 +536,14 @@ pfoi2 <- ggplot(data=gamfoi,aes(x=age,group=antigenf,color=antigenf,fill=antigen
   scale_x_continuous(breaks=seq(4,16,by=2))+
   # scale_y_continuous(breaks=seq(0,1,by=0.2),labels=sprintf("%1.0f",seq(0,1,by=0.2)*100))+
   coord_cartesian(ylim=c(0,0.5),xlim=c(4,17))+
-  labs(x="Age in months",y="Seroconversion rate") +
+  labs(x="Age in months",y="Seroconversion rate per child-month") +
   scale_fill_manual(values=pcols) +
-  scale_color_manual(values=pcols) +
+  scale_color_manual(values=pcols,guide=guide_legend(title="Pathogen")) +
   theme_minimal(base_size = 14) +
   theme(legend.position = "right"
         )
 
 pfoi2
-
-
-```
-
-Compact figure with all pathogens on the same panel and nicer labels
-```{r foi figure small with labels}
-# bright color-blind palette defined in an earlier code chunk
-pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cgrey)
-# pcols <- c(corange,cred,cmagent,cblue,cteal,cgreen,cgrey)
-
-
-plabs <- gamfoi %>%
-  filter(age==17) %>%
-  mutate(foi=ifelse(antigenf=="E. histolytica LecA",foi-0.002,foi),
-         foi=ifelse(antigenf=="Salmonella LPS groups B + D",foi+0.002,foi))
-
-pfoi2 <- ggplot(data=gamfoi,aes(x=age,group=antigenf,color=antigenf,fill=antigenf)) +
-  # foi estiamte from splines
-  geom_line(aes(y=foi)) +
-  # horizontal line at 0
-  geom_hline(aes(yintercept=0)) +
-  # pathogen labels
-  geom_text(data=plabs,aes(x=age+0.5,y=foi,label=antigenf),
-            hjust=0)+
-  # plot aesthetics
-  scale_x_continuous(breaks=seq(4,16,by=2))+
-  # scale_y_continuous(breaks=seq(0,1,by=0.2),labels=sprintf("%1.0f",seq(0,1,by=0.2)*100))+
-  coord_cartesian(ylim=c(0,0.5),xlim=c(4,17))+
-  labs(x="Age in months",y="Seroconversion rate") +
-  scale_fill_manual(values=pcols) +
-  scale_color_manual(values=pcols) +
-  theme_minimal(base_size = 14) +
-  theme(legend.position = "none",
-        plot.margin = unit(c(1,6,1,1),"cm")
-        )
-
-# Code to override clipping for labels
-pfoi3 <- ggplot_gtable(ggplot_build(pfoi2))
-pfoi3$layout$clip[pfoi3$layout$name == "panel"] <- "off"
-grid.draw(pfoi3)
-# pdf(file="~/enterics-seroepi/figs/asembo-ab-agecurves-foi-small.pdf",width=9,height=8)
-# grid.draw(pfoi3)
-# dev.off()
-
 
 
 ```
@@ -669,7 +638,7 @@ popavgfoi <- foreach(ab=levels(dfoi$antigenf),.combine=rbind) %dopar% {
 
 knitr::kable(select(popavgfoi,-foi_se),digits=3,
              caption="Population-average incidence rate per child month estimated from a cross-sectional seroprevalence curve",
-             col.names = c("Antigen","Incidence per month","min95","max95"),
+             col.names = c("Pathogen","Incidence per month","min95","max95"),
              row.names = FALSE)
 
 
@@ -740,12 +709,12 @@ avgfoi <- foreach(ab=levels(dfoi$antigenf),.combine=rbind) %dopar% {
 
 knitr::kable(select(avgfoi,-mufoi_se),digits=3,
              caption="Average incidence rate per child month estimated from a cross-sectional seroprevalence curve",
-             col.names = c("Antigen","Incidence per month","min95","max95"),
+             col.names = c("Pathogen","Incidence per month","min95","max95"),
              row.names = FALSE)
 
 ```
 
-Indeed the estimates are very similar with those above, averaged over the empirical distribution of age.  Given this similarity, the population-averaged estimates will be used below in the comparison across methods.
+Indeed the estimates are very similar with those above, averaged over the empirical distribution of age. This is because measurements were almost uniformly distributed over the age range in this cohort.  Given this similarity, the population-averaged estimates will be used below in the comparison across methods.
 
 # Comparison of estimates
 
@@ -754,11 +723,16 @@ Retrieve the results from the longitudinal analysis of the data and compare esti
 #--------------------------------
 # load the prospective estimates
 # these are incidence per year
-# from asembo-enteric-ab-long-analysis.Rmd
+# created with script:
+# Fig6-asembo-incidence-analysis.Rmd
+#
+# Exclude cholera due to cross-reactivity
+# with ETEC and thus difficulty of 
+# interpretation
 #--------------------------------
 est_long <- readRDS("~/enterics-seroepi/output/asembo-enteric-ab-ests-incidencerates.rds") %>%
-  filter(outcome=="Seroconversion") %>%
-  mutate(method="Longitudinal") %>%
+  filter(outcome=="Seroconversion" & antigen!="cholera") %>%
+  mutate(method="Longitudinal") %>% 
   select(method,antigenf,starts_with("rate")) %>%
   # convert rates to per-month (rather than per-year)
   mutate(rate=rate,rate_lb=rate_lb,rate_ub=rate_ub)
@@ -792,6 +766,8 @@ rate_comp <- bind_rows(est_long,est_xc,est_cr,est_rcm) %>%
   arrange(antigenf,method)
 
 ```
+#Figure 6 - supplement 1, Rate Comparison
+
 Create a figure to summarize the comparison
 
 **This is Figure 6 - supplement 1**
@@ -799,7 +775,7 @@ Create a figure to summarize the comparison
 ```{r incidence long xc comp figure}
 
 # pcols <- c(cblack,corange,cteal,cmagent)
-pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
 # pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
 
 
@@ -807,9 +783,7 @@ pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
 ratecomp_plot <- ggplot(data=rate_comp,aes(x=antigenf,y=rate,color=antigenf,fill=method,shape=method)) +
   geom_pointrange(aes(ymin=rate_lb,ymax=rate_ub),
                   fill="white",size=0.5,
-                  position=position_nudge(x=c(rep(c(-0.3,-0.1,0.1,0.3),3),
-                                              0,
-                                              rep(c(-0.3,-0.1,0.1,0.3),4)))) +
+                  position=position_nudge(x=rep(c(-0.3,-0.1,0.1,0.3),3)) )+
   
   labs(x="",y="seroconversion rate per child-year") +
   scale_y_continuous(breaks=0:7)+
@@ -824,14 +798,52 @@ ratecomp_plot <- ggplot(data=rate_comp,aes(x=antigenf,y=rate,color=antigenf,fill
 
 ratecomp_plot
 
-# save a PDF version
-ggsave("~/enterics-seroepi/figs/asembo-ab-seroincidence-rate-comparison.pdf",plot=ratecomp_plot,device="pdf",width=8.5,height=4)
+# save PDF and TIFF versions
+ggsave(here("figs","Fig6sup1-asembo-ab-seroincidence-rate-comparison.pdf"),plot=ratecomp_plot,device="pdf",width=7.5,height=4)
+ggsave(here("figs","Fig6sup1-asembo-ab-seroincidence-rate-comparison.TIFF"),plot=ratecomp_plot,device="tiff",width=7.5,height=4)
+
+```
+Put the estimates on separate scales for lower and higher transmission pathogens to enable clearer comparisons
+
+```{r incidence long xc comp figure 2 panel}
+
+# pcols <- c(cblack,corange,cteal,cmagent)
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+# pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
+
+rate_comp2 <- rate_comp %>%
+  mutate(pathgroup=ifelse(antigenf %in% c("ETEC toxin beta subunit","Campylobacter p18 or p39"),"Higher transmission","Lower transmission"),
+         pathgroup=factor(pathgroup,levels=c("Lower transmission","Higher transmission")))
+
+
+ratecomp_plot2 <- ggplot(data=rate_comp2,aes(color=antigenf,fill=method,shape=method)) +
+  facet_wrap(~pathgroup,scales="free")+
+  geom_pointrange(aes(x=antigenf,y=rate,ymin=rate_lb,ymax=rate_ub),
+                  fill="white",size=0.5,
+                  position=position_nudge(x=rep(c(-0.3,-0.1,0.1,0.3),3)) )+
+  labs(x="",y="seroconversion rate per child-year") +
+  scale_y_continuous(breaks=0:7)+
+  scale_x_discrete(drop=TRUE,aesthetics=c("color"))+
+  # scale_fill_manual(values=pcols) +
+  scale_color_manual(values=pcols,guide=FALSE) +
+  scale_shape_manual(values=c(21,22,23,24),guide_legend(title="Estimation method"))+
+  # coord_cartesian(ylim=c(0,7.5))+
+  theme_minimal() +
+  theme(legend.position = "top",
+        axis.text.x=element_text(size=8,angle=45,hjust = 1),
+        strip.text = element_text(size=12))
+
+ratecomp_plot2
+
+# save PDF and TIFF versions
+# ggsave(here("figs","Fig6sup1-asembo-ab-seroincidence-rate-comparison.pdf"),plot=ratecomp_plot2,device="pdf",width=8,height=4)
+# ggsave(here("figs","Fig6sup1-asembo-ab-seroincidence-rate-comparison.TIFF"),plot=ratecomp_plot2,device="tiff",width=8,height=4)
 
 ```
 
-For most pathogens, the semiparametric estimate of seroconversion rates using splines was close to the rate estimated prospectively. In all cases uncertainty in spline-based estimates of the seroconversion rate derived from seroprevalence was much higher than the prospective rate estimates, as reflected by wider 95% credible intervals.   As Jewell and Emerson (**2013**) demonstrate under a parametric exponential survival model, the asymptotic relative efficiency of a cross-sectional, current-status analysis compared to a longitudinal analysis is 96.1% if the cumulative proportion of failures is 0.5, but only 65.5% if the proportion of failures is 0.9. These results are broadly consistent with that analysis, with the loss in efficiency much higher among ETEC, _V. cholerae_ and _Campylobacter_ with seroprevalence that approached 100% by ages 10-12 months in this cohort.
+For most pathogens, the semiparametric estimate of seroconversion rates using splines was close to the rate estimated prospectively. In all cases uncertainty in spline-based estimates of the seroconversion rate derived from seroprevalence was much higher than the prospective rate estimates, as reflected by wider 95% credible intervals.   As Jewell and Emerson (**2013**) demonstrate under a parametric exponential survival model, the asymptotic relative efficiency of a cross-sectional, current-status analysis compared to a longitudinal analysis is 96.1% if the cumulative proportion of failures is 0.5, but only 65.5% if the proportion of failures is 0.9. These results are broadly consistent with that analysis, with the loss in efficiency much higher among ETEC and _Campylobacter_ with seroprevalence that approached 100% by ages 10-12 months in this cohort.
 
-For most pathogens, seroconversion rate estimates from cross-sectional analysis were biased downward compared to the longitudinal analysis -- a result that would be expected in the case of seroreversion, which was common in this cohort for all but ETEC, _V. cholerae_, and _Campylobacter_.  The parametric cross-sectional analyses assumed a constant rate without seroreversion (exponential survival model, SIR model) or with seroreversion (reversible catalytic model, SIS model), and were genearlly further from the longitudinal estimates than the semiparametric spline; exceptions include _E. histolytica_ and _Salmonella_. Age-specific estimates of the seroconversion rate under the spline model suggest that the rates were not constant over age, so this suggests the parametric models could be slightly more biased. Allowing for sero-reversion in the reversible catalytic model did not remove the bias.
+For most pathogens, seroconversion rate estimates from cross-sectional analysis were biased downward compared to the longitudinal analysis -- a result that would be expected in the case of seroreversion, which was common in this cohort for all but ETEC and _Campylobacter_.  The parametric cross-sectional analyses assumed a constant rate without seroreversion (exponential survival model, SIR model) or with seroreversion (reversible catalytic model, SIS model), and were genearlly further from the longitudinal estimates than the semiparametric spline; exceptions include _E. histolytica_ and _Salmonella_. Age-specific estimates of the seroconversion rate under the spline model suggest that the rates were not constant over age, so this suggests the parametric models could be slightly more biased. Allowing for sero-reversion in the reversible catalytic model did not remove the bias.
 
 # Session Info
 ```{r session info}
