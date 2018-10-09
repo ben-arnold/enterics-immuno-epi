@@ -1,5 +1,6 @@
 ---
-title: "Haiti enteric antibody analysis of longitudinal change"
+title: "Enteropathogen seroepidemiology among children in low-resource settings"
+subtitle: "Haiti antibody profiles, Figure 5 - supplement 1, Table 2"
 output: 
   html_document:
     highlight: haddock
@@ -21,10 +22,9 @@ output:
       smooth_scroll: true
 ---
 
-# Summary
+# Notebook Summary
 
-This script summarizes the change in antibody levels within individual children.  It also evaluates how well increases in antibody levels classify incident seroconversion events, and estimates the sensitivity, specificity, PPV, and NPV for a 4-fold increase and a for a fold increase that maximizes the Youden Index (the difference between the true positive rate and the false positive rate). 
-
+This script plots individual antibody trajectories in the Haitian cohort over successive measurement visits and also by age.  Children were measured up to 9 times, but the majority were measured 5 times, so figures by measurement round include up to 6 visits. 
 
 # Script preamble
 ```{r preamble}
@@ -204,8 +204,7 @@ log10labs <- c(
 
 # Longitudinal child trajectories
 
-
-```{r figure of individual MFI trajectories by age}
+```{r figure of individual MFI trajectories by age, fig.width=7,fig.height=7}
 # Individual trajectories by age
 indivp_age <- ggplot(filter(dl2pp,!is.na(sero_chng)), aes(x=age, y=logmfi, group=factor(id),color=sero_chng) ) +
     facet_wrap(~antigenf,nrow=6,ncol=2)+
@@ -231,11 +230,9 @@ indivp_age <- ggplot(filter(dl2pp,!is.na(sero_chng)), aes(x=age, y=logmfi, group
   
 indivp_age
 
-# save PDF version
-ggsave(filename=here("figs","haiti-indiv-ab-age.pdf"),plot = indivp_age, device='pdf', width=5,height=14)
 ```
 
-```{r figure of individual MFI trajectories by age compare class}
+```{r figure of individual MFI trajectories by age compare class, fig.width=7,fig.height=7}
 # Individual trajectories by age, comparison of classifications
 indivp_age <- ggplot(filter(dl2pp,!is.na(sero_comp)), aes(x=age, y=logmfi, group=factor(id),color=sero_comp) ) +
     facet_wrap(~antigenf,nrow=6,ncol=2)+
@@ -261,11 +258,9 @@ indivp_age <- ggplot(filter(dl2pp,!is.na(sero_comp)), aes(x=age, y=logmfi, group
   
 indivp_age
 
-# save PDF version
-ggsave(filename=here("figs","haiti-indiv-ab-age-comp.pdf"),plot = indivp_age, device='pdf', width=6,height=12)
 ```
 
-```{r figure of individual MFI trajectories by measurement}
+```{r figure of individual MFI trajectories by measurement, fig.width=7,fig.height=7}
 # Individual trajectories by measurement (1 to 6)
 # since only 29 children were measured 7+ times
 table(dl2pp$measnum[dl2pp$antigen=="vsp3"])
@@ -285,7 +280,7 @@ indivp_meas <- ggplot(filter(dl2pp,!is.na(sero_chng) & measnum<=6), aes(x=measnu
     coord_cartesian(ylim=c(0, 4.5),xlim=c(1,6))+
     scale_y_continuous(breaks=0:4,labels=log10labs) +
     scale_x_continuous(breaks=1:6) +
-    theme_minimal() +
+    theme_minimal(base_size=16) +
     theme(
       legend.position="top",
       panel.grid.minor=element_blank(),
@@ -295,11 +290,10 @@ indivp_meas <- ggplot(filter(dl2pp,!is.na(sero_chng) & measnum<=6), aes(x=measnu
   
 indivp_meas
 
-# save PDF version
-ggsave(filename=here("figs","haiti-indiv-ab-measurement.pdf"),plot = indivp_meas, device='pdf', width=6,height=12)
 ```
 
-```{r figure of individual MFI trajectories by measurement compare class}
+# Figure 5 - supplement 1, Individual trajectories by measurement round
+```{r figure of individual MFI trajectories by measurement compare class, fig.width=7,fig.height=7}
 # Individual trajectories by measurement (1 to 6)
 # since only 29 children were measured 7+ times
 # compare seroconversion classification
@@ -327,8 +321,9 @@ indivp_meas2 <- ggplot(filter(dl2pp,!is.na(sero_comp) & measnum<=6), aes(x=measn
   
 indivp_meas2
 
-# save PDF version
-ggsave(filename=here("figs","haiti-indiv-ab-measurement-comp.pdf"),plot = indivp_meas2, device='pdf', width=6,height=12)
+# save PDF and TIFF versions
+ggsave(filename=here("figs","Fig5sup1-haiti-indiv-ab-trajectories-meas.pdf"),plot = indivp_meas, device='pdf', width=6,height=12)
+ggsave(filename=here("figs","Fig5sup1-haiti-indiv-ab-trajectories-meas.TIFF"),plot = indivp_meas, device='tiff', width=6,height=12)
 
 ```
 

@@ -1,5 +1,6 @@
 ---
-title: "Asembo enteric antibody analysis of longitudinal change"
+title: "Enteropathogen seroepidemiology among children in low-resource settings"
+subtitle: "Asembo, Kenya antibody profiles, Figure 5"
 output:
   html_notebook:
     highlight: haddock
@@ -21,11 +22,9 @@ output:
       smooth_scroll: yes
 ---
 
-# Summary
+# Notebook Summary
 
-This script summarizes the change in antibody levels within individual children and also estimates the incidence proportion over a 6-7 month period of seroconversion and seroreversion.
-
-The Asembo study was longitudinal and followed children prospectively. We can estimate the average seroconversion rate among children who were at risk (seronegative) at enrollment and seroconverted during the study. We can also estimate the sero-reversion rate, albeit with very little precision since, with the exception of rotavirus, very few children were at risk (seropositive) at enrollment.
+This script plots individual antibody trajectories in the Asembo, Kenya cohort from enrollment to follow-up. 199 children were measured at both timepoints.
 
 # Script preamble
 ```{r preamble}
@@ -37,14 +36,6 @@ here()
 
 # load packages
 library(tidyverse)
-library(kableExtra)
-library(ROCR)
-
-# set up for parallel computing
-# configure for a laptop (use only 3 cores)
-library(foreach)
-library(doParallel)
-registerDoParallel(cores=3)
 
 # bright color blind palette:  https://personal.sron.nl/~pault/ 
 cblack <- "#000004FF"
@@ -156,9 +147,6 @@ ppq <- ggplot(data=filter(dlp,!is.na(mficat)),aes(x=svy,y=logmfi,group=factor(ch
 
 ppq
 
-# save a PDF version
-ggsave(here("figs","asembo-ab-long-mfi.pdf"),plot=ppq,device="pdf",width=6,height=12)
-
 ```
 
 Create the same figure of individual antibody trajectories between measurements, but limit it to antigens with seroincidence measures, and color the trajectories by seroconversion/reversion status. 
@@ -220,6 +208,7 @@ pp
 
 ```
 
+# Figure 5, antibody trajectories
 ```{r change in antibody seroincidence figure subset, fig.height=9, fig.width=6}
 #-----------------------------
 # final figure, excluding cholera
@@ -255,8 +244,9 @@ pp2 <- ggplot(data=dl3,aes(x=svy,y=logmfi,group=factor(childid),color=icat_comp)
 
 pp2
 
-# save a PDF version
-ggsave(here("figs","asembo-ab-long-seroincidence.pdf"),plot=pp2,device="pdf",width=6,height=10)
+# save PDF and TIFF versions
+ggsave(here("figs","Fig5-asembo-ab-trajectories.pdf"),plot=pp2,device="pdf",width=6,height=10)
+ggsave(here("figs","Fig5-asembo-ab-trajectories.TIFF"),plot=pp2,device="tiff",width=6,height=10)
 
 ```
 
