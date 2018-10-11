@@ -1,5 +1,5 @@
 ---
-title: Enteropathogen seroepidemiology among children in high transmission settings
+title: Enteropathogen seroepidemiology among children in low-resource settings
 subtitle: Supplementary Information File 2. Classification agreement between different seropositivity cutoff approaches.
 output:
   html_document:
@@ -83,7 +83,7 @@ cgrey <- "#777777"
 # load the formatted data
 # created with 
 # haiti-enteric-ab-data-format.Rmd ->
-# haiti-enteric-ab-distributions.Rmd
+# Fig1-haiti-ab-distributions.Rmd
 #-----------------------------
 dl <- readRDS(here("data","haiti_analysis2.rds"))
 
@@ -241,7 +241,7 @@ knitr::kable(dclass3,digits=3,caption="Summary of seropositivity classifications
 # with seropositivity indicators
 # created with:
 # asembo-enteric-ab-data-format.Rmd -->
-# asembo-enteric-ab-distributions.Rmd
+# Fig1sup3-asembo-ab-distributions.Rmd
 #-----------------------------
 dl <- readRDS(here("data","asembo_analysis2.rds"))
 
@@ -252,7 +252,7 @@ dl <- readRDS(here("data","asembo_analysis2.rds"))
 
 ```{r kenya fig,fig.width=6,fig.height=12,warning=FALSE}
 
-pcols <- c(cred,corange,cgreen,cchartr,cteal,cblue,cmagent,cgrey)
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cgrey)
 
 log10labs <- c( 
   expression(10^0),
@@ -406,7 +406,7 @@ In the Tanzania study, children were enrolled between ages 1-9 years. Enteric pa
 # load the formatted data
 # created with 
 # kongwa-enteric-ab-data-format.Rmd ->
-# kongwa-enteric-ab-distributions.Rmd
+# Fig1sup1-kongwa-ab-distributions.Rmd
 #-----------------------------
 dl <- readRDS(here("data","kongwa_analysis2.rds"))
 
