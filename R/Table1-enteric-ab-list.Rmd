@@ -18,9 +18,9 @@ output:
 This notebook summarizes the antigens included in each cohort, the number of children, number of measurements, and seropositivity cutoff values estimated through ROC-based cutoffs, mixture models, or distribution among presumed unexposed (see main article Methods for details).
 
 This notebook draws on datasets created by the notebooks that estimate antibody distributions in each cohort:
-  * Haiti: haiti-enteric-ab-distributions.Rmd -> haiti_analysis2.rds
-  * Kenya: asembo-enteric-ab-distributions.Rmd -> asembo_analysis2.rds
-  * Tanzania: kongwa-enteric-ab-distributions.Rmd -> kongwa_analysis2.rds
+  * Haiti: Fig1-haiti-ab-distributions.Rmd -> haiti_analysis2.rds
+  * Kenya: Fig1sup3-asembo-ab-distributions.Rmd -> asembo_analysis2.rds
+  * Tanzania: Fig1sup1sup2-kongwa-ab-distributions.Rmd -> kongwa_analysis2.rds
 
 
 # Script preamble
@@ -45,6 +45,10 @@ library(kableExtra)
 dh <- readRDS(here("data","haiti_analysis2.rds"))
 da <- readRDS(here("data","asembo_analysis2.rds"))
 dk <- readRDS(here("data","kongwa_analysis2.rds"))
+
+# re-order antigens in Kenya for consistency with other cohorts
+da <- da %>%
+  mutate(antigenf=factor(antigenf,levels=c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Salmonella LPS B","Salmonella LPS D","ETEC toxin beta subunit","Cholera toxin beta subunit","Campylobacter p18","Campylobacter p39")))
 ```
 
 # Summary counts and statistics for each study
@@ -111,8 +115,8 @@ knitr::kable(dtab,digits=2,escape=FALSE,
   kable_styling(bootstrap_options = c("striped","condensed"),full_width = TRUE) %>%
   add_header_above(c(" " = 3, "Seropositivity cutoff, log10(MFI) *" = 3)) %>%
   group_rows("Leogane, Haiti", 1,10) %>%
-  group_rows("Asembo, Kenya", 11,22) %>%
-  group_rows("Kongwa, Tanzania", 23,34) %>%
+  group_rows("Asembo, Kenya", 11,21) %>%
+  group_rows("Kongwa, Tanzania", 22,33) %>%
   footnote(
     general=c("ROC: receiver operator characteristic curve."),
     symbol=c("Seropositivity cutoffs determined using ROC curves based on external known positive and negative specimens, finite Gaussian mixture models, or distribution among the presumed unexposed (see Methods for details). Cutoff values are missing (na) if they could not be estimated in each method; cutoff values based on the presumed unexposed required longitudinal measurements within individual children and therefore could not be estimated for any antigen in the repeated cross-sectional design in Tanzania.",
