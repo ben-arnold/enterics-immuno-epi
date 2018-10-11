@@ -1,5 +1,5 @@
 ---
-title: Enteropathogen seroepidemiology among children in high transmission settings
+title: Enteropathogen seroepidemiology among children in low-resource settings
 subtitle: Supplementary Information File 1. Effect of Kenya and Tanzania interventions on enteropathogen antibody response.
 output: 
   html_document:
@@ -83,9 +83,9 @@ cgrey <- "#777777"
 dl <- readRDS(here("data","asembo_analysis2.rds"))
 
 # list the enteric antigens and make formatted labels for them
-mbavars <- c("vsp3","vsp5","cp17","cp23","leca","rotavirus","salb","sald","p18","p39","etec","cholera")
+mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","p18","p39","etec","cholera")
 
-mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Rotavirus","Salmonella LPS B","Salmonella LPS D","Campylobacter p18","Campylobacter p39","ETEC toxin beta subunit","Cholera toxin beta subunit")
+mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Salmonella LPS B","Salmonella LPS D","Campylobacter p18","Campylobacter p39","ETEC toxin beta subunit","Cholera toxin beta subunit")
 ```
 
 ```{r composite antigens, warning=FALSE}
@@ -102,7 +102,7 @@ dgi <- dl %>%
   spread(antigen,seropos) %>%
   mutate(seropos=ifelse(vsp3==1|vsp5==1,1,0),
          antigen="vsp3vsp5",
-         antigenf="Giardia VSP-3 + VSP-5") %>%
+         antigenf="Giardia VSP-3 or VSP-5") %>%
   select(-vsp3,-vsp5)
 
 dcr <- dl %>% 
@@ -111,7 +111,7 @@ dcr <- dl %>%
   spread(antigen,seropos) %>%
   mutate(seropos=ifelse(cp17==1|cp23==1,1,0),
          antigen="cp17cp23",
-         antigenf="Cryptosporidium Cp17 + Cp23") %>%
+         antigenf="Cryptosporidium Cp17 or Cp23") %>%
   select(-cp17,-cp23)
 
 ds <- dl %>% 
@@ -120,7 +120,7 @@ ds <- dl %>%
   spread(antigen,seropos) %>%
   mutate(seropos=ifelse(salb==1|sald==1,1,0),
          antigen="salbsald",
-         antigenf="Salmonella LPS groups B + D") %>%
+         antigenf="Salmonella LPS groups B or D") %>%
   select(-salb,-sald)
 
 dcp <- dl %>% 
@@ -129,21 +129,20 @@ dcp <- dl %>%
   spread(antigen,seropos) %>%
   mutate(seropos=ifelse(p18==1|p39==1,1,0),
          antigen="p18p39",
-         antigenf="Campylobacter p18 + p39") %>%
+         antigenf="Campylobacter p18 or p39") %>%
   select(-p18,-p39)
 
 
 
 dlp <- bind_rows(dl,dgi,dcr,ds,dcp) %>%
   mutate(antigenf=factor(antigenf,
-                         levels=c("Giardia VSP-3 + VSP-5",
-                                  "Cryptosporidium Cp17 + Cp23",
+                         levels=c("Giardia VSP-3 or VSP-5",
+                                  "Cryptosporidium Cp17 or Cp23",
                                   "E. histolytica LecA",
-                                  "Rotavirus",
-                                  "Salmonella LPS groups B + D",
+                                  "Salmonella LPS groups B or D",
                                   "ETEC toxin beta subunit",
                                   "Cholera toxin beta subunit",
-                                  "Campylobacter p18 + p39")) ) %>%
+                                  "Campylobacter p18 or p39")) ) %>%
   filter(!is.na(antigenf)) %>%
   select(pathogen,antigen,antigenf,
          childid,time,tr,sex,age,agediff,
@@ -280,9 +279,6 @@ tmlediffs <- foreach(ab=levels(dlp$antigenf),.combine=rbind) %dopar% {
 #-----------------------------
 # report estimates in tables
 #-----------------------------
-
-# seroprevalence among control
-# knitr::kable(filter(tmlemeans,tr=="Cont"),digits=2,caption="Seroprevalence in the control arm")
 
 # seroprevalence among intervention and control
 tmlemeans %>%
