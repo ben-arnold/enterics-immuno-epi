@@ -1,6 +1,6 @@
 ---
-title: "Insights into the seroepidemiology of enteric pathogens among children living in high transmission settings"
-subtitle: "Table 1"
+title: Enteropathogen seroepidemiology among children in low-resource settings
+subtitle: Table 1, summary of antibody measurements and cutoffs by cohort
 output: 
   html_document:
     highlight: haddock

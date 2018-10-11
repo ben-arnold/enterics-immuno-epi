@@ -1,5 +1,6 @@
 ---
-title: "Kongwa enteric antibody distributions and seropositivity cutoffs"
+title: Enteropathogen seroepidemiology among children in low-resource settings
+subtitle: Tanzan antibody distributions and seropositivity cutoffs, Figure 1 - supplements 1 and 2
 output:
   html_document:
     highlight: haddock

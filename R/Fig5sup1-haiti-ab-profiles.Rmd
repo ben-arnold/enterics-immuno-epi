@@ -1,6 +1,6 @@
 ---
-title: "Enteropathogen seroepidemiology among children in low-resource settings"
-subtitle: "Haiti antibody profiles, Figure 5 - supplement 1"
+title: Enteropathogen seroepidemiology among children in low-resource settings
+subtitle: Haiti antibody profiles, Figure 5 - supplement 1
 output: 
   html_document:
     highlight: haddock
@@ -551,8 +551,8 @@ ageNs <- dl3plot2 %>%
   mutate(nlab=paste("(n=",n,")",sep=""))
 
 # custom color blind color palette is in the preamble chunck
-# pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
-pcols <- c(corange,cred,cmagent,cblue,cteal,cgreen)
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+# pcols <- c(corange,cred,cmagent,cblue,cteal,cgreen)
 
 diffmfi_byage <- ggplot(data=dl3plot2,aes(x=agecat,y=logmfi_dlead,fill=pathogen,color=pathogen)) +
   facet_wrap(~antigenf,nrow=6,ncol=4)+ # ,scales='free_y'

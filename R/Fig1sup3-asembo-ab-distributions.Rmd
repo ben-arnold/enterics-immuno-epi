@@ -1,7 +1,7 @@
 ---
-title: "Enteropathogen seroepidemiology among children in low-resource settings"
-subtitle: "Asembo, Kenya Antibody distributions, Figure 1 - supplement 3"
-  output:
+title: Enteropathogen seroepidemiology among children in low-resource settings
+subtitle: Asembo, Kenya Antibody distributions, Figure 1 - supplement 3
+output:
   html_document:
     highlight: haddock
     theme: default
@@ -22,9 +22,9 @@ subtitle: "Asembo, Kenya Antibody distributions, Figure 1 - supplement 3"
       smooth_scroll: yes
 ---
 
-# Summary
+# Notebook Summary
 
-This script summarizes the distribution of antibody responses in the Asembo cohort. 
+This script summarizes the distribution of antibody responses in the Asembo, Kenya cohort. 
 
 It fits Gaussian mixture models to the distributions, and where possible, estimates seropositivity cutoffs based on the mixture model fits.
 
@@ -84,7 +84,7 @@ dl <- dl %>%
 
 ```
 
-#Distribution of antibody levels
+# Distribution of antibody levels
 
 ```{r Ab distribution figure, fig.height=12, fig.width=6}
 

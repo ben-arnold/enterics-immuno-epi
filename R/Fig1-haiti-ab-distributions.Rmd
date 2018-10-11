@@ -1,5 +1,6 @@
 ---
-title: "Haiti enteric antibody distributions and seropositivity cutoffs"
+title: Enteropathogen seroepidemiology among children in low-resource settings
+subtitle: Haiti antibody distributions and seropositivity cutoffs, Figure 1
 output:
   html_document:
     highlight: haddock
@@ -336,7 +337,7 @@ ggsave(here("figs","haiti-ab-unexposed-distributions.pdf"),plot=punexp,device="p
 
 ```
 
-## Main Text Fig 1: age-stratified antibody distributions, with cutoffs
+## Figure1, age-stratified antibody distributions, with cutoffs
 
 
 **This is Figure 1 in the main text**

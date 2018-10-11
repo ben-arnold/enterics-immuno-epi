@@ -1,6 +1,6 @@
 ---
-title: "Enteropathogen seroepidemiology among children in low-resource settings"
-subtitle: "Asembo, Kenya antibody profiles, Figure 5"
+title: Enteropathogen seroepidemiology among children in low-resource settings
+subtitle: Asembo, Kenya antibody profiles, Figure 5
 output:
   html_notebook:
     highlight: haddock
