@@ -803,7 +803,7 @@ pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
 # pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
 
 rate_comp2 <- rate_comp %>%
-  mutate(pathgroup=ifelse(antigenf %in% c("ETEC toxin beta subunit","Campylobacter p18 or p39"),"Higher transmission","Lower transmission"),
+  mutate(pathgroup=ifelse(antigenf %in% c("ETEC LT β subunit","Campylobacter p18 or p39"),"Higher transmission","Lower transmission"),
          pathgroup=factor(pathgroup,levels=c("Lower transmission","Higher transmission")))
 
 

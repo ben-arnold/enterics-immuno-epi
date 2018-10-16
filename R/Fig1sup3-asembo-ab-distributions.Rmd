@@ -118,10 +118,10 @@ p
 # provided by Jeff Priest CDC
 #-----------------------------
 dl$roccut <- NA
-dl$roccut[dl$antigen %in% "vsp3"] <- log10(542)
-dl$roccut[dl$antigen %in% "vsp5"] <- log10(421)
-dl$roccut[dl$antigen %in% "cp17"] <- log10(375)
-dl$roccut[dl$antigen %in% "cp23"] <- log10(1336)
+dl$roccut[dl$antigen %in% "vsp3"] <- log10(651)
+dl$roccut[dl$antigen %in% "vsp5"] <- log10(451)
+dl$roccut[dl$antigen %in% "cp17"] <- log10(428)
+dl$roccut[dl$antigen %in% "cp23"] <- log10(1380)
 ```
 
 ## Mixture-model based cutoffs

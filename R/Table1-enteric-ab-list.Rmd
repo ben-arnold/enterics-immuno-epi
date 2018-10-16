@@ -104,6 +104,10 @@ dtab <- bind_rows(dhsum,dasum,dksum) %>%
          unexpcut=ifelse(is.infinite(unexpcut),NA,unexpcut)
          )
 
+# exclude trachoma, since article is focused on enteropathogens
+dtab <- dtab %>%
+  filter(antigenf!="C. trachomatis pgp3")
+
 # add custom footnotes (careful, this is fragile!)
 dtab$antigenf[c(27,28,31,32)] <- paste0(dtab$antigenf[c(27,28,31,32)],footnote_marker_symbol(2))
 dtab$antigenf[c(30)] <- paste0(dtab$antigenf[c(30)],footnote_marker_symbol(3))
@@ -111,15 +115,15 @@ dtab$antigenf[c(30)] <- paste0(dtab$antigenf[c(30)],footnote_marker_symbol(3))
 options(knitr.kable.NA = "")
 knitr::kable(dtab,digits=2,escape=FALSE,
              caption="Table 1. Number of children and samples tested, and estimated seropositivity cutoffs by country and antigen included in the seroepidemiologic analyses.",
-             col.names=c("","N\nchildren","N\nsamples","ROC","Mixture Model","Unexposed")) %>%
+             col.names=c("","N<br>children","N<br>samples","External<br>Reference","Mixture<br>Model","Unexposed")) %>%
   kable_styling(bootstrap_options = c("striped","condensed"),full_width = TRUE) %>%
   add_header_above(c(" " = 3, "Seropositivity cutoff, log10(MFI) *" = 3)) %>%
   group_rows("Leogane, Haiti", 1,10) %>%
   group_rows("Asembo, Kenya", 11,21) %>%
-  group_rows("Kongwa, Tanzania", 22,33) %>%
+  group_rows("Kongwa, Tanzania", 22,32) %>%
   footnote(
     general=c("ROC: receiver operator characteristic curve. ETEC LT: enterotoxigenic E. coli heat labile toxin"),
-    symbol=c("Seropositivity cutoffs determined using ROC curves based on external known positive and negative specimens, finite Gaussian mixture models, or distribution among the presumed unexposed (see Methods for details). Cutoff values are missing (na) if they could not be estimated in each method; cutoff values based on the presumed unexposed required longitudinal measurements within individual children and therefore could not be estimated for any antigen in the repeated cross-sectional design in Tanzania.",
+    symbol=c("Seropositivity cutoffs determined using external reference samples (typically ROC curves except for Giardia and E. hystolitica in Haiti), finite Gaussian mixture models, or distribution among the presumed unexposed (see Methods for details). Cutoff values are missing if they could not be estimated in each method; cutoff values based on the presumed unexposed required longitudinal measurements within individual children and therefore could not be estimated for any antigen in the repeated cross-sectional design in Tanzania.",
              "Measured only in year 1  of the study (2012)",
              "Measured only in years 2-4 of the study (2013-2015)")
   )
