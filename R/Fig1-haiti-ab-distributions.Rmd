@@ -12,14 +12,6 @@ output:
     toc_float:
       collapsed: yes
       smooth_scroll: yes
-  html_notebook:
-    highlight: haddock
-    theme: default
-    toc: yes
-    toc_depth: 3
-    toc_float:
-      collapsed: yes
-      smooth_scroll: yes
 ---
 
 # Summary
@@ -43,7 +35,7 @@ library(tidyverse)
 library(mixtools)
 library(knitr)
 library(kableExtra)
-  options(knitr.table.format = "html") 
+  options(knitr.table.format = "html")
 
 
 
@@ -81,7 +73,7 @@ dl <- readRDS(here("data","haiti_analysis.rds"))
 # list the enteric antigens and formatted labels for them
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","etec","norogi","norogii")
 
-mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Salmonella LPS B","Salmonella LPS D","ETEC toxin beta subunit","Norovirus GI", "Norovirus GII")
+mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Salmonella LPS group B","Salmonella LPS group D","ETEC LT β subunit","Norovirus GI", "Norovirus GII")
 ```
 
 #Distribution of antibody levels
@@ -114,9 +106,6 @@ p <- ggplot(data=dl,aes(x=logmfi,group=pathogen,color=pathogen,fill=pathogen)) +
   theme(legend.position = "none")
 
 p
-
-# save a PDF version
-ggsave(here("figs","haiti-ab-distributions.pdf"),plot=p,device="pdf",width=7,height=14)
 
 ```
 
@@ -240,8 +229,6 @@ pmix <- ggplot(data=filter(dl,age<=1),aes(x=logmfi,group=pathogen,color=pathogen
 
 pmix
 
-# save a PDF version
-ggsave(here("figs","haiti-ab-mixture-distributions.pdf"),plot=pmix,device="pdf",width=7,height=14)
 
 ```
 
@@ -287,8 +274,6 @@ knitr::kable(select(unexp_dists,antigenf,n,starts_with("unexp"))) %>%
   kable_styling(bootstrap_options = "striped",full_width = TRUE)
 
 
-
-
 #-----------------------------
 # merge the cutoff values
 # based on presumed unexposed
@@ -332,8 +317,6 @@ punexp <- ggplot(data=filter(dl,unexp=="Presumed unexposed" & !is.na(unexpcut)),
 
 punexp
 
-# save a PDF version
-ggsave(here("figs","haiti-ab-unexposed-distributions.pdf"),plot=punexp,device="pdf",width=7,height=14)
 
 ```
 
@@ -383,7 +366,7 @@ p2 <- ggplot(data=dl,aes(x=logmfi,fill=pathogen,color=pathogen)) +
 p2
 
 # save PDF and TIFF versions
-ggsave(here("figs","Fig1-haiti-ab-distributions-byage.pdf"),plot=p2,device="pdf",width=16,height=6)
+ggsave(here("figs","Fig1-haiti-ab-distributions-byage.pdf"),plot=p2,device=cairo_pdf,width=16,height=6)
 ggsave(here("figs","Fig1-haiti-ab-distributions-byage.TIFF"),plot=p2,device="tiff",width=16,height=6)
 
 ```

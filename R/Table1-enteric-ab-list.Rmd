@@ -48,7 +48,7 @@ dk <- readRDS(here("data","kongwa_analysis2.rds"))
 
 # re-order antigens in Kenya for consistency with other cohorts
 da <- da %>%
-  mutate(antigenf=factor(antigenf,levels=c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Salmonella LPS B","Salmonella LPS D","ETEC toxin beta subunit","Cholera toxin beta subunit","Campylobacter p18","Campylobacter p39")))
+  mutate(antigenf=factor(antigenf,levels=c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Salmonella LPS group B","Salmonella LPS group D","ETEC LT β subunit","Cholera toxin β subunit","Campylobacter p18","Campylobacter p39")))
 ```
 
 # Summary counts and statistics for each study
@@ -118,7 +118,7 @@ knitr::kable(dtab,digits=2,escape=FALSE,
   group_rows("Asembo, Kenya", 11,21) %>%
   group_rows("Kongwa, Tanzania", 22,33) %>%
   footnote(
-    general=c("ROC: receiver operator characteristic curve."),
+    general=c("ROC: receiver operator characteristic curve. ETEC LT: enterotoxigenic E. coli heat labile toxin"),
     symbol=c("Seropositivity cutoffs determined using ROC curves based on external known positive and negative specimens, finite Gaussian mixture models, or distribution among the presumed unexposed (see Methods for details). Cutoff values are missing (na) if they could not be estimated in each method; cutoff values based on the presumed unexposed required longitudinal measurements within individual children and therefore could not be estimated for any antigen in the repeated cross-sectional design in Tanzania.",
              "Measured only in year 1  of the study (2012)",
              "Measured only in years 2-4 of the study (2013-2015)")

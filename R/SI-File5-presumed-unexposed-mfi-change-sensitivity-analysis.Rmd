@@ -95,7 +95,7 @@ dl <- readRDS(here("data","haiti_analysis2.rds"))
 # list the enteric antigens and formatted labels for them
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","etec","norogi","norogii")
 
-mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Salmonella LPS B","Salmonella LPS D","ETEC toxin beta subunit","Norovirus GI", "Norovirus GII")
+mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Salmonella LPS group B","Salmonella LPS group D","ETEC LT β subunit","Norovirus GI.4", "Norovirus GII.4.NO")
 
 ```
 
@@ -363,7 +363,7 @@ dl <- readRDS(here("data","asembo_analysis2.rds"))
 # list the enteric antigens and make formatted labels for them
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","etec","cholera","p18","p39")
 
-mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Salmonella LPS B","Salmonella LPS D","ETEC toxin beta subunit","Cholera toxin beta subunit","Campylobacter p18","Campylobacter p39")
+mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Salmonella LPS group B","Salmonella LPS group D","ETEC LT β subunit","Cholera toxin β subunit","Campylobacter p18","Campylobacter p39")
 
 dl <- dl %>% mutate(antigenf=factor(antigenf,levels=mbalabs))
 

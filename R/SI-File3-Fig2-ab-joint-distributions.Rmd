@@ -113,10 +113,10 @@ d <- dall %>%
          ylab=ifelse(antigen %in% c("p18","p39"),"p39",ylab),
          xlab=ifelse(antigen %in% c("salb","sald"),"LPS Group B",xlab),
          ylab=ifelse(antigen %in% c("salb","sald"),"LPS Group D",ylab),
-         xlab=ifelse(antigen %in% c("cholera","etec"),"V. cholerae toxin beta subunit",xlab),
-         ylab=ifelse(antigen %in% c("cholera","etec"),"ETEC toxin beta subunit",ylab),
-         xlab=ifelse(antigen %in% c("norogi","norogii"),"GII",xlab),
-         ylab=ifelse(antigen %in% c("norogi","norogii"),"GI",ylab)
+         xlab=ifelse(antigen %in% c("cholera","etec"),"Cholera toxin β subunit",xlab),
+         ylab=ifelse(antigen %in% c("cholera","etec"),"ETEC LT β subunit",ylab),
+         xlab=ifelse(antigen %in% c("norogi","norogii"),"GII.4.NO",xlab),
+         ylab=ifelse(antigen %in% c("norogi","norogii"),"GI.4",ylab)
          ) %>%
   filter(!is.na(comp))
 
@@ -201,7 +201,7 @@ complot <- ggplot(data=dw,aes(x=x,y=y)) +
 complot
 
 # save PDF and TIFF versions
-ggsave(here("figs","Fig2-ab-scatter-composite.pdf"),plot=complot,device="pdf",width=13,height=15)
+ggsave(here("figs","Fig2-ab-scatter-composite.pdf"),plot=complot,device=cairo_pdf,width=13,height=15)
 ggsave(here("figs","Fig2-ab-scatter-composite.TIFF"),plot=complot,device="tiff",width=13,height=15)
 ```
 
@@ -266,7 +266,7 @@ scatterloess<-function(x,y,cex=0.4,...){
 
 # list the enteric antigens in Haiti and formatted labels for them
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","etec","norogi","norogii")
-mbalabs <- c("Giardia\nVSP-3","Giardia\nVSP-5","Cryptosporidium\nCp17","Cryptosporidium\nCp23","E. histolytica\nLecA","Salmonella\nLPS B","Salmonella\nLPS D","ETEC\ntoxin beta subunit","Norovirus\nGI", "Norovirus\nGII")
+mbalabs <- c("Giardia\nVSP-3","Giardia\nVSP-5","Cryptosporidium\nCp17","Cryptosporidium\nCp23","E. histolytica\nLecA","Salmonella\nLPS B","Salmonella\nLPS D","ETEC\nLT β subunit","Norovirus\nGI", "Norovirus\nGII")
 
 hmat <- dall %>%
   filter(country=="Haiti") %>%
@@ -278,23 +278,13 @@ pairs(hmat[mbavars],labels=mbalabs,cex=0.1,las=1,
       lower.panel=myellipse
 )
 
-# save a PDF version
-pdf(here("figs","haiti-pairs-plot.pdf"),width=10,height=10)
-pairs(hmat[mbavars],labels=mbalabs,cex=0.1,las=1,
-      upper.panel=scatterloess,
-      lower.panel=myellipse
-)
-mtext(expression(paste(log[10],"  Luminex response (MFI-bg)")),side=4,line=0.9)
-mtext(expression(paste(log[10],"  Luminex response (MFI-bg)")),side=3,line=2.5)
-
-dev.off()
 ```
 ## Kenya
 ```{r kenya pairs plot,fig.width=7,fig.height=7}
 # list the enteric antigens in Asembo Kenya and formatted labels for them
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","etec","cholera","p18","p39")
 
-mbalabs <- c("Giardia\nVSP-3","Giardia\nVSP-5","Cryptosporidium\nCp17","Cryptosporidium\nCp23","E. histolytica\nLecA","Salmonella\nLPS B","Salmonella\nLPS D","ETEC\ntoxin beta subunit","Cholera\ntoxin beta subunit","Campylobacter\np18","Campylobacter\np39")
+mbalabs <- c("Giardia\nVSP-3","Giardia\nVSP-5","Cryptosporidium\nCp17","Cryptosporidium\nCp23","E. histolytica\nLecA","Salmonella\nLPS B","Salmonella\nLPS D","ETEC\nLT β subunit","Cholera\ntoxin β subunit","Campylobacter\np18","Campylobacter\np39")
 
 kmat <- dall %>%
   filter(country=="Kenya") %>%
@@ -306,16 +296,6 @@ pairs(kmat[mbavars],labels=mbalabs,cex=0.1,las=1,
       lower.panel=myellipse
 )
 
-# save a PDF version
-pdf(here("figs","asembo-pairs-plot.pdf"),width=11,height=11)
-pairs(kmat[mbavars],labels=mbalabs,cex=0.1,las=1,
-      upper.panel=scatterloess,
-      lower.panel=myellipse
-)
-mtext(expression(paste(log[10],"  Luminex response (MFI-bg)")),side=4,line=0.9)
-mtext(expression(paste(log[10],"  Luminex response (MFI-bg)")),side=3,line=2.5)
-
-dev.off()
 ```
 ## Tanzania
 
@@ -326,7 +306,7 @@ There are a few blank panels in this figure. The reason is that some antigens we
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","etec","cholera","p18","p39")
 
 mbalabs <- c("Giardia\nVSP-3","Giardia\nVSP-5","Cryptosporidium\nCp17","Cryptosporidium\nCp23",
-             "E. histolytica\nLecA","Salmonella\nLPS B","Salmonella\nLPS D","ETEC\ntoxin beta subunit","Cholera\ntoxin beta subunit","Campylobacter\np18","Campylobacter\np39")
+             "E. histolytica\nLecA","Salmonella\nLPS B","Salmonella\nLPS D","ETEC\nLT β subunit","Cholera\ntoxin β subunit","Campylobacter\np18","Campylobacter\np39")
 
 tmat <- dall %>%
   filter(country=="Tanzania") %>%
@@ -337,16 +317,6 @@ pairs(tmat[mbavars],labels=mbalabs,cex=0.1,las=1,
       lower.panel=myellipse
 )
 
-# save a PDF version
-pdf(here("figs","kongwa-pairs-plot.pdf"),width=11,height=11)
-pairs(tmat[mbavars],labels=mbalabs,cex=0.1,las=1,
-      upper.panel=scatterloess,
-      lower.panel=myellipse
-)
-mtext(expression(paste(log[10],"  Luminex response (MFI-bg)")),side=4,line=0.9)
-mtext(expression(paste(log[10],"  Luminex response (MFI-bg)")),side=3,line=2.5)
-
-dev.off()
 ```
 
 # Session Info

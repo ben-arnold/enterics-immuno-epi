@@ -12,14 +12,6 @@ output:
     toc_float:
       collapsed: yes
       smooth_scroll: yes
-  html_notebook:
-    theme: default
-    highlight: haddock
-    toc: true
-    toc_depth: 3
-    toc_float:
-      collapsed: true
-      smooth_scroll: true
 ---
 
 # Notebook summary
@@ -85,7 +77,7 @@ dl <- readRDS(here("data","asembo_analysis2.rds"))
 # list the enteric antigens and make formatted labels for them
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","p18","p39","etec","cholera")
 
-mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Salmonella LPS B","Salmonella LPS D","Campylobacter p18","Campylobacter p39","ETEC toxin beta subunit","Cholera toxin beta subunit")
+mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Salmonella LPS B","Salmonella LPS D","Campylobacter p18","Campylobacter p39","ETEC LT β subunit","Cholera toxin β subunit")
 ```
 
 ```{r composite antigens, warning=FALSE}
@@ -140,8 +132,8 @@ dlp <- bind_rows(dl,dgi,dcr,ds,dcp) %>%
                                   "Cryptosporidium Cp17 or Cp23",
                                   "E. histolytica LecA",
                                   "Salmonella LPS groups B or D",
-                                  "ETEC toxin beta subunit",
-                                  "Cholera toxin beta subunit",
+                                  "ETEC LT β subunit",
+                                  "Cholera toxin β subunit",
                                   "Campylobacter p18 or p39")) ) %>%
   filter(!is.na(antigenf)) %>%
   select(pathogen,antigen,antigenf,
@@ -363,7 +355,7 @@ dgi <- dl %>%
   spread(antigen,seropos) %>%
   mutate(seropos=ifelse(vsp3==1|vsp5==1,1,0),
          antigen="vsp3vsp5",
-         antigenf="Giardia VSP-3 + VSP-5") %>%
+         antigenf="Giardia VSP-3 or VSP-5") %>%
   select(-vsp3,-vsp5)
 
 dcr <- dl %>% 
@@ -372,14 +364,14 @@ dcr <- dl %>%
   spread(antigen,seropos) %>%
   mutate(seropos=ifelse(cp17==1|cp23==1,1,0),
          antigen="cp17cp23",
-         antigenf="Cryptosporidium Cp17 + Cp23") %>%
+         antigenf="Cryptosporidium Cp17 or Cp23") %>%
   select(-cp17,-cp23)
 
 
 dlp <- bind_rows(dl,dgi,dcr) %>%
   mutate(antigenf=factor(antigenf,
-                         levels=c("Giardia VSP-3 + VSP-5",
-                                  "Cryptosporidium Cp17 + Cp23",
+                         levels=c("Giardia VSP-3 or VSP-5",
+                                  "Cryptosporidium Cp17 or Cp23",
                                   "E. histolytica LecA")) ) %>%
   filter(!is.na(antigenf)) %>%
   select(pathogen,antigen,antigenf,

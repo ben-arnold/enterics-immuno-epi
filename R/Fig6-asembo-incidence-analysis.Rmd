@@ -12,14 +12,6 @@ output:
     toc_float:
       collapsed: yes
       smooth_scroll: yes
-  html_notebook:
-    highlight: haddock
-    theme: default
-    toc: yes
-    toc_depth: 3
-    toc_float:
-      collapsed: yes
-      smooth_scroll: yes
 ---
 
 # Notebook Summary
@@ -149,8 +141,8 @@ dlp2 <- dlp %>%
                                   "Cryptosporidium Cp17 or Cp23",
                                    "E. histolytica LecA",
                                   "Salmonella LPS groups B or D",
-                                  "ETEC toxin beta subunit",
-                                  "Cholera toxin beta subunit",
+                                  "ETEC LT β subunit",
+                                  "Cholera toxin β subunit",
                                   "Campylobacter p18 or p39")) 
          ) 
 
@@ -555,8 +547,8 @@ ratep <- grid.arrange(rateplot,seroip,ncol=1,nrow=2,heights=c(4,5))
 
 
 # save pdf and a TIFF version
-ggsave(file=here("figs","Fig6-asembo-seroincidence.pdf"),plot=ratep,device="pdf",height=8,width=4)
-ggsave(file=here("figs","Fig6-asembo-seroincidence.TIFF"),plot=ratep,device="tiff",height=8,width=4)
+ggsave(file=here("figs","Fig6-asembo-seroincidence.pdf"),plot=ratep,device=cairo_pdf,height=8,width=4.5)
+ggsave(file=here("figs","Fig6-asembo-seroincidence.TIFF"),plot=ratep,device="tiff",height=8,width=4.5)
 
 ```
 

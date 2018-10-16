@@ -77,10 +77,10 @@ d <- bind_rows(dk,dh) %>%
                                            "Cryptosporidium Cp17 or Cp23",
                                            "E. histolytica LecA",
                                            "Salmonella LPS groups B or D",
-                                           "ETEC toxin beta subunit",
+                                           "ETEC LT β subunit",
                                            "Campylobacter p18 or p39",
-                                           "Norovirus GI",
-                                           "Norovirus GII"
+                                           "Norovirus GI.4",
+                                           "Norovirus GII.4.NO"
                                            )),
          country=factor(country,levels=c("Kenya","Haiti")),
          method=factor(method,levels=c("4-fold increase in MFI","Seropositivity cutoff"),labels=c("seroconversion definition:\n4-fold increase in IgG","seroconversion definition:\ncrossed seropositivity cutoff"))
@@ -124,9 +124,7 @@ pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cchartr,cbPalette[c(8,5)])
 
 
 pserop2 <- ggplot(data=d,aes(x=seroprev*100,y=seroi)) +
-  # geom_smooth(data=filter(pd,antigen!="rotavirus"),aes(x=seroprev,y=seroi),se=FALSE,color="gray50",size=0.5,method="glm",alpha=0.5,linetype="dashed")+
   geom_pointrange(aes(ymin=seroi_lb,ymax=seroi_ub,color=antigenf)) +
-  geom_text(data=filter(d,antigen=="rotavirus"),aes(label=antigenf),nudge_x=15,size=3,color="gray40")+
   facet_grid(method~country,scales="free")+
   # scale_x_continuous(breaks=seq(0,1,by=0.1),labels=seq(0,100,by=10))+
   # scale_y_continuous(breaks=0:10)+
@@ -151,9 +149,8 @@ pserop2
 # Kenya original scale
 kd <- d %>% filter(country=="Kenya" & method=="seroconversion definition:\n4-fold increase in IgG")
 pk <- ggplot(data=kd,aes(x=seroprev,y=seroi)) +
-  geom_smooth(data=filter(kd,antigen!="rotavirus"),aes(x=seroprev,y=seroi),se=FALSE,color="gray50",size=0.5,method="glm",alpha=0.5,linetype="dashed")+
+  geom_smooth(se=FALSE,color="gray50",size=0.5,method="glm",alpha=0.5,linetype="dashed")+
   geom_pointrange(aes(ymin=seroi_lb,ymax=seroi_ub,color=antigenf)) +
-  geom_text(data=filter(kd,antigen=="rotavirus"),aes(label=antigenf),nudge_x=0.11,size=3,color="gray40")+
   scale_x_continuous(breaks=seq(0,1,by=0.2),labels=seq(0,100,by=20))+
   scale_y_continuous(breaks=0:4)+
   scale_color_manual(values=pcols,guide=guide_legend(title="Pathogen")) +
@@ -171,7 +168,7 @@ pk <- ggplot(data=kd,aes(x=seroprev,y=seroi)) +
 # Haiti original scale
 hd <- d %>% filter(country=="Haiti" & method=="seroconversion definition:\n4-fold increase in IgG")
 ph <- ggplot(data=hd,aes(x=seroprev,y=seroi)) +
-  geom_smooth(data=hd,aes(x=seroprev,y=seroi),se=FALSE,color="gray50",size=0.5,method="glm",alpha=0.5,linetype="dashed")+
+  geom_smooth(se=FALSE,color="gray50",size=0.5,method="glm",alpha=0.5,linetype="dashed")+
   geom_pointrange(aes(ymin=seroi_lb,ymax=seroi_ub,color=antigenf)) +
   scale_x_continuous(breaks=seq(0.6,1,by=0.1),labels=seq(60,100,by=10))+
   scale_y_continuous(breaks=seq(0,1.5,by=0.5))+
@@ -189,7 +186,7 @@ ivsp_composite <- grid.arrange(pk,ph,ncol=1,nrow=2)
 
 
 # save PDF and TIFF versions
-ggsave(file=here("figs","Fig7-asembo-haiti-seroincidence-vs-seroprev.pdf"),plot=ivsp_composite,device="pdf",height=8,width=6)
+ggsave(file=here("figs","Fig7-asembo-haiti-seroincidence-vs-seroprev.pdf"),plot=ivsp_composite,device=cairo_pdf,height=8,width=6)
 ggsave(file=here("figs","Fig7-asembo-haiti-seroincidence-vs-seroprev.TIFF"),plot=ivsp_composite,device="tiff",height=8,width=6)
 
   

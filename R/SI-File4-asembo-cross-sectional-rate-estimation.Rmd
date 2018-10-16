@@ -12,15 +12,6 @@ output:
     toc_float:
       collapsed: yes
       smooth_scroll: yes
-  html_notebook:
-    citation_package: natbib
-    highlight: haddock
-    theme: default
-    toc: yes
-    toc_depth: 3
-    toc_float:
-      collapsed: yes
-      smooth_scroll: yes
 ---
 
 # Summary
@@ -205,7 +196,7 @@ rcp <- function(h,r,t) h/(r+h)*(1-exp(-(r+h)*t))
 # of the data
 #--------------------------------
 est_r <- readRDS("~/enterics-seroepi/output/asembo-enteric-ab-ests-incidencerates.rds") %>%
-  filter(outcome=="Seroreversion" & !antigenf %in% "Rotavirus") %>%
+  filter(outcome=="Seroreversion") %>%
   mutate(antigenf=droplevels(antigenf)) %>%
   # convert rates to per-month (rather than per-year)
   mutate(rate=rate/12,rate_lb=rate_lb/12,rate_ub=rate_ub/12) %>%
@@ -525,7 +516,7 @@ pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cgrey)
 plabs <- gamfoi %>%
   filter(age==17) %>%
   mutate(foi=ifelse(antigenf=="E. histolytica LecA",foi-0.002,foi),
-         foi=ifelse(antigenf=="Salmonella LPS groups B + D",foi+0.002,foi))
+         foi=ifelse(antigenf=="Salmonella LPS groups B or D",foi+0.002,foi))
 
 pfoi2 <- ggplot(data=gamfoi,aes(x=age,group=antigenf,color=antigenf,fill=antigenf)) +
   # foi estiamte from splines
@@ -799,7 +790,7 @@ ratecomp_plot <- ggplot(data=rate_comp,aes(x=antigenf,y=rate,color=antigenf,fill
 ratecomp_plot
 
 # save PDF and TIFF versions
-ggsave(here("figs","Fig6sup1-asembo-ab-seroincidence-rate-comparison.pdf"),plot=ratecomp_plot,device="pdf",width=7.5,height=4)
+ggsave(here("figs","Fig6sup1-asembo-ab-seroincidence-rate-comparison.pdf"),plot=ratecomp_plot,device=cairo_pdf,width=7.5,height=4)
 ggsave(here("figs","Fig6sup1-asembo-ab-seroincidence-rate-comparison.TIFF"),plot=ratecomp_plot,device="tiff",width=7.5,height=4)
 
 ```

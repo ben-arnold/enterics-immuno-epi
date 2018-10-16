@@ -138,7 +138,7 @@ dl <- readRDS(here("data","haiti_analysis2.rds"))
 # just to acommodate plot aesthetics
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","etec","salb","sald","norogi","norogii")
 
-mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","ETEC toxin beta subunit","Salmonella LPS B","Salmonella LPS D","Norovirus GI", "Norovirus GII")
+mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","ETEC LT β subunit","Salmonella LPS group B","Salmonella LPS group D","Norovirus GI.4","Norovirus GII.4.NO")
 
 dl <- dl %>%
   mutate(antigenf=factor(antigenf,levels=mbalabs),
@@ -302,7 +302,7 @@ pcurve <- ggplot(data=gamfits,aes(x=age,group=pathogen,color=pathogen,fill=patho
 pcurve
 
 # save PDF and TIFF versions
-ggsave(here("figs","Fig3-haiti-ab-agecurves-mean.pdf"),plot=pcurve,device="pdf",width=7,height=14)
+ggsave(here("figs","Fig3-haiti-ab-agecurves-mean.pdf"),plot=pcurve,device=cairo_pdf,width=7,height=14)
 ggsave(here("figs","Fig3-haiti-ab-agecurves-mean.TIFF"),plot=pcurve,device="tiff",width=7,height=14)
 
 ```
@@ -376,9 +376,9 @@ dlp <- bind_rows(dlp,dgi,dcr,ds) %>%
                                   "Cryptosporidium Cp17 or Cp23",
                                   "E. histolytica LecA",
                                   "Salmonella LPS groups B or D",
-                                  "ETEC toxin beta subunit",
-                                  "Norovirus GI", 
-                                  "Norovirus GII")) ) %>%
+                                  "ETEC LT β subunit",
+                                  "Norovirus GI.4", 
+                                  "Norovirus GII.4.NO")) ) %>%
   filter(!is.na(antigenf)) %>%
   select(pathogen,antigen,antigenf,
          id,sampleid,sdate,age,
@@ -518,7 +518,7 @@ Create a more parsimonius plot, that only includes the spline fits but also incl
 
 # re-arrange antigen factor to group noro on the same row
 dplot <- dplot %>%
-  mutate(antigenf=factor(antigenf,levels=c("Giardia VSP-3 or VSP-5","Cryptosporidium Cp17 or Cp23","E. histolytica LecA","Salmonella LPS groups B or D","Norovirus GI","Norovirus GII","ETEC toxin beta subunit")))
+  mutate(antigenf=factor(antigenf,levels=c("Giardia VSP-3 or VSP-5","Cryptosporidium Cp17 or Cp23","E. histolytica LecA","Salmonella LPS groups B or D","Norovirus GI.4","Norovirus GII.4.NO","ETEC LT β subunit")))
 
 # bright color-blind palette defined in an earlier code chunk
 pcols <- c(cred,corange,cgreen,cteal,cmagent,cmagent,cblue)
@@ -544,7 +544,7 @@ ppcurve2 <- ggplot(data=dplot,aes(x=age,color=antigenf,fill=antigenf)) +
 ppcurve2
 
 # save PDF and TIFF versions
-ggsave(here("figs","Fig4-haiti-ab-agecurves-seroprev.pdf"),plot=ppcurve2,device="pdf",width=7,height=14)
+ggsave(here("figs","Fig4-haiti-ab-agecurves-seroprev.pdf"),plot=ppcurve2,device=cairo_pdf,width=7,height=14)
 ggsave(here("figs","Fig4-haiti-ab-agecurves-seroprev.TIFF"),plot=ppcurve2,device="tiff",width=7,height=14)
 
 ```
@@ -728,11 +728,11 @@ log10labs <- c(
 # drop cholera estimates, because of cross-reactivity with ETEC
 # re-arrange antigen factor for parsimomy
 dplot <- gamfits %>%
-  filter(antigenf!="Cholera toxin beta subunit") %>%
+  filter(pathogen!="V. cholerae") %>%
   mutate(antigenf=factor(antigenf,levels=c("Giardia VSP-3","Giardia VSP-5",
                                            "Cryptosporidium Cp17","Cryptosporidium Cp23",
-                                           "E. histolytica LecA","ETEC toxin beta subunit",
-                                           "Salmonella LPS B","Salmonella LPS D",
+                                           "E. histolytica LecA","ETEC LT β subunit",
+                                           "Salmonella LPS group B","Salmonella LPS group D",
                                            "Campylobacter p18","Campylobacter p39" )))
 
 # bright color-blind palette defined in an earlier code chunk
@@ -761,7 +761,7 @@ pcurve <- ggplot(data=filter(dplot,age<=17),aes(x=age,group=pathogen,color=patho
 pcurve
 
 # save PDF and TIFF versions
-ggsave(here("figs","Fig3sup2-asembo-ab-agecurves-mean.pdf"),plot=pcurve,device="pdf",width=7,height=14)
+ggsave(here("figs","Fig3sup2-asembo-ab-agecurves-mean.pdf"),plot=pcurve,device=cairo_pdf,width=7,height=14)
 ggsave(here("figs","Fig3sup2-asembo-ab-agecurves-mean.TIFF"),plot=pcurve,device="tiff",width=7,height=14)
 ```
 
@@ -822,8 +822,8 @@ dlp <- bind_rows(dl,dgi,dcr,ds,dcp) %>%
                                   "Cryptosporidium Cp17 or Cp23",
                                   "E. histolytica LecA",
                                   "Salmonella LPS groups B or D",
-                                  "ETEC toxin beta subunit",
-                                  "Cholera toxin beta subunit",
+                                  "ETEC LT β subunit",
+                                  "Cholera toxin β subunit",
                                   "Campylobacter p18 or p39")) ) %>%
   filter(!is.na(antigenf)) %>%
   select(pathogen,antigen,antigenf,
@@ -992,7 +992,7 @@ ppcurve2 <- ggplot(data=dplot,aes(x=age,color=antigenf,fill=antigenf)) +
 ppcurve2
 
 # save PDF and TIFF versions
-ggsave(here("figs","Fig4sup1-asembo-ab-agecurves-seroprev.pdf"),plot=ppcurve2,device="pdf",width=7,height=10)
+ggsave(here("figs","Fig4sup1-asembo-ab-agecurves-seroprev.pdf"),plot=ppcurve2,device=cairo_pdf,width=7,height=10)
 ggsave(here("figs","Fig4sup1-asembo-ab-agecurves-seroprev.TIFF"),plot=ppcurve2,device="tiff",width=7,height=10)
 
 ```
@@ -1028,7 +1028,7 @@ dl <- readRDS(here("data","kongwa_analysis2.rds"))
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","etec","cholera","p18","p39")
 
 mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23",
-             "E. histolytica LecA","Salmonella LPS B","Salmonella LPS D","ETEC toxin beta subunit","Cholera toxin beta subunit","Campylobacter p18","Campylobacter p39")
+             "E. histolytica LecA","Salmonella LPS B","Salmonella LPS D","ETEC LT β subunit","Cholera toxin β subunit","Campylobacter p18","Campylobacter p39")
 dl <- dl %>% filter(antigen %in% mbavars) %>% mutate(antigenf=droplevels(antigenf))
 ```
 
@@ -1164,7 +1164,7 @@ log10labs <- c(
 # drop cholera, bump ETEC up to put salmonella on the same row
 # this is only for final aesthetics
 dplot <- gamfits %>%
-  filter(antigenf!="Cholera toxin beta subunit") %>%
+  filter(pathogen!="V. cholerae") %>%
   mutate(pathogen=factor(pathogen,levels=c("Giardia",
                                            "Cryptosporidium",
                                            "E. histolytica",
@@ -1174,8 +1174,8 @@ dplot <- gamfits %>%
          antigenf=factor(antigenf,levels=c("Giardia VSP-3","Giardia VSP-5",
                                            "Cryptosporidium Cp17","Cryptosporidium Cp23",
                                            "E. histolytica LecA",
-                                           "ETEC toxin beta subunit",
-                                           "Salmonella LPS B","Salmonella LPS D",
+                                           "ETEC LT β subunit",
+                                           "Salmonella LPS group B","Salmonella LPS group D",
                                            "Campylobacter p18","Campylobacter p39")))
 
 # custom color blind color palette is in the preamble chunck
@@ -1204,7 +1204,7 @@ pcurve <- ggplot(data=dplot,aes(x=age+0.5,color=pathogen,fill=pathogen)) +
 pcurve
 
 # save PDF and TIFF versions 
-ggsave(here("figs","Fig3sup1-kongwa-ab-agecurves-mean.pdf"),plot=pcurve,device="pdf",width=7,height=14)
+ggsave(here("figs","Fig3sup1-kongwa-ab-agecurves-mean.pdf"),plot=pcurve,device=cairo_pdf,width=7,height=14)
 ggsave(here("figs","Fig3sup1-kongwa-ab-agecurves-mean.TIFF"),plot=pcurve,device="tiff",width=7,height=14)
 
 
@@ -1244,7 +1244,7 @@ dlp <- dl %>%
 
 dgi <- dlp %>% 
   filter(antigen %in% c("vsp3","vsp5")) %>%
-  select(svy,year,vilid,clusterid,hhid,seroid,id,aztr,age,pathogen,antigen,seropos) %>%
+  select(svy,year,vilid,clusterid,id,aztr,age,pathogen,antigen,seropos) %>%
   spread(antigen,seropos) %>%
   mutate(seropos=ifelse(vsp3==1|vsp5==1,1,0),
          antigen="vsp3vsp5",
@@ -1253,7 +1253,7 @@ dgi <- dlp %>%
 
 dcr <- dlp %>% 
   filter(antigen %in% c("cp17","cp23")) %>%
-  select(svy,year,vilid,clusterid,hhid,seroid,id,aztr,age,pathogen,antigen,seropos) %>%
+  select(svy,year,vilid,clusterid,id,aztr,age,pathogen,antigen,seropos) %>%
   spread(antigen,seropos) %>%
   mutate(seropos=ifelse(cp17==1|cp23==1,1,0),
          antigen="cp17cp23",
@@ -1268,7 +1268,7 @@ dlp <- bind_rows(dlp,dgi,dcr) %>%
                                   "E. histolytica LecA")) ) %>%
   filter(!is.na(antigenf)) %>%
   select(pathogen,antigen,antigenf,
-         svy,year,vilid,clusterid,hhid,seroid,id,aztr,age,
+         svy,year,vilid,clusterid,id,aztr,age,
          roccut,mixcut,serocut,serocut_desc,
          posroc,posmix,seropos) %>%
   arrange(pathogen,antigenf,svy,year,clusterid,id,age)
@@ -1421,7 +1421,7 @@ ppcurve2 <- ggplot(data=pgamfits,aes(x=age+0.5,group=pathogen,color=pathogen,fil
 ppcurve2
 
 # save a PDF version
-ggsave(here("figs","Fig4sup2-kongwa-ab-agecurves-seroprev.pdf"),plot=ppcurve2,device="pdf",width=4,height=10)
+ggsave(here("figs","Fig4sup2-kongwa-ab-agecurves-seroprev.pdf"),plot=ppcurve2,device=cairo_pdf,width=4,height=10)
 ggsave(here("figs","Fig4sup2-kongwa-ab-agecurves-seroprev.TIFF"),plot=ppcurve2,device="tiff",width=4,height=10)
 
 

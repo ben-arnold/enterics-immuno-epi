@@ -12,14 +12,6 @@ output:
     toc_float:
       collapsed: yes
       smooth_scroll: yes
-  html_notebook:
-    theme: default
-    highlight: haddock
-    toc: true
-    toc_depth: 3
-    toc_float:
-      collapsed: true
-      smooth_scroll: true
 ---
 
 # Notebook Summary
@@ -72,7 +64,7 @@ dl <- readRDS(here("data","haiti_analysis2.rds"))
 # list the enteric antigens and formatted labels for them
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","etec","salb","sald","norogi","norogii")
 
-mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","ETEC toxin beta subunit","Salmonella LPS B","Salmonella LPS D","Norovirus GI", "Norovirus GII")
+mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Salmonella LPS group B","Salmonella LPS group D","ETEC LT β subunit","Norovirus GI.4","Norovirus GII.4.NO")
 ```
 
 # Identify incident changes
@@ -322,7 +314,7 @@ indivp_meas2 <- ggplot(filter(dl2pp,!is.na(sero_comp) & measnum<=6), aes(x=measn
 indivp_meas2
 
 # save PDF and TIFF versions
-ggsave(filename=here("figs","Fig5sup1-haiti-indiv-ab-trajectories-meas.pdf"),plot = indivp_meas2, device='pdf', width=6,height=12)
+ggsave(filename=here("figs","Fig5sup1-haiti-indiv-ab-trajectories-meas.pdf"),plot = indivp_meas2, device=cairo_pdf, width=6,height=12)
 ggsave(filename=here("figs","Fig5sup1-haiti-indiv-ab-trajectories-meas.TIFF"),plot = indivp_meas2, device='tiff', width=6,height=12)
 
 ```
@@ -410,7 +402,7 @@ for(iid in c(20,24,30,34,35,38,43,47,72,76,77,119,135)) {
   
   p
 
-  ggsave(filename=here("figs",paste("haiti-spaghetti-",iid,".pdf",sep="")),plot = p,device='pdf',width=5,height=14)
+  ggsave(filename=here("figs",paste("haiti-spaghetti-",iid,".pdf",sep="")),plot = p,device=cairo_pdf,width=5,height=14)
 
 }
 
@@ -530,8 +522,6 @@ diffmfi_byepisode <- ggplot(data=filter(dl3plot,!is.na(serostat4fold)),aes(x=ser
 
 diffmfi_byepisode
 
-# save a PDF version
-ggsave(here("figs","haiti-ab-mfidiff-byepisode-4fold.pdf"),plot=diffmfi_byepisode,device="pdf",width=9,height=8)
 
 
 ```
@@ -572,9 +562,6 @@ diffmfi_byage <- ggplot(data=dl3plot2,aes(x=agecat,y=logmfi_dlead,fill=pathogen,
   )
 
 diffmfi_byage
-
-# save a PDF version
-ggsave(here("figs","haiti-ab-mfidiff-byage.pdf"),plot=diffmfi_byage,device="pdf",width=9,height=8)
 
 
 ```

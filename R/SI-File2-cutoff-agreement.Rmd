@@ -12,12 +12,6 @@ output:
     toc_float:
       collapsed: yes
       smooth_scroll: yes
-  html_notebook:
-    highlight: haddock
-    toc: yes
-    toc_float:
-      collapsed: yes
-      smooth_scroll: yes
 ---
 
 # Summary

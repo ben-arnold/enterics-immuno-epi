@@ -12,14 +12,6 @@ output:
     toc_float:
       collapsed: yes
       smooth_scroll: yes
-  html_notebook:
-    theme: default
-    highlight: haddock
-    toc: true
-    toc_depth: 3
-    toc_float:
-      collapsed: true
-      smooth_scroll: true
 ---
 
 # Notebook Summary
@@ -71,7 +63,7 @@ dl <- readRDS(here("data","haiti_analysis2.rds"))
 # list the enteric antigens and formatted labels for them
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","etec","salb","sald","norogi","norogii")
 
-mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","ETEC toxin beta subunit","Salmonella LPS B","Salmonella LPS D","Norovirus GI", "Norovirus GII")
+mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Salmonella LPS group B","Salmonella LPS group D","ETEC LT β subunit","Norovirus GI.4","Norovirus GII.4.NO")
 ```
 
 # Identify incident changes
@@ -287,9 +279,9 @@ dl3 <- bind_rows(dl2,dgi,dcr,ds) %>%
                                   "Cryptosporidium Cp17 or Cp23",
                                   "E. histolytica LecA",
                                   "Salmonella LPS groups B or D",
-                                  "ETEC toxin beta subunit",
-                                  "Norovirus GI",
-                                  "Norovirus GII"))) %>%
+                                  "ETEC LT β subunit",
+                                  "Norovirus GI.4",
+                                  "Norovirus GII.4.NO"))) %>%
   filter(!is.na(antigenf)) %>%
   select(antigen,antigenf,id,obsnum,sdate,age,agediff,seropos,seroi4fold,seror4fold) %>%
   mutate(orig=1)
@@ -305,9 +297,9 @@ dl3 <- left_join(dl3,dseror,by=c("antigenf","id","obsnum")) %>%
                                   "Cryptosporidium Cp17 or Cp23",
                                   "E. histolytica LecA",
                                   "Salmonella LPS groups B or D",
-                                  "ETEC toxin beta subunit",
-                                  "Norovirus GI", 
-                                  "Norovirus GII")),
+                                  "ETEC LT β subunit",
+                                  "Norovirus GI.4", 
+                                  "Norovirus GII.4.NO")),
   ) %>%
   select(-seroi,-seror) %>%
   filter(!is.na(antigenf))
