@@ -16,7 +16,7 @@ output:
 
 # Notebook Summary
 
-This script estimates the incidence rate of seroconversion and seroreversion in the Haitian cohort.
+This script estimates the incidence rate of seroconversion and seroreversion in the Haitian cohort. It also estimates the incidence rate of antibody boosting and waning events, defined as a 4-fold change in antibody levels to above a seropositivity cutoff (boosting) or from above a seropositivity cutoff (waning).
 
 
 # Script preamble
@@ -103,11 +103,11 @@ As with the age-prevalence curve analysis, use information across multiple recom
 
 ```{r identify 4-fold changes}
 #-----------------------------
-# Identify incident changes 
+# Identify incident boosting/waning 
 # of 4-fold MFI or more. For
-# seroconversions, +4fold increase
+# incident boosting, +4fold increase
 # that ends above seropositivity cutoff
-# for seroreversions, -4fold decrease
+# for incident waning, -4fold decrease
 # that starts above seropositivity cutoff
 #-----------------------------
 dl2 <- dl %>%
@@ -122,11 +122,11 @@ dl2 <- dl %>%
     logmfi_dlag  = logmfi - logmfi_lag,
     logmfi_dlead = logmfi_lead - logmfi,
     logmfi_d4fold = ifelse(logmfi_dlag>log10(4),1,0),
-    # incident seroconversions based on a 4-fold increase in MFI
+    # incident boosting based on a 4-fold increase in MFI
     # with a second measure above the seropositivity cutoff
     seroi4fold = ifelse(logmfi_dlag>log10(4) & logmfi>serocut,1,0),
     seroi4fold = ifelse(is.na(logmfi_dlag),NA,seroi4fold),
-    # incident seroreversions based on a 4-fold decrease in MFI
+    # incident waning based on a 4-fold decrease in MFI
     # with the first measure above the seropositivity cutoff
     seror4fold = ifelse(logmfi_dlag< -log10(4) & logmfi_lag>serocut,1,0)
          ) %>%
@@ -312,7 +312,7 @@ dl3 <- left_join(dl3,dseror,by=c("antigenf","id","obsnum")) %>%
 # at the same measurement
 # this is unusual. In these
 # three cases, set the 
-# sero-reversion to 0
+# incident waning indicator to 0
 #----------------------------
 table(dl3$seroi4fold,dl3$seror4fold)
 indivp <- ggplot(data=filter(dl, 
@@ -339,6 +339,7 @@ table(dl3$seroi4fold,dl3$seror4fold)
 #-----------------------------
 # identify incident 
 # seroconversions and reversions
+# boosting and waning (4-fold changes)
 #-----------------------------
 
 # group the data by child and
@@ -492,12 +493,12 @@ rate_ests %>%
 ```
 
 
-## Seroincidence rates based on 4-fold increase
+## Seroincidence rates based on 4-fold change
 
 ```{r long incidence rate estimates 4-fold, warning=FALSE}
 #-----------------------------
 # estimate sero-incidence rates
-# for seroconversion 
+# for antibody boosting and waning 
 # estimate SEs with a bootstrap
 #-----------------------------
 
@@ -509,14 +510,14 @@ rate_ests %>%
 # if indivs seroconvert
 # 
 # create indicators of at risk
-# based on incidence conversions
-# and seroreversions
+# based on incidence boosting
+# and waning
 # at risk if seronegative OR experienced
 # a 4-fold decrease in MFI in previous period
 #
 # the below code is opaque, but confirmed through 
 # extensive vetting and inspection that it does this:
-# children are at risk of seroconversion if they are seronegative or
+# children are at risk of boosting if they are seronegative or
 # if they experience a 4-fold decrease in MFI between the previous
 # two measurements
 #-----------------------------
@@ -629,7 +630,7 @@ Table of results
 rate_ests_4fold %>%
   select(antigenf,nit,ni,starts_with("seroi")) %>%
   knitr::kable(digits=2,
-             caption="Incidence rates of seroconversion per child year",
+             caption="Incidence rates of 4-fold antibody boosting per child year",
              col.names = c("Antigen","Years at risk","n events","Incidence per year","min95","max95"),
              row.names = FALSE) %>%
   kable_styling(bootstrap_options = c("striped"),full_width = TRUE)
@@ -638,7 +639,7 @@ rate_ests_4fold %>%
 rate_ests_4fold %>%
   select(antigenf,nrt,nr,starts_with("seror")) %>%
   knitr::kable(digits=2,
-             caption="Incidence rates of seroreversion per child year",
+             caption="Incidence rates of 4-fold antibody waning per child year",
              col.names = c("Antigen","Years at risk","n events","Incidence per year","min95","max95"),
              row.names = FALSE) %>%
   kable_styling(bootstrap_options = c("striped"),full_width = TRUE)
@@ -685,16 +686,14 @@ knitr::kable(select(dtablong,-ratedesc),digits=1,
              col.names = c("Pathogen","Child-years", "Incident cases","Rate (95% CI)","Child-years", "Incident cases","Rate (95% CI)","Ratio of cases","Ratio of rates")) %>%
   kable_styling(bootstrap_options = c("striped"),full_width = TRUE) %>%
   add_header_above(c(" " = 1, "Seropositivity cutoff *" = 3, "4 Fold Change in MFI †" = 3, " " = 2)) %>%
-  group_rows("Seroconversion", 1,7) %>%
-  group_rows("Seroreversion", 8, 14) %>%
-  footnote(symbol = c("Incident changes in serostatus defined by crossing seropositivity cutoffs.","Incident changes in serostatus defined by a 4-fold increase or decrease in MFI, with seroconversions restricted to changes that ended above the seropositivity cutoff and seroreversions restricted to changes that started above the seropositivity cutoff.")
+  group_rows("Seroconversion / boosting", 1,7) %>%
+  group_rows("Seroreversion / waning", 8, 14) %>%
+  footnote(symbol = c("Incident changes in serostatus defined by crossing seropositivity cutoffs.","Incident changes in serostatus defined by a 4-fold increase or decrease in MFI, with incident boosting episodes restricted to changes that ended above the seropositivity cutoff and incident waning episodes restricted to changes that started from above the seropositivity cutoff.")
            )
-  
-
 ```
 
-# Compare seroconversion rates with seroprevalence
-For pathogens without seroreversion, age-dependent seroprevalence is a measure of the cumulative distribution of exposure. In turn, this is a measure of the cumulative incidence of seroconversion. Since the seroreversion rate was substantial for many pathogens studied, we would hypothesize there would not necessarily be a strong relationship between seroprevalence and the average seroconversion rate over the age period.  Examine this relationship for each pathogen.  
+# Compare seroincidence rates with seroprevalence
+For pathogens without seroreversion, age-dependent seroprevalence is a measure of the cumulative distribution of exposure. In turn, this is a measure of the cumulative incidence of seroconversion. Since the seroreversion rate was substantial for many pathogens studied, we would hypothesize there would not necessarily be a strong relationship between seroprevalence and the average seroincidence rate over the age period.  Examine this relationship for each pathogen.  
 
 ```{r seroprevalence}
 serop <- dl6 %>%
@@ -722,7 +721,7 @@ pserop <- ggplot(data=d_serop,aes(x=seroprev,y=seroi,color=antigenf)) +
   scale_y_continuous(breaks=seq(0,2,by=0.5))+
   scale_color_manual(values=pcols,guide=guide_legend(title="Pathogen")) +
   coord_cartesian(xlim=c(0.6,1),ylim=c(0,2))+
-  labs(x="Seroprevalence (%)",y="Seroconversion rate per child-year")+
+  labs(x="Seroprevalence (%)",y="Seroincidence rate per child-year")+
   theme_minimal() 
   # theme(legend.position="none")
 
