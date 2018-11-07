@@ -108,7 +108,7 @@ dl <- dl %>%
 # (using the is.na(age_diff) to identify them)
 dl2 <- dl %>%
   group_by(antigen,id) %>% 
-  arrange(antigen,id,sdate,sampleid) %>%
+  arrange(antigen,id,sampleid) %>%
   mutate(age_min  = min(age),
          age_diff = age - lag(age),
          
@@ -130,7 +130,7 @@ dl2 <- dl %>%
          serorn = ifelse(seror==1,serorn,0)
          ) %>%
   select(
-         id,sampleid,sdate,
+         id,sampleid,
          starts_with("age"),
          pathogen,antigen,antigenf,
          mfi,logmfi,logmfi_dlag,logmfi_dlead,
@@ -158,7 +158,7 @@ dl2 <- dl2 %>%
 Create labels for different seroconversion patterns
 ```{r seroconversion patterns}
 dl2pp <- dl2 %>%
-  arrange(antigen,id,sdate,sampleid) %>%
+  arrange(antigen,id,sampleid) %>%
   group_by(antigen,id) %>%
   mutate(measnum=row_number()) %>%
   mutate(
@@ -412,7 +412,7 @@ for(iid in c(20,24,30,34,35,38,43,47,72,76,77,119,135)) {
 
 # Method agreement for identifying seroconversion
 
-Compare the agreement in the identification of seroconversions based on two approaches: crossing the seropositivity threshold, and a 4-fold increase in MFI.  Compare the approaches separately for the primary seroconversion and subsequent seroconversions
+Compare the agreement in the identification of seroconversions based on two approaches: crossing the seropositivity threshold, and a 4-fold increase in MFI.  Compare the approaches separately for the primary boosting event and subsequent boosting
 
 ```{r indicators of seroconversion}
 #----------------------------------
@@ -444,8 +444,8 @@ dl3$serostat[dl3$seror==1] <- "Seroreversion"
 dl3 <- dl3 %>%
   mutate(seroinf4fold=cut(seroin4fold,breaks=c(-1,0,1,5),
                      labels=c("No change", 
-                              "Primary seroconversion", 
-                              "Secondary seroconversion")),
+                              "Primary boosting", 
+                              "Secondary boosting")),
          serostat4fold = seroinf4fold
   )
 

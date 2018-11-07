@@ -343,7 +343,7 @@ dlp <- dl %>%
 
 dgi <- dlp %>% 
   filter(antigen %in% c("vsp3","vsp5")) %>%
-  select(id,sampleid,sdate,age,pathogen,antigen,seropos) %>%
+  select(id,sampleid,age,pathogen,antigen,seropos) %>%
   spread(antigen,seropos) %>%
   mutate(seropos=ifelse(vsp3==1|vsp5==1,1,0),
          antigen="vsp3vsp5",
@@ -352,7 +352,7 @@ dgi <- dlp %>%
 
 dcr <- dlp %>% 
   filter(antigen %in% c("cp17","cp23")) %>%
-  select(id,sampleid,sdate,age,pathogen,antigen,seropos) %>%
+  select(id,sampleid,age,pathogen,antigen,seropos) %>%
   spread(antigen,seropos) %>%
   mutate(seropos=ifelse(cp17==1|cp23==1,1,0),
          antigen="cp17cp23",
@@ -361,7 +361,7 @@ dcr <- dlp %>%
 
 ds <- dlp %>% 
   filter(antigen %in% c("salb","sald")) %>%
-  select(id,sampleid,sdate,age,pathogen,antigen,seropos) %>%
+  select(id,sampleid,age,pathogen,antigen,seropos) %>%
   spread(antigen,seropos) %>%
   mutate(seropos=ifelse(salb==1|sald==1,1,0),
          antigen="salbsald",
@@ -381,9 +381,9 @@ dlp <- bind_rows(dlp,dgi,dcr,ds) %>%
                                   "Norovirus GII.4.NO")) ) %>%
   filter(!is.na(antigenf)) %>%
   select(pathogen,antigen,antigenf,
-         id,sampleid,sdate,age,
+         id,sampleid,age,
          seropos) %>%
-  arrange(pathogen,antigenf,id,sdate)
+  arrange(pathogen,antigenf,id,sampleid)
 ```
 
 

@@ -20,7 +20,9 @@ This script loads the raw data and formats it for all of the analyses
 #-----------------------------
 # preamble
 #-----------------------------
-rm(list=ls())
+library(here)
+here()
+
 library(tidyverse)
 library(foreign)
 
@@ -89,14 +91,16 @@ dl$pathogen[dl$antigen %in% c("norogi","norogii")] <- "Norovirus"
 
 dl <- dl %>%
   mutate(pathogen = factor(pathogen,levels=c("Giardia","Cryptosporidium","E. histolytica","Salmonella","ETEC","Norovirus")),
-         antigenf=factor(antigen,levels=mbavars,labels=mbalabs))
+         antigenf=factor(antigen,levels=mbavars,labels=mbalabs)) %>%
+  select(pathogen,antigen,antigenf,id,sampleid,age,mfi,logmfi)
      
 #-----------------------------
 # save a long version of the
 # dataset for all future 
 # analyses
 #-----------------------------
-saveRDS(dl,file="~/enterics-seroepi/data/haiti_analysis.rds")
+saveRDS(dl,file=here("data","haiti_analysis.rds"))
+write_csv(dl,path=here("data","haiti_analysis.csv"))
 ```
 # Session Info
 ```{r session info}
