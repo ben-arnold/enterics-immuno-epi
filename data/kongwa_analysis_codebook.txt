@@ -1,0 +1,45 @@
+
+Codebook for
+kongwa_analysis.csv / .rds
+
+
+This file includes 7,710 observations and 8 variables. 
+
+Each observation corresponds to a measurement on a single child. The data are in long format, sorted by antigen, id, sampleid.  
+
+All of the IgG antibody responses are in units of median florescence intensity minus background (MFI-bg) and were measured in a multiplex bead assay on the Luminex platform. For details about the study design and measurement methods, please refer to these related articles:
+
+Martin D, et al. Impact of Ivermectin Mass Drug Administration for Lymphatic Filariasis on Scabies in Eight Villages in Kongwa District, Tanzania. Am J Trop Med Hyg. 2018;99: 937–939.
+https://doi.org/10.4269/ajtmh.18-0018
+
+
+Below is a brief description of the variables in this file.  
+
+> str(kongwa_analysis)
+'data.frame':	59868 obs. of  12 variables:
+ $ pathogen : Factor w/ 8 levels "Giardia","Cryptosporidium",..: 1 1 1 1 1 1 1 1 1 1 ...
+ $ antigen  : Factor w/ 12 levels "vsp3","vsp5",..: 1 1 1 1 1 1 1 1 1 1 ...
+ $ antigenf : Factor w/ 12 levels "Giardia VSP-3",..: 1 1 1 1 1 1 1 1 1 1 ...
+ $ svy      : num  1 1 1 1 1 1 1 1 1 1 ...
+ $ year     : num  2012 2012 2012 2012 2012 ...
+ $ vilid    : chr  "1" "1" "1" "1" ...
+ $ clusterid: num  102 102 104 106 106 106 106 106 107 107 ...
+ $ id       : int  1 2 3 4 5 6 7 8 9 10 ...
+ $ aztr     : num  0 0 0 0 0 0 0 0 0 0 ...
+ $ age      : int  1 1 2 2 2 2 3 3 3 3 ...
+ $ mfi      : num  20459 9727 122 1068 12 ...
+ $ logmfi   : num  4.31 3.99 2.09 3.03 1.08 ...
+
+
+ $ pathogen : Pathogen description
+ $ antigen  : Antigen code
+ $ antigenf : Antigen description
+ $ svy      : Survey number (1,2,3,4)
+ $ year     : Year of the survey (2012,2013,2014,2015)
+ $ vilid    : Village ID (1,...,8)
+ $ clusterid: Cluster ID
+ $ id       : Individual ID
+ $ aztr     : Azithromycin treatment allocation at cluster level (after measurement)
+ $ age      : Age in years completed, rounded to year
+ $ mfi      : Median florescence intensity minus background (MFI-bg)
+ $ logmfi   : Log_10 MFI-bg, with values <=0 set to 1 before the log transformation

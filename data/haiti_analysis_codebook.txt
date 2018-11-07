@@ -1,0 +1,47 @@
+
+Codebook for
+haiti_analysis.csv / .rds
+
+
+This file includes 7,710 observations and 8 variables. 
+
+Each observation corresponds to a measurement on a single child. The data are in long format, sorted by antigen, id, sampleid.  
+
+All of the IgG antibody responses are in units of median florescence intensity minus background (MFI-bg) and were measured in a multiplex bead assay on the Luminex platform. For details about the study design and measurement methods, please refer to these related articles:
+
+Lammie PJ, Reiss MD, Dimock KA, Streit TG, Roberts JM, Eberhard ML. Longitudinal analysis of the development of filarial infection and antifilarial immunity in a cohort of Haitian children. Am J Trop Med Hyg. 1998;59: 217–221.
+https://www.ncbi.nlm.nih.gov/pubmed/9715935
+
+Moss DM et al. Longitudinal evaluation of enteric protozoa in Haitian children by stool exam and multiplex serologic assay. Am J Trop Med Hyg. 2014;90: 653–660. 
+https://doi.org/10.4269/ajtmh.13-0545
+
+Hamlin KL, Moss DM, Priest JW, Roberts J, Kubofcik J, Gass K, et al. Longitudinal monitoring of the development of antifilarial antibodies and acquisition of Wuchereria bancrofti in a highly endemic area of Haiti. PLoS Negl Trop Dis. 2012;6: e1941. 
+https://journals.plos.org/plosntds/article?id=10.1371/journal.pntd.0001941
+
+Arnold BF et al. Measuring changes in transmission of neglected tropical diseases, malaria, and enteric pathogens from quantitative antibody levels. PLoS Negl Trop Dis. 2017;11: e0005616. 
+https://journals.plos.org/plosntds/article?id=10.1371/journal.pntd.0005616
+Note that a subset of these data, in a slightly different format, are also available through this paper: https://osf.io/xdp6e .
+
+
+Below is a brief description of the variables in this file.  
+
+> str(haiti_analysis)
+'data.frame':	7710 obs. of  8 variables:
+ $ pathogen: Factor w/ 6 levels "Giardia","Cryptosporidium",..: 1 1 1 1 1 1 1 1 1 1 ...
+ $ antigen : chr  "vsp3" "vsp3" "vsp3" "vsp3" ...
+ $ antigenf: Factor w/ 10 levels "Giardia VSP-3",..: 1 1 1 1 1 1 1 1 1 1 ...
+ $ id      : int  2057 2057 2057 2057 2057 2057 2057 2067 2067 2067 ...
+ $ sampleid: chr  "1" "2" "3" "4" ...
+ $ age     : num  0.0667 1.1917 3.8333 5.6667 6.75 ...
+ $ mfi     : num  5 18 4 23355 391 ...
+ $ logmfi  : num  0.699 1.255 0.602 4.368 2.592 ...
+
+
+ $ pathogen  : Pathogen description
+ $ antigen   : Antigen code
+ $ antigenf  : Antigen description
+ $ id        : Unique child ID
+ $ sampleid  : Sample ID (1,2,...)
+ $ age       : Age in years
+ $ mfi       : Median florescence intensity minus background (MFI-bg)
+ $ logmfi    : Log_10 MFI-bg, with values <=0 set to 1 before the log transformation

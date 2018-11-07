@@ -1,0 +1,44 @@
+
+Codebook for
+asembo_analysis.csv / .rds
+
+
+This file includes 4,829 observations and 12 variables. 
+
+Each observation corresponds to a measurement on a single child. The data are in long format, sorted by antigen, childid, time.  
+
+All of the IgG antibody responses are in units of median florescence intensity minus background (MFI-bg) and were measured in a multiplex bead assay on the Luminex platform.  For details about the study design and measurement methods, please refer to these related articles:
+
+Morris JF et al. A Randomized Controlled Trial to Assess the Impact of Ceramic Water Filters on Prevention of Diarrhea and Cryptosporidiosis in Infants and Young Children-Western Kenya, 2013. Am J Trop Med Hyg. 2018;98: 1260–1268. doi: https://doi.org/10.4269/ajtmh.17-0731
+
+
+Below is a brief description of the variables in this file. 
+
+> str(asembo_analysis)
+Classes ‘grouped_df’, ‘tbl_df’, ‘tbl’ and 'data.frame':	4829 obs. of  12 variables:
+ $ pathogen  : Factor w/ 7 levels "Giardia","Cryptosporidium",..: 1 1 1 1 1 1 1 1 1 1 ...
+ $ antigen   : Factor w/ 11 levels "vsp3","vsp5",..: 1 1 1 1 1 1 1 1 1 1 ...
+ $ antigenf  : Factor w/ 11 levels "Giardia VSP-3",..: 1 1 1 1 1 1 1 1 1 1 ...
+ $ childid   : int  1 1 2 2 3 3 4 4 5 5 ...
+ $ time      : Factor w/ 2 levels "A","B": 1 2 1 2 1 2 1 2 1 2 ...
+ $ sex       : int  2 2 2 2 2 2 1 1 2 2 ...
+ $ age       : int  5 11 7 14 6 13 8 14 7 14 ...
+ $ agediff   : int  6 6 7 7 7 7 6 6 7 7 ...
+ $ tr        : Factor w/ 2 levels "Cont","Int": 1 1 1 1 1 1 1 1 1 1 ...
+ $ mfi       : num  8 4 34 118 74 10 5 5 3 3 ...
+ $ logmfi    : num  0.903 0.602 1.531 2.072 1.869 ...
+ $ logmfidiff: num  -0.301 -0.301 0.54 0.54 -0.869 ...
+
+
+ $ pathogen  : Pathogen description
+ $ antigen   : Antigen code
+ $ antigenf  : Antigen description
+ $ childid   : Unique child ID
+ $ time      : Measurement time (A=Enrollment, B=Follow-up)
+ $ sex       : Child sex (1=male, 2=female)
+ $ age       : Age in months (rounded to months completed)
+ $ agediff   : Within-child age difference from enrollment (time==A) to follow-up (time==B), in months
+ $ tr        : Treatment assignment for the household water filter intervention
+ $ mfi       : Median florescence intensity minus background (MFI-bg)
+ $ logmfi    : Log_10 MFI-bg, with values <=0 set to 1 before the log transformation
+ $ logmfidiff: Within-child difference in logmfi from enrollment (time==A) to follow-up (time==B)
