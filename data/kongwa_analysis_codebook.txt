@@ -3,9 +3,9 @@ Codebook for
 kongwa_analysis.csv / .rds
 
 
-This file includes 7,710 observations and 8 variables. 
+This file includes 59,868 observations and 12 variables. 
 
-Each observation corresponds to a measurement on a single child. The data are in long format, sorted by antigen, id, sampleid.  
+Each observation corresponds to a measurement on a single child. The data are in long format, sorted by antigen, svy, year, vilid, clusterid, id.  
 
 All of the IgG antibody responses are in units of median florescence intensity minus background (MFI-bg) and were measured in a multiplex bead assay on the Luminex platform. For details about the study design and measurement methods, please refer to these related articles:
 
