@@ -115,7 +115,7 @@ dtab$antigenf[c(30)] <- paste0(dtab$antigenf[c(30)],footnote_marker_symbol(3))
 options(knitr.kable.NA = "")
 knitr::kable(dtab,digits=2,escape=FALSE,
              caption="Table 1. Number of children and samples tested, and estimated seropositivity cutoffs by country and antigen included in the seroepidemiologic analyses.",
-             col.names=c("","N<br>children","N<br>samples","External<br>Reference","Mixture<br>Model","Unexposed")) %>%
+             col.names=c("","N<br>children","N<br>samples","External<br>Reference","Mixture<br>Model","Presumed<br>Unexposed")) %>%
   kable_styling(bootstrap_options = c("striped","condensed"),full_width = TRUE) %>%
   add_header_above(c(" " = 3, "Seropositivity cutoff, log10(MFI) *" = 3)) %>%
   group_rows("Leogane, Haiti", 1,10) %>%
