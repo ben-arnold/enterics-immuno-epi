@@ -336,13 +336,16 @@ dasum &lt;-<span class="st"> </span>da <span class="op">%&gt;%</span>
 <h2>Tanzania</h2>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co">#-----------------------------</span>
 <span class="co"># Tanzania summary</span>
+<span class="co"># report ROC cutoffs from</span>
+<span class="co"># years 2-4</span>
 <span class="co">#-----------------------------</span>
 dksum &lt;-<span class="st"> </span>dk <span class="op">%&gt;%</span>
 <span class="st">  </span><span class="kw">group_by</span>(antigenf) <span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">roc2=</span><span class="kw">ifelse</span>(year<span class="op">&gt;</span><span class="dv">2012</span>,roccut,<span class="ot">NA</span>)) <span class="op">%&gt;%</span>
 <span class="st">  </span><span class="kw">summarize</span>(<span class="dt">Nchild=</span><span class="kw">length</span>(<span class="kw">unique</span>(id[<span class="kw">is.na</span>(mfi)<span class="op">==</span>F])),
             <span class="dt">Nobs=</span><span class="kw">sum</span>(<span class="kw">is.na</span>(mfi)<span class="op">==</span>F),
-            <span class="dt">roccut=</span><span class="kw">max</span>(roccut,<span class="dt">na.rm=</span>T),
-            <span class="dt">mixcut=</span><span class="kw">max</span>(mixcut,<span class="dt">na.rm=</span>T)  )</code></pre></div>
+            <span class="dt">roccut=</span><span class="kw">max</span>(roc2,<span class="dt">na.rm=</span>T),
+            <span class="dt">mixcut=</span><span class="kw">max</span>(mixcut,<span class="dt">na.rm=</span>T)  ) </code></pre></div>
 </div>
 </div>
 <div id="print-the-table" class="section level1">
@@ -371,8 +374,7 @@ knitr<span class="op">::</span><span class="kw">kable</span>(dtab,<span class="d
 <span class="st">  </span><span class="kw">group_rows</span>(<span class="st">&quot;Asembo, Kenya&quot;</span>, <span class="dv">11</span>,<span class="dv">21</span>) <span class="op">%&gt;%</span>
 <span class="st">  </span><span class="kw">group_rows</span>(<span class="st">&quot;Kongwa, Tanzania&quot;</span>, <span class="dv">22</span>,<span class="dv">32</span>) <span class="op">%&gt;%</span>
 <span class="st">  </span><span class="kw">footnote</span>(
-    <span class="dt">general=</span><span class="kw">c</span>(<span class="st">&quot;ROC: receiver operator characteristic curve. ETEC LT: enterotoxigenic E. coli heat labile toxin&quot;</span>),
-    <span class="dt">symbol=</span><span class="kw">c</span>(<span class="st">&quot;Seropositivity cutoffs determined using external reference samples (typically ROC curves except for Giardia and E. hystolitica in Haiti), finite Gaussian mixture models, or distribution among the presumed unexposed (see Methods for details). Cutoff values are missing if they could not be estimated in each method; cutoff values based on the presumed unexposed required longitudinal measurements within individual children and therefore could not be estimated for any antigen in the repeated cross-sectional design in Tanzania.&quot;</span>,
+    <span class="dt">symbol=</span><span class="kw">c</span>(<span class="st">&quot;Seropositivity cutoffs determined using external reference samples (typically ROC curves except for Giardia and E. hystolitica in Haiti), finite Gaussian mixture models, or distribution among the presumed unexposed (see Methods for details). External reference cutoffs reported from years (2013-2015) in Tanzania, estimated among 4,087 samples. Cutoff values are missing if they could not be estimated in each method; cutoff values based on the presumed unexposed required longitudinal measurements within individual children and therefore could not be estimated for any antigen in the repeated cross-sectional design in Tanzania.&quot;</span>,
              <span class="st">&quot;Measured only in year 1  of the study (2012)&quot;</span>,
              <span class="st">&quot;Measured only in years 2-4 of the study (2013-2015)&quot;</span>)
   )</code></pre></div>
@@ -876,7 +878,7 @@ Cryptosporidium Cp17
 4989
 </td>
 <td style="text-align:right;">
-2.51
+2.26
 </td>
 <td style="text-align:right;">
 </td>
@@ -894,7 +896,7 @@ Cryptosporidium Cp23
 4989
 </td>
 <td style="text-align:right;">
-3.07
+2.58
 </td>
 <td style="text-align:right;">
 </td>
@@ -912,7 +914,7 @@ E. histolytica LecA
 4989
 </td>
 <td style="text-align:right;">
-2.18
+1.97
 </td>
 <td style="text-align:right;">
 2.50
@@ -1026,17 +1028,7 @@ Campylobacter p39<sup>†</sup>
 <tfoot>
 <tr>
 <td style="padding: 0; border: 0;" colspan="100%">
-<strong>Note: </strong>
-</td>
-</tr>
-<tr>
-<td style="padding: 0; border: 0;" colspan="100%">
-<sup></sup> ROC: receiver operator characteristic curve. ETEC LT: enterotoxigenic E. coli heat labile toxin
-</td>
-</tr>
-<tr>
-<td style="padding: 0; border: 0;" colspan="100%">
-<sup>*</sup> Seropositivity cutoffs determined using external reference samples (typically ROC curves except for Giardia and E. hystolitica in Haiti), finite Gaussian mixture models, or distribution among the presumed unexposed (see Methods for details). Cutoff values are missing if they could not be estimated in each method; cutoff values based on the presumed unexposed required longitudinal measurements within individual children and therefore could not be estimated for any antigen in the repeated cross-sectional design in Tanzania.
+<sup>*</sup> Seropositivity cutoffs determined using external reference samples (typically ROC curves except for Giardia and E. hystolitica in Haiti), finite Gaussian mixture models, or distribution among the presumed unexposed (see Methods for details). External reference cutoffs reported from years (2013-2015) in Tanzania, estimated among 4,087 samples. Cutoff values are missing if they could not be estimated in each method; cutoff values based on the presumed unexposed required longitudinal measurements within individual children and therefore could not be estimated for any antigen in the repeated cross-sectional design in Tanzania.
 </td>
 </tr>
 <tr>
@@ -1084,7 +1076,7 @@ Campylobacter p39<sup>†</sup>
 ## [16] plyr_1.8.4        munsell_0.5.0     gtable_0.2.0     
 ## [19] cellranger_1.1.0  rvest_0.3.2       psych_1.8.4      
 ## [22] evaluate_0.10.1   knitr_1.20        parallel_3.5.0   
-## [25] broom_0.4.4       Rcpp_0.12.18      scales_1.0.0     
+## [25] broom_0.4.4       Rcpp_0.12.19      scales_1.0.0     
 ## [28] backports_1.1.2   jsonlite_1.5      mnormt_1.5-5     
 ## [31] hms_0.4.2         digest_0.6.16     stringi_1.2.2    
 ## [34] grid_3.5.0        rprojroot_1.3-2   cli_1.0.0        

@@ -87,13 +87,16 @@ dasum <- da %>%
 ```{r tanzania summary, warning=FALSE}
 #-----------------------------
 # Tanzania summary
+# report ROC cutoffs from
+# years 2-4
 #-----------------------------
 dksum <- dk %>%
   group_by(antigenf) %>%
+  mutate(roc2=ifelse(year>2012,roccut,NA)) %>%
   summarize(Nchild=length(unique(id[is.na(mfi)==F])),
             Nobs=sum(is.na(mfi)==F),
-            roccut=max(roccut,na.rm=T),
-            mixcut=max(mixcut,na.rm=T)  )
+            roccut=max(roc2,na.rm=T),
+            mixcut=max(mixcut,na.rm=T)  ) 
 ```
 
 # Print the table
@@ -122,8 +125,7 @@ knitr::kable(dtab,digits=2,escape=FALSE,
   group_rows("Asembo, Kenya", 11,21) %>%
   group_rows("Kongwa, Tanzania", 22,32) %>%
   footnote(
-    general=c("ROC: receiver operator characteristic curve. ETEC LT: enterotoxigenic E. coli heat labile toxin"),
-    symbol=c("Seropositivity cutoffs determined using external reference samples (typically ROC curves except for Giardia and E. hystolitica in Haiti), finite Gaussian mixture models, or distribution among the presumed unexposed (see Methods for details). Cutoff values are missing if they could not be estimated in each method; cutoff values based on the presumed unexposed required longitudinal measurements within individual children and therefore could not be estimated for any antigen in the repeated cross-sectional design in Tanzania.",
+    symbol=c("Seropositivity cutoffs determined using external reference samples (typically ROC curves except for Giardia and E. hystolitica in Haiti), finite Gaussian mixture models, or distribution among the presumed unexposed (see Methods for details). External reference cutoffs reported from years (2013-2015) in Tanzania, estimated among 4,087 samples. Cutoff values are missing if they could not be estimated in each method; cutoff values based on the presumed unexposed required longitudinal measurements within individual children and therefore could not be estimated for any antigen in the repeated cross-sectional design in Tanzania.",
              "Measured only in year 1  of the study (2012)",
              "Measured only in years 2-4 of the study (2013-2015)")
   )
