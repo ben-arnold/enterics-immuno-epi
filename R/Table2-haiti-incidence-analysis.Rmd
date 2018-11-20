@@ -685,10 +685,10 @@ knitr::kable(select(dtablong,-ratedesc),digits=1,
              caption="Incidence rates of seroconversion and seroreversion per child year among children ages 0-11 years in Haiti, 1990-1999. ",
              col.names = c("Pathogen","Child-years", "Incident cases","Rate (95% CI)","Child-years", "Incident cases","Rate (95% CI)","Ratio of cases","Ratio of rates")) %>%
   kable_styling(bootstrap_options = c("striped"),full_width = TRUE) %>%
-  add_header_above(c(" " = 1, "Seropositivity cutoff *" = 3, "4 Fold Change in MFI †" = 3, " " = 2)) %>%
+  add_header_above(c(" " = 1, "Seropositivity cutoff *" = 3, "4 Fold Change in IgG levels †" = 3, " " = 2)) %>%
   group_rows("Seroconversion / boosting", 1,7) %>%
   group_rows("Seroreversion / waning", 8, 14) %>%
-  footnote(symbol = c("Incident changes in serostatus defined by crossing seropositivity cutoffs.","Incident changes in serostatus defined by a 4-fold increase or decrease in MFI, with incident boosting episodes restricted to changes that ended above the seropositivity cutoff and incident waning episodes restricted to changes that started from above the seropositivity cutoff.")
+  footnote(symbol = c("Incident changes in serostatus defined by crossing seropositivity cutoffs.","Incident changes in serostatus defined by a 4-fold increase or decrease in IgG levels (MFI-bg), with incident boosting episodes restricted to changes that ended above the seropositivity cutoff and incident waning episodes restricted to changes that started from above the seropositivity cutoff.")
            )
 ```
 

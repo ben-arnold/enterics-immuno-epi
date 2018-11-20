@@ -1618,10 +1618,10 @@ knitr<span class="op">::</span><span class="kw">kable</span>(<span class="kw">se
              <span class="dt">caption=</span><span class="st">&quot;Incidence rates of seroconversion and seroreversion per child year among children ages 0-11 years in Haiti, 1990-1999. &quot;</span>,
              <span class="dt">col.names =</span> <span class="kw">c</span>(<span class="st">&quot;Pathogen&quot;</span>,<span class="st">&quot;Child-years&quot;</span>, <span class="st">&quot;Incident cases&quot;</span>,<span class="st">&quot;Rate (95% CI)&quot;</span>,<span class="st">&quot;Child-years&quot;</span>, <span class="st">&quot;Incident cases&quot;</span>,<span class="st">&quot;Rate (95% CI)&quot;</span>,<span class="st">&quot;Ratio of cases&quot;</span>,<span class="st">&quot;Ratio of rates&quot;</span>)) <span class="op">%&gt;%</span>
 <span class="st">  </span><span class="kw">kable_styling</span>(<span class="dt">bootstrap_options =</span> <span class="kw">c</span>(<span class="st">&quot;striped&quot;</span>),<span class="dt">full_width =</span> <span class="ot">TRUE</span>) <span class="op">%&gt;%</span>
-<span class="st">  </span><span class="kw">add_header_above</span>(<span class="kw">c</span>(<span class="st">&quot; &quot;</span> =<span class="st"> </span><span class="dv">1</span>, <span class="st">&quot;Seropositivity cutoff *&quot;</span> =<span class="st"> </span><span class="dv">3</span>, <span class="st">&quot;4 Fold Change in MFI †&quot;</span> =<span class="st"> </span><span class="dv">3</span>, <span class="st">&quot; &quot;</span> =<span class="st"> </span><span class="dv">2</span>)) <span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">add_header_above</span>(<span class="kw">c</span>(<span class="st">&quot; &quot;</span> =<span class="st"> </span><span class="dv">1</span>, <span class="st">&quot;Seropositivity cutoff *&quot;</span> =<span class="st"> </span><span class="dv">3</span>, <span class="st">&quot;4 Fold Change in IgG levels †&quot;</span> =<span class="st"> </span><span class="dv">3</span>, <span class="st">&quot; &quot;</span> =<span class="st"> </span><span class="dv">2</span>)) <span class="op">%&gt;%</span>
 <span class="st">  </span><span class="kw">group_rows</span>(<span class="st">&quot;Seroconversion / boosting&quot;</span>, <span class="dv">1</span>,<span class="dv">7</span>) <span class="op">%&gt;%</span>
 <span class="st">  </span><span class="kw">group_rows</span>(<span class="st">&quot;Seroreversion / waning&quot;</span>, <span class="dv">8</span>, <span class="dv">14</span>) <span class="op">%&gt;%</span>
-<span class="st">  </span><span class="kw">footnote</span>(<span class="dt">symbol =</span> <span class="kw">c</span>(<span class="st">&quot;Incident changes in serostatus defined by crossing seropositivity cutoffs.&quot;</span>,<span class="st">&quot;Incident changes in serostatus defined by a 4-fold increase or decrease in MFI, with incident boosting episodes restricted to changes that ended above the seropositivity cutoff and incident waning episodes restricted to changes that started from above the seropositivity cutoff.&quot;</span>)
+<span class="st">  </span><span class="kw">footnote</span>(<span class="dt">symbol =</span> <span class="kw">c</span>(<span class="st">&quot;Incident changes in serostatus defined by crossing seropositivity cutoffs.&quot;</span>,<span class="st">&quot;Incident changes in serostatus defined by a 4-fold increase or decrease in IgG levels (MFI-bg), with incident boosting episodes restricted to changes that ended above the seropositivity cutoff and incident waning episodes restricted to changes that started from above the seropositivity cutoff.&quot;</span>)
            )</code></pre></div>
 <table class="table table-striped" style="margin-left: auto; margin-right: auto;">
 <caption>
@@ -1638,7 +1638,7 @@ Seropositivity cutoff *
 </th>
 <th style="border-bottom:hidden; padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="3">
 <div style="border-bottom: 1px solid #ddd; padding-bottom: 5px;">
-4 Fold Change in MFI †
+4 Fold Change in IgG levels †
 </div>
 </th>
 <th style="border-bottom:hidden" colspan="2">
@@ -2100,7 +2100,7 @@ Norovirus GII.4.NO
 </tr>
 <tr>
 <td style="padding: 0; border: 0;" colspan="100%">
-<sup>†</sup> Incident changes in serostatus defined by a 4-fold increase or decrease in MFI, with incident boosting episodes restricted to changes that ended above the seropositivity cutoff and incident waning episodes restricted to changes that started from above the seropositivity cutoff.
+<sup>†</sup> Incident changes in serostatus defined by a 4-fold increase or decrease in IgG levels (MFI-bg), with incident boosting episodes restricted to changes that ended above the seropositivity cutoff and incident waning episodes restricted to changes that started from above the seropositivity cutoff.
 </td>
 </tr>
 </tfoot>
@@ -2182,7 +2182,7 @@ pserop</code></pre></div>
 ## [19] gtable_0.2.0      cellranger_1.1.0  rvest_0.3.2      
 ## [22] codetools_0.2-15  psych_1.8.4       evaluate_0.10.1  
 ## [25] labeling_0.3      knitr_1.20        highr_0.6        
-## [28] broom_0.4.4       Rcpp_0.12.18      scales_1.0.0     
+## [28] broom_0.4.4       Rcpp_0.12.19      scales_1.0.0     
 ## [31] backports_1.1.2   jsonlite_1.5      mnormt_1.5-5     
 ## [34] hms_0.4.2         digest_0.6.16     stringi_1.2.2    
 ## [37] grid_3.5.0        rprojroot_1.3-2   cli_1.0.0        
