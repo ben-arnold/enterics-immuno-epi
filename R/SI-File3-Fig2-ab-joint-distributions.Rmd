@@ -172,18 +172,19 @@ dsmooths <- foreach(countryi=levels(dw$country),.combine=rbind) %:%
 Summary composite figure, **Figure 2 in the main text**
 ```{r composite figure,fig.width=7,fig.height=9 }
 
-pcol <- viridis(n=1,begin=0.3,end=0.4)
+vircols <- viridis(n=4,alpha=1,begin=0.2,end=0.97)
+pcol <- vircols[2]
 
 # grab labels
 dlabs <- dw %>% select(country,comp,xlab,ylab) %>% group_by(country,comp) %>% slice(1)
 
 complot <- ggplot(data=dw,aes(x=x,y=y)) +
   facet_grid(comp~country) +
-  geom_point(pch=19,color="black",alpha=0.1) +
-  geom_line(data=dsmooths,aes(x=x,y=y),col=pcol,size=1.2)+
+  geom_point(pch=19,color=pcol,alpha=0.1) +
+  geom_line(data=dsmooths,aes(x=x,y=y),col="black",size=1.2)+
   geom_text(data=dcorr,
             aes(x=0.5,y=4.3,label=paste("rho ==",sprintf("%1.2f",corxy)) ),
-            parse=TRUE, col=pcol)   +
+            parse=TRUE, col="black")   +
   geom_text(data=dlabs,aes(x=2.3,y=0.1,label=xlab),color="gray40",angle=0)+
   geom_text(data=dlabs,aes(x=0.1,y=2.3,label=ylab),color="gray40",angle=90)+
   scale_x_continuous(limits=c(0,4.6),breaks=0:4,labels = log10labs)+
