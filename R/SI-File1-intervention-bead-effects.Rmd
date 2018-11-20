@@ -1,6 +1,6 @@
 ---
 title: Enteropathogen seroepidemiology among children in low-resource settings
-subtitle: Supplementary Information File 1. Effect of Kenya and Tanzania interventions on enteropathogen antibody response.
+subtitle: Supplementary Information File 1. No effect of intervention or bead lot on enteropathogen antibody response in Kenya and Tanzania.
 output: 
   html_document:
     highlight: haddock
@@ -16,11 +16,16 @@ output:
 
 # Notebook summary
 
-This notebook compares antibody measurements among children assigned to different treatment arms in the Asembo household water filter trial and in the Kongwa annual azithromycin distribution trial. For additional details on the interventions and design, please see the main text and previously published articles related to the trials:
+This notebook compares antibody measurements among children assigned to different treatment arms in the Asembo, Kenya household water filter trial and in the Kongwa, Tanzania annual azithromycin distribution trial. For additional details on the interventions and design, please see the main text and previously published articles related to the trials:
 
 Morris JF, Murphy J, Fagerli K, Schneeberger C, Jaron P, Moke F, et al. A Randomized Controlled Trial to Assess the Impact of Ceramic Water Filters on Prevention of Diarrhea and Cryptosporidiosis in Infants and Young Children-Western Kenya, 2013. _Am J Trop Med Hyg._ 2018;98: 1260–1268. https://www.ncbi.nlm.nih.gov/pubmed/29611500
 
 **XX Citation for Kongwa, Tanzania to be added XX**
+
+The results show that the interventions did not effect enteropathogen antibody response. Based on these results, we pooled data across treatment arms in all analyses.
+
+
+The final section of this notebook stratifies the analyses from Tanzania in years 1 versus years 2-4. The Tanania study  used different bead lots in year 1 versus years 2-4 of the study. Different bead lots could theoretically have different antigen coupling efficiency, which could introduce differences in the MFI-bg measurements, since they are on an arbitrary scale that depends on how much antibody from the sample binds to the beads. Results of the stratified analyses show that the patterns observed were qualitatively and quantitatively similar for year 1 (n=902) versus years 2-4 (n=4,087). Owing to the much larger number of samples from later years, the results of this analysis also show that the pooled results match almost exactly the estimates from years 2-4.
 
 # Script preamble
 ```{r preamble}
@@ -60,7 +65,7 @@ cgrey <- "#777777"
 ```
 
 
-#Asembo, Kenya
+#Asembo, Kenya Intervention Effects
 
 
 ## Load the data and format
@@ -313,10 +318,9 @@ ppcurve
 
 ```
 
-# Kongwa, Tanzania
+# Kongwa, Tanzania Intervention Effects
 
 In Kongwa, Tanzania, antibody measurements were among children ages 1-9 years old. Without children <1, it was difficult to identify seropositivity cutoff values based on mixture models for any of the enteric pathogens (see main text). Therefore, there were only 3 pathogens (Giardia, Crypto, E. histolytica) where we could classify children as seropositive or seronegative becuase out-of-sample specimens were used to estimate cutoffs using an ROC curve. 
-
 In light of this limitation, below we compare the intervention and control groups using mean log MFI values, which is a reasonable alternative in this situation ([Arnold et al. 2017](http://journals.plos.org/plosntds/article?id=10.1371/journal.pntd.0005616).
 
 _Salmonella_ and _Campylobacter_ antibodies were not measured after the first year enrollment survey in 2012.  No clusters were treated at enrollment, therefore we cannot assess the effect of azithromycin treatment on these pathogens. Therefore, limit comparisons to years 2013-2015 to avoid any potential time trends, including those due to a change in bead lots from 2012 until the later years.
@@ -510,6 +514,354 @@ mucurve
 ```
 
 
+# Kongwa, Tanzania Bead Lot Effects
+
+## Load and format data
+```{r data format bead comp}
+#-----------------------------
+# load the formatted data
+# created with 
+# asembo-enteric-ab-data-format.Rmd
+#-----------------------------
+dl <- readRDS(here("data","kongwa_analysis.rds"))
+
+# list the enteric antigens and formatted labels for them
+mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","etec","cholera","p18","p39","pgp3")
+
+mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Salmonella LPS group B","Salmonella LPS group D","ETEC LT β subunit","Cholera toxin β subunit","Campylobacter p18","Campylobacter p39","C. trachomatis pgp3")
+
+dl <- dl %>%
+  mutate(antigen=as.character(antigen))
+
+#-----------------------------
+# subset to antigens measured
+# in all years
+#-----------------------------
+dl <- dl %>%
+  filter(antigen %in% c("vsp3","vsp5","cp17","cp23","leca","etec"))
+
+#-----------------------------
+# create a stratification
+# variable for bead set
+#-----------------------------
+dl <- dl %>%
+  mutate(beadset = factor(ifelse(year==2012,"Year 1","Years 2-4")),
+         antigenf=factor(antigenf))
+
+
+```
+
+```{r roc cutoffs, echo=TRUE, message=FALSE, warning=FALSE}
+#----------------------------
+# Add ROC cutoffs 
+# Estimated by Diana Martin
+# for years 1 and 2-4 for antigens
+# included in multiple years
+#----------------------------
+dl$roccut <- NA
+dl$roccut[dl$antigen %in% "vsp3"] <- log10(116) 
+dl$roccut[dl$antigen %in% "vsp5"] <- log10(109) 
+dl$roccut[dl$antigen %in% "cp23"] <- log10(1185)
+dl$roccut[dl$antigen %in% "cp17"] <- log10(321)
+dl$roccut[dl$antigen %in% "leca"] <- log10(153)
+dl$roccut[dl$antigen %in% "pgp3"] <- log10(818)
+
+
+# different cutoffs for bead set used in years 2-4
+dl$roccut[dl$antigen %in% "vsp3"  & dl$svy >1] <- log10(170)
+dl$roccut[dl$antigen %in% "vsp5"  & dl$svy >1] <- log10(141)
+dl$roccut[dl$antigen %in% "cp23"  & dl$svy >1] <- log10(378) 
+dl$roccut[dl$antigen %in% "cp17"  & dl$svy >1] <- log10(180) 
+dl$roccut[dl$antigen %in% "leca"  & dl$svy >1] <- log10(94)
+dl$roccut[dl$antigen %in% "pgp3"  & dl$svy >1] <- log10(882)
+
+```
+
+## Age stratified antibody distributions
+
+This is a beadset-stratified version of Figure 1 - supplement 1 in the article.
+
+```{r age stratified distribution figure, fig.width=12,fig.height=6}
+# create age categories
+dlplot <- dl %>%
+  mutate(agecat = cut(age,breaks=c(0,1,2,3,4,10),
+                      labels=c("1 year","2 years","3 years","4 years","5-9 years")),
+         antigenf=factor(antigenf,levels=mbalabs)
+         ) %>%
+  filter(antigen!="pgp3") %>% mutate(antigenf=droplevels(antigenf)) %>%
+  group_by(antigen) %>%
+  mutate(plotroc=min(roccut))
+
+
+# custom color blind color palette is in the preamble chunck
+pcols <- c(cteal,corange)
+
+
+
+# custom log labels
+log10labs <- c( 
+  expression(10^0),
+  expression(10^1),
+  expression(10^2),
+  expression(10^3),
+  expression(10^4)
+)
+
+# faceted over age and antigen
+p2 <- ggplot(data=dlplot,aes(x=logmfi,group=beadset,fill=beadset,color=beadset)) +
+  facet_grid(agecat~antigenf,scales='free')+
+  geom_density(aes(y=..density..),color=NA,alpha=0.5)+
+  geom_vline(aes(xintercept = roccut,color=beadset)) +
+  coord_cartesian(ylim=c(0, 1.25))+
+  scale_x_continuous(expand=c(0,0),limits=c(0,5),breaks=0:4,labels=log10labs) +
+  scale_fill_manual(values=pcols)+
+  scale_color_manual(values=pcols)+
+  labs(title="",x="Luminex Response (MFI-bg)",y="Density") +
+  theme_minimal()+
+  theme(
+    strip.text.x = element_text(size=9),
+    strip.text.y=element_text(size=12,angle=0),
+    legend.position="top"
+  )
+
+p2
+```
+
+The patterns are very similar across beadsets. Vertical lines are ROC-cutoffs for each beadset.
+
+Below is a figure that contrasts the distribution of the Year 1 beadset (blue) with the overall distribution (black line); and then Years 2-4 beadset (orange) with the overall distribution (black line).  The plots  show that the combined analysis, which pools data over all years, essentially reflects the patterns observed in years 2-4 -- consistent with that bead set contributing >4 times more observations to the analysis (n=4,087 vs n=902).
+
+```{r distribution comparison to overall, fig.width=12,fig.height=6}
+# faceted over age and antigen
+p3 <- ggplot(data=dlplot,aes(x=logmfi)) +
+  facet_grid(agecat~antigenf,scales='free')+
+  geom_density(data=filter(dlplot,beadset=="Year 1"), aes(y=..density..),fill=cteal,color=NA,alpha=0.5)+
+  geom_density(aes(y=..density..),fill=NA,color="black")+
+  # scale_y_continuous(expand=c(0,0),breaks=seq(0,40,by=10)) +
+  coord_cartesian(ylim=c(0, 1.25))+
+  scale_x_continuous(expand=c(0,0),limits=c(0,5),breaks=0:4,labels=log10labs) +
+
+  labs(title="",x="Luminex Response (MFI-bg)",y="Density") +
+  theme_minimal()+
+  theme(
+    strip.text.x = element_text(size=9),
+    strip.text.y=element_text(size=12,angle=0),
+    legend.position="top"
+  )
+
+p3
+
+p4 <- ggplot(data=dlplot,aes(x=logmfi)) +
+  facet_grid(agecat~antigenf,scales='free')+
+  geom_density(data=filter(dlplot,beadset=="Years 2-4"), aes(y=..density..),fill=corange,color=NA,alpha=0.5)+
+  geom_density(aes(y=..density..),fill=NA,color="black")+
+  coord_cartesian(ylim=c(0, 1.25))+
+  scale_x_continuous(expand=c(0,0),limits=c(0,5),breaks=0:4,labels=log10labs) +
+
+  labs(title="",x="Luminex Response (MFI-bg)",y="Density") +
+  theme_minimal()+
+  theme(
+    strip.text.x = element_text(size=9),
+    strip.text.y=element_text(size=12,angle=0),
+    legend.position="top"
+  )
+
+p4
+
+```
+
+## Joint distribution of antibody response
+
+Summarize the joint distribution of antibody response, stratified by beadsets used in Y1 and Y2-4 for antigens included in both beadsets.
+
+```{r group antigens and reshape}
+#--------------------------------
+# create antigen groupings for
+# comparisons
+# drop obs not contributing
+#--------------------------------
+dl2 <- dl %>%
+  mutate(comp= ifelse(antigen %in% c("vsp3","vsp5"),"Giardia",NA),
+         comp= ifelse(antigen %in% c("cp17","cp23"),"Cryptosporidium",comp),
+         comp= factor(comp,levels=c("Giardia","Cryptosporidium"))
+         ) %>% 
+  mutate(xlab=ifelse(antigen %in% c("vsp3","vsp5"),"VSP-3",NA),
+         ylab=ifelse(antigen %in% c("vsp3","vsp5"),"VSP-5",NA),
+         xlab=ifelse(antigen %in% c("cp17","cp23"),"Cp17",xlab),
+         ylab=ifelse(antigen %in% c("cp17","cp23"),"Cp23",ylab)
+         ) %>%
+  filter(!is.na(comp))
+
+#--------------------------------
+# for antigen each pair, 
+# label it as "x" or "y" to 
+# spread it to wide format
+#--------------------------------
+dw <- dl2 %>%
+  mutate(xy=ifelse(antigen %in% c("vsp3","cp17"),"x","y")) %>%
+  select(beadset,comp,xlab,ylab,id,xy,logmfi) %>%
+  spread(xy,logmfi) %>%
+  mutate(beadset=factor(beadset,levels=c("Year 1","Years 2-4")))
+
+```
+
+```{r est correlations}
+#--------------------------------
+# estimate spearman's correlation
+# within each country, comparison
+#--------------------------------
+dcorr <- dw %>%
+  group_by(beadset,comp) %>%
+  mutate(corxy=cor(x,y,method="spearman",use="pairwise.complete.obs") ) %>%
+  summarize(corxy=max(corxy,na.rm=T))
+```
+
+```{r est trimmed smooths}
+#--------------------------------
+# estimate smooths, trimmed to
+# drop the bottom and top 1% of
+# data in each comparison
+# to avoid edge effects
+#--------------------------------
+dsmooths <- foreach(beadseti=levels(dw$beadset),.combine=rbind) %:%
+                      foreach(compi=levels(dw$comp),.combine=rbind) %do% {
+                        pd <- filter(dw,beadset==beadseti & comp==compi)
+                        if(nrow(pd)>0) {
+                          xqs <- quantile(pd$x,probs=c(0.01,0.99),na.rm=TRUE)
+                          newd <- data.frame(x=seq(xqs[1],xqs[2],by=0.01))
+                          lfit <- loess(y~x,data=pd)
+                          return(data.frame(beadset=beadseti,comp=compi,x=newd,y=predict(lfit,newdata=newd)))
+                        }
+                        
+  
+}
+
+```
+
+```{r composite figure,fig.width=7,fig.height=9 }
+
+pcols <- c(cteal,corange)
+
+# grab labels
+dlabs <- dw %>% select(beadset,comp,xlab,ylab) %>% group_by(beadset,comp) %>% slice(1)
+
+complot <- ggplot(data=dw,aes(x=x,y=y,color=beadset)) +
+  facet_grid(comp~beadset) +
+  geom_point(pch=19,alpha=0.1) +
+  geom_line(data=dsmooths,aes(x=x,y=y),col="black",size=1.2)+
+  geom_text(data=dcorr,
+            aes(x=0.5,y=4.3,label=paste("rho ==",sprintf("%1.2f",corxy)) ),
+            parse=TRUE, col="black")   +
+  geom_text(data=dlabs,aes(x=2.3,y=0.1,label=xlab),color="gray40",angle=0)+
+  geom_text(data=dlabs,aes(x=0.1,y=2.3,label=ylab),color="gray40",angle=90)+
+  scale_x_continuous(limits=c(0,4.6),breaks=0:4,labels = log10labs)+
+  scale_y_continuous(limits=c(0,4.6),breaks=0:4,labels = log10labs)+
+  scale_color_manual(values=pcols) +
+  coord_equal() +
+  labs(x="Luminex Response (MFI-bg)",y="Luminex Response (MFI-bg)") +
+  theme_minimal(base_size=12) +
+  theme(
+    strip.text.x=element_text(size=12),
+    strip.text.y=element_text(size=12,angle=0),
+    legend.position="none"
+  )
+
+
+complot
+
+```
+
+
+Stratified version of Figure 2 in the main text.
+The relationships and correlation estimates are nearly identical across beadsets.
+
+
+## Age-dependent mean curves
+Estimate age-dependent mean log10 MFI-bg in the Tanzania study, separately for the two different bead sets.
+```{r age-curve mean gam}
+
+# ---------------------------------------
+# fit cubic spline over age, separately for each antigen
+# and beadset
+# estimate approximate simultaneous confidence intervals
+# for the fits
+# ---------------------------------------
+library(mgcv)
+gamfits <- foreach(ab=levels(dl$antigenf),.combine=rbind) %:%
+  foreach(beadseti=levels(dl$beadset),.combine=rbind) %dopar% {
+    pd <- dplyr::filter(dl, antigenf==ab & beadset==beadseti)
+    gfit <- gam(logmfi~s(age, bs="cr",k=9),data=pd)
+    gsci <- gamCI(m=gfit,newdata=pd,nreps=1000)
+    gsci$antigen <- ab
+    return(gsci)
+  }
+
+# ---------------------------------------
+# get overall, pooled estimate
+# ---------------------------------------
+gamfits2 <- foreach(ab=levels(dl$antigenf),.combine=rbind) %dopar% {
+    pd <- dplyr::filter(dl, antigenf==ab)
+    gfit <- gam(logmfi~s(age, bs="cr",k=9),data=pd)
+    gsci <- gamCI(m=gfit,newdata=pd,nreps=1000)
+    gsci$antigen <- ab
+    gsci$beadset <- factor("Combined",levels=c("Year 1","Years 2-4","Combined"))
+    return(gsci)
+}
+
+gamfits <- gamfits %>%
+  mutate(beadset=factor(beadset,levels=c("Year 1","Years 2-4","Combined"))) %>%
+  bind_rows(gamfits2)
+
+```
+
+
+
+```{r age-curve mean figure tanzania, fig.height=12, fig.width=6}
+
+log10labs <- c( 
+  expression(10^0),
+  expression(10^1),
+  expression(10^2),
+  expression(10^3),
+  expression(10^4)
+)
+
+
+dplot <- data.frame(gamfits) %>%
+  dplyr::filter(pathogen!="V. cholerae") %>%
+  mutate(pathogen=factor(pathogen,levels=c("Giardia",
+                                           "Cryptosporidium",
+                                           "E. histolytica",
+                                           "ETEC")),
+         antigenf=factor(antigenf,levels=c("Giardia VSP-3","Giardia VSP-5",
+                                           "Cryptosporidium Cp17","Cryptosporidium Cp23",
+                                           "E. histolytica LecA",
+                                           "ETEC LT β subunit")))
+
+pcols <- c(cteal,corange,cblack)
+
+pcurve <- ggplot(data=dplot,aes(x=age+0.5,group=beadset,color=beadset,fill=beadset)) +
+  # approximate simultaneous CI from spline fit
+  geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA) +
+  # spline fit
+  geom_line(aes(y=fit)) +
+  # plot aesthetics
+  facet_wrap(~antigenf,nrow=6,ncol=2) +
+  scale_x_continuous(limits=c(0,10),breaks=seq(0,10,by=2))+
+  scale_y_continuous(breaks=0:4,labels=log10labs)+
+  coord_cartesian(ylim=c(0,4.5))+
+  labs(x="Age in years",y="Luminex Response (MFI-bg)") +
+  scale_fill_manual(values=pcols) +
+  scale_color_manual(values=pcols) +
+  theme_minimal(base_size=16) +
+  theme(legend.position = "top")
+
+pcurve
+
+
+```
+
+The results show that in general the MFI-bg levels were slightly lower in year 1 than in years 2-4, but that the qualitative age-dependent patterns are similar. Since year is perfectly confounded by bead lot, there is no way to distinguish whether differences are due to between-year differences in exposure or due to bead lot effects.  The plots also show that the combined analysis, which pools data over all years, essentially reflects the patterns observed in years 2-4 -- consistent with that bead set contributing >4 times more observations to the analysis (n=4,087 vs n=902).
 
 # Session Info
 ```{r session info}
