@@ -284,12 +284,12 @@ div.tocify {
 <pre><code>## [1] &quot;/Users/benarnold/enterics-seroepi&quot;</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># load packages</span>
 <span class="kw">library</span>(tidyverse)</code></pre></div>
-<pre><code>## ── Attaching packages ─────────────────────────── tidyverse 1.2.1 ──</code></pre>
+<pre><code>## ── Attaching packages ──────────────────────── tidyverse 1.2.1 ──</code></pre>
 <pre><code>## ✔ ggplot2 3.0.0     ✔ purrr   0.2.4
 ## ✔ tibble  1.4.2     ✔ dplyr   0.7.4
 ## ✔ tidyr   0.8.0     ✔ stringr 1.3.1
 ## ✔ readr   1.1.1     ✔ forcats 0.3.0</code></pre>
-<pre><code>## ── Conflicts ────────────────────────────── tidyverse_conflicts() ──
+<pre><code>## ── Conflicts ─────────────────────────── tidyverse_conflicts() ──
 ## ✖ dplyr::filter() masks stats::filter()
 ## ✖ dplyr::lag()    masks stats::lag()</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(psych)</code></pre></div>
@@ -595,16 +595,9 @@ dclass2 &lt;-<span class="st"> </span><span class="kw">foreach</span>(<span clas
            <span class="dt">antigen=</span>ab) <span class="op">%&gt;%</span>
 <span class="st">    </span><span class="kw">select</span>(antigen,Nobs,<span class="kw">everything</span>())
   tabi
-}</code></pre></div>
-<pre><code>## Warning in cohen.kappa1(x, w = w, n.obs = n.obs, alpha = alpha, levels =
-## levels): upper or lower confidence interval exceed abs(1) and set to +/- 1.
+}
 
-## Warning in cohen.kappa1(x, w = w, n.obs = n.obs, alpha = alpha, levels =
-## levels): upper or lower confidence interval exceed abs(1) and set to +/- 1.
-
-## Warning in cohen.kappa1(x, w = w, n.obs = n.obs, alpha = alpha, levels =
-## levels): upper or lower confidence interval exceed abs(1) and set to +/- 1.</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">knitr<span class="op">::</span><span class="kw">kable</span>(dclass2,<span class="dt">digits=</span><span class="dv">3</span>,<span class="dt">caption=</span><span class="st">&quot;Summary of seropositivity classifications by ROC curve and distribution among unexposed for Giardia (VSP-3 and VSP-5), Cryptosporidium (Cp17, Cp23), and E. histolytica (LecA)&quot;</span>) <span class="op">%&gt;%</span>
+knitr<span class="op">::</span><span class="kw">kable</span>(dclass2,<span class="dt">digits=</span><span class="dv">3</span>,<span class="dt">caption=</span><span class="st">&quot;Summary of seropositivity classifications by ROC curve and distribution among unexposed for Giardia (VSP-3 and VSP-5), Cryptosporidium (Cp17, Cp23), and E. histolytica (LecA)&quot;</span>) <span class="op">%&gt;%</span>
 <span class="st">  </span><span class="kw">kable_styling</span>(<span class="dt">bootstrap_options =</span> <span class="st">&quot;striped&quot;</span>,<span class="dt">full_width =</span> <span class="ot">TRUE</span>)</code></pre></div>
 <table class="table table-striped" style="margin-left: auto; margin-right: auto;">
 <caption>
@@ -801,25 +794,9 @@ dclass3 &lt;-<span class="st"> </span><span class="kw">foreach</span>(<span clas
            <span class="dt">antigen=</span>ab) <span class="op">%&gt;%</span>
 <span class="st">    </span><span class="kw">select</span>(antigen,Nobs,<span class="kw">everything</span>())
   tabi
-}</code></pre></div>
-<pre><code>## Warning in cohen.kappa1(x, w = w, n.obs = n.obs, alpha = alpha, levels =
-## levels): upper or lower confidence interval exceed abs(1) and set to +/- 1.
+}
 
-## Warning in cohen.kappa1(x, w = w, n.obs = n.obs, alpha = alpha, levels =
-## levels): upper or lower confidence interval exceed abs(1) and set to +/- 1.
-
-## Warning in cohen.kappa1(x, w = w, n.obs = n.obs, alpha = alpha, levels =
-## levels): upper or lower confidence interval exceed abs(1) and set to +/- 1.
-
-## Warning in cohen.kappa1(x, w = w, n.obs = n.obs, alpha = alpha, levels =
-## levels): upper or lower confidence interval exceed abs(1) and set to +/- 1.
-
-## Warning in cohen.kappa1(x, w = w, n.obs = n.obs, alpha = alpha, levels =
-## levels): upper or lower confidence interval exceed abs(1) and set to +/- 1.
-
-## Warning in cohen.kappa1(x, w = w, n.obs = n.obs, alpha = alpha, levels =
-## levels): upper or lower confidence interval exceed abs(1) and set to +/- 1.</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">knitr<span class="op">::</span><span class="kw">kable</span>(dclass3,<span class="dt">digits=</span><span class="dv">3</span>,<span class="dt">caption=</span><span class="st">&quot;Summary of seropositivity classifications by Gaussian mixture model and distribution among unexposed for Giardia (VSP-3 and VSP-5), Cryptosporidium (Cp17, Cp23), E. histolytica (LecA), Salmonella (LPS D and LPS B), and Norovirus (Groups I and II)&quot;</span>) <span class="op">%&gt;%</span>
+knitr<span class="op">::</span><span class="kw">kable</span>(dclass3,<span class="dt">digits=</span><span class="dv">3</span>,<span class="dt">caption=</span><span class="st">&quot;Summary of seropositivity classifications by Gaussian mixture model and distribution among unexposed for Giardia (VSP-3 and VSP-5), Cryptosporidium (Cp17, Cp23), E. histolytica (LecA), Salmonella (LPS D and LPS B), and Norovirus (Groups I and II)&quot;</span>) <span class="op">%&gt;%</span>
 <span class="st">  </span><span class="kw">kable_styling</span>(<span class="dt">bootstrap_options =</span> <span class="st">&quot;striped&quot;</span>,<span class="dt">full_width =</span> <span class="ot">TRUE</span>)</code></pre></div>
 <table class="table table-striped" style="margin-left: auto; margin-right: auto;">
 <caption>
@@ -1758,13 +1735,9 @@ dclass &lt;-<span class="st"> </span><span class="kw">foreach</span>(<span class
            <span class="dt">antigen=</span>ab) <span class="op">%&gt;%</span>
 <span class="st">    </span><span class="kw">select</span>(antigen,Nobs,<span class="kw">everything</span>())
   tabi
-}</code></pre></div>
-<pre><code>## Warning in cohen.kappa1(x, w = w, n.obs = n.obs, alpha = alpha, levels =
-## levels): upper or lower confidence interval exceed abs(1) and set to +/- 1.
+}
 
-## Warning in cohen.kappa1(x, w = w, n.obs = n.obs, alpha = alpha, levels =
-## levels): upper or lower confidence interval exceed abs(1) and set to +/- 1.</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">knitr<span class="op">::</span><span class="kw">kable</span>(dclass,<span class="dt">digits=</span><span class="dv">2</span>,<span class="dt">caption=</span><span class="st">&quot;Summary of seropositivity classifications by ROC curve and Gaussian mixture models for Giardia (VSP-3) and E. histolytica (LecA)&quot;</span>) <span class="op">%&gt;%</span>
+knitr<span class="op">::</span><span class="kw">kable</span>(dclass,<span class="dt">digits=</span><span class="dv">2</span>,<span class="dt">caption=</span><span class="st">&quot;Summary of seropositivity classifications by ROC curve and Gaussian mixture models for Giardia (VSP-3) and E. histolytica (LecA)&quot;</span>) <span class="op">%&gt;%</span>
 <span class="st">  </span><span class="kw">kable_styling</span>(<span class="dt">bootstrap_options =</span> <span class="st">&quot;striped&quot;</span>,<span class="dt">full_width=</span><span class="ot">TRUE</span>)</code></pre></div>
 <table class="table table-striped" style="margin-left: auto; margin-right: auto;">
 <caption>
@@ -1917,7 +1890,7 @@ vsp5
 ## [16] plyr_1.8.4        munsell_0.5.0     gtable_0.2.0     
 ## [19] cellranger_1.1.0  rvest_0.3.2       codetools_0.2-15 
 ## [22] evaluate_0.10.1   labeling_0.3      highr_0.6        
-## [25] broom_0.4.4       Rcpp_0.12.18      scales_1.0.0     
+## [25] broom_0.4.4       Rcpp_1.0.0        scales_1.0.0     
 ## [28] backports_1.1.2   jsonlite_1.5      mnormt_1.5-5     
 ## [31] hms_0.4.2         digest_0.6.16     stringi_1.2.2    
 ## [34] grid_3.5.0        rprojroot_1.3-2   cli_1.0.0        

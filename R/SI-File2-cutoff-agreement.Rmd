@@ -160,7 +160,7 @@ knitr::kable(dclass,digits=3,caption="Summary of seropositivity classifications 
 
 For antibodies with both cutoffs available (_Giardia_, _Cryptosporidium_, _E. histolytica_), summarize classification agreement and Cohen's Kappa.  
 
-```{r seropositivity roc vs unexp}
+```{r seropositivity roc vs unexp, warning=FALSE}
 dcomp <- dl %>%
   ungroup() %>%
   filter(age<=1) %>%
@@ -190,7 +190,7 @@ knitr::kable(dclass2,digits=3,caption="Summary of seropositivity classifications
 
 ## Mixture model vs unexposed cutoffs
 
-```{r seropositivity mix vs unexp}
+```{r seropositivity mix vs unexp, warning=FALSE}
 #-----------------------------
 # compare classification by mixture
 # model and distribution among the unexposed
@@ -282,7 +282,7 @@ pmix
 
 For antibodies where both cutoffs are available (_Giardia_ and _Cryptosporidium_), summarize classification agreement and Cohen's Kappa.  
 
-```{r asembo roc vs mix}
+```{r asembo roc vs mix, warning=FALSE}
 #-----------------------------
 # compare classification by ROC and mixture models 
 # for Giardia and Cryptosporidium, the 2 pathogens
@@ -317,7 +317,7 @@ Classification was very consistent between the two approaches.
 ## ROC vs unexposed cutoffs
 
 
-```{r Asembo roc vs unexp}
+```{r Asembo roc vs unexp, warning=FALSE}
 #-----------------------------
 # compare classification by ROC and 
 # distribution among the unexposed
@@ -451,7 +451,7 @@ pmix
 
 In cases where both cutoffs are available (_Giardia_,  and _E. histolytica_), summarize agreement between classifications.  
 
-```{r seropositivity}
+```{r seropositivity, warning=FALSE}
 # for Giardia and E. histolytica, the 2 pathogens
 # with both
 dcomp <- dl %>%
