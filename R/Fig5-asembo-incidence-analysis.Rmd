@@ -1,6 +1,6 @@
 ---
 title: Enteropathogen seroepidemiology among children in low-resource settings
-subtitle: Rates of seroconversion and seroreversion in Asembo, Kenya, Figure 6
+subtitle: Rates of seroconversion and seroreversion in Asembo, Kenya, Figure 5
 output:
   html_document:
     highlight: haddock
@@ -116,6 +116,8 @@ dlp <- dlp %>% filter(measA==1 & measB==1) %>%
 Estimates of the mean seroincidence rates during the study. The rates assume that incident sero-conversions and sero-reversions happened at the mid-point between measurements for each child.
 
 As with the age-prevalence curve analysis, use information across multiple recombinant antigens for each pathogen when identifying risk periods and incident seroconversions and seroreversions.
+
+Incident seroconversions are often used as a measure of a pathogen's force of infection.
 
 ```{r composite antigens}
 #-----------------------------
@@ -244,7 +246,7 @@ rate_ests <- left_join(rate_ests,rate_cis,by="antigenf") %>%
 rate_ests %>%
   select(antigenf,nit,ni,starts_with("seroi")) %>%
   knitr::kable(digits=1,
-             caption="Incidence rates seroconversion per child year",
+             caption="Incidence rates seroconversion per child year (force of infection)",
              col.names = c("Antigen","Years at risk","n events","Incidence per year","min95","max95"),
              row.names = FALSE)
 
@@ -350,7 +352,7 @@ rate_ests_4fold <- left_join(rate_ests_4fold,rate_cis,by="antigenf") %>%
 rate_ests_4fold %>%
   select(antigenf,nit,ni,starts_with("seroi")) %>%
   knitr::kable(digits=1,
-             caption="Incidence rates seroconversion per child year",
+             caption="Incidence rates of >4-fold boosting per child year (Force of infection)",
              col.names = c("Antigen","Years at risk","n events","Incidence per year","min95","max95"),
              row.names = FALSE)
 
@@ -457,8 +459,8 @@ est_seror %>%
 
 
 
-# Fig 6 Incidence rate figure
-**This is Figure 6 in the manuscript**
+# Fig 5 Incidence rate figure
+**This is Figure 5 in the manuscript**
 ```{r seroincidence rate figure}
 
 # reshape the incident rate estimates to long
@@ -547,8 +549,8 @@ ratep <- grid.arrange(rateplot,seroip,ncol=1,nrow=2,heights=c(4,5))
 
 
 # save pdf and a TIFF version
-ggsave(file=here("figs","Fig6-asembo-seroincidence.pdf"),plot=ratep,device=cairo_pdf,height=8,width=4.5)
-ggsave(file=here("figs","Fig6-asembo-seroincidence.TIFF"),plot=ratep,device="tiff",height=8,width=4.5)
+ggsave(file=here("figs","Fig5-asembo-seroincidence.pdf"),plot=ratep,device=cairo_pdf,height=8,width=4.5)
+ggsave(file=here("figs","Fig5-asembo-seroincidence.TIFF"),plot=ratep,device="tiff",height=8,width=4.5)
 
 ```
 
@@ -579,7 +581,7 @@ pserop <- ggplot(data=d_serop,aes(x=seroprev,y=seroi,color=antigenf)) +
   scale_y_continuous(breaks=0:10)+
   scale_color_manual(values=pcols,guide=guide_legend(title="Pathogen")) +
   coord_cartesian(xlim=c(0,1),ylim=c(0,10))+
-  labs(x="Seroprevalence (%)",y="Seroconversion rate per child-year")+
+  labs(x="Seroprevalence (%)",y="Force of Infection\n(seroconversion rate per child-year)")+
   theme_minimal() 
   # theme(legend.position="none")
 
