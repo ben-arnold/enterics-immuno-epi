@@ -1,6 +1,6 @@
 ---
 title: Enteropathogen seroepidemiology among children in low-resource settings
-subtitle: Comparison of seroprevalence with seroconversion rates (force of infection) in Haiti and Kenya, Figure 7
+subtitle: Comparison of seroprevalence with seroconversion rates (force of infection) in Haiti and Kenya, Figure 6
 output:
   html_notebook:
     highlight: haddock
@@ -104,7 +104,7 @@ pserop <- ggplot(data=d,aes(x=log(seroprev),y=log(seroi))) +
   # scale_y_continuous(breaks=0:10)+
   scale_color_manual(values=pcols,guide=guide_legend(title="Pathogen")) +
   coord_cartesian(ylim=c(-2.5,2.25))+
-  labs(x="log seroprevalence (%)",y="log seroconversion rate per child-year")+
+  labs(x="log seroprevalence (%)",y="force of infection\n(log seroconversion rate per child-year)")+
   theme_minimal() +
   theme(
     strip.text=element_text(size=10)
@@ -130,7 +130,7 @@ pserop2 <- ggplot(data=d,aes(x=seroprev*100,y=seroi)) +
   # scale_y_continuous(breaks=0:10)+
   scale_color_manual(values=pcols,guide=guide_legend(title="Pathogen")) +
   # coord_cartesian(xlim=c(0.6,1))+
-  labs(x="seroprevalence (%)",y="seroconversion rate per child-year")+
+  labs(x="seroprevalence (%)",y="force of infection\n(seroconversion rate per child-year)")+
   theme_minimal() +
   theme(
      legend.position="right"
@@ -144,6 +144,8 @@ pserop2
 
 # Separate figures with separate axes
 
+** Figure 6 in the manuscript **
+
 ```{r separate panels}
 
 # Kenya original scale
@@ -155,7 +157,7 @@ pk <- ggplot(data=kd,aes(x=seroprev,y=seroi)) +
   scale_y_continuous(breaks=0:4)+
   scale_color_manual(values=pcols,guide=guide_legend(title="Pathogen")) +
   coord_cartesian(xlim=c(0,1),ylim=c(0,4))+
-  labs(title="Kenya, ages 4-17 months",x="seroprevalence (%)",y="seroconversion rate per child-year")+
+  labs(title="Kenya, ages 4-17 months",x="seroprevalence (%)",y="force of infection\n(seroconversion rate per child-year)")+
   theme_minimal() +
   theme(
      legend.position="right",
@@ -174,7 +176,7 @@ ph <- ggplot(data=hd,aes(x=seroprev,y=seroi)) +
   scale_y_continuous(breaks=seq(0,1.5,by=0.5))+
   scale_color_manual(values=pcols[c(1:5,8,9)],guide=guide_legend(title="Pathogen")) +
   coord_cartesian(xlim=c(0.6,1),ylim=c(0,1.5))+
-  labs(title="Haiti, ages 0 - 11 years",x="seroprevalence (%)",y="seroconversion rate per child-year")+
+  labs(title="Haiti, ages 0 - 11 years",x="seroprevalence (%)",y="force of infection\n(seroconversion rate per child-year)")+
   theme_minimal() +
   theme(
      legend.position="right",
@@ -186,8 +188,8 @@ ivsp_composite <- grid.arrange(pk,ph,ncol=1,nrow=2)
 
 
 # save PDF and TIFF versions
-ggsave(file=here("figs","Fig7-asembo-haiti-seroincidence-vs-seroprev.pdf"),plot=ivsp_composite,device=cairo_pdf,height=8,width=6)
-ggsave(file=here("figs","Fig7-asembo-haiti-seroincidence-vs-seroprev.TIFF"),plot=ivsp_composite,device="tiff",height=8,width=6)
+ggsave(file=here("figs","Fig6-asembo-haiti-foi-vs-seroprev.pdf"),plot=ivsp_composite,device=cairo_pdf,height=8,width=6)
+ggsave(file=here("figs","Fig6-asembo-haiti-foi-vs-seroprev.TIFF"),plot=ivsp_composite,device="tiff",height=8,width=6)
 
   
 ```
