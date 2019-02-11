@@ -1,6 +1,6 @@
 ---
 title: Enteropathogen seroepidemiology among children in low-resource settings
-subtitle: Haiti antibody profiles, Figure 5 - supplement 1
+subtitle: Haiti antibody profiles, Figure 4 - supplement 1
 output: 
   html_document:
     highlight: haddock
@@ -284,7 +284,7 @@ indivp_meas
 
 ```
 
-# Figure 5 - supplement 1, Individual trajectories by measurement round
+# Figure 4 - supplement 1, Individual trajectories by measurement round
 ```{r figure of individual MFI trajectories by measurement compare class, fig.width=7,fig.height=7}
 # Individual trajectories by measurement (1 to 6)
 # since only 29 children were measured 7+ times
@@ -314,8 +314,8 @@ indivp_meas2 <- ggplot(filter(dl2pp,!is.na(sero_comp) & measnum<=6), aes(x=measn
 indivp_meas2
 
 # save PDF and TIFF versions
-ggsave(filename=here("figs","Fig5sup1-haiti-indiv-ab-trajectories-meas.pdf"),plot = indivp_meas2, device=cairo_pdf, width=6,height=12)
-ggsave(filename=here("figs","Fig5sup1-haiti-indiv-ab-trajectories-meas.TIFF"),plot = indivp_meas2, device='tiff', width=6,height=12)
+ggsave(filename=here("figs","Fig4sup1-haiti-indiv-ab-trajectories-meas.pdf"),plot = indivp_meas2, device=cairo_pdf, width=6,height=12)
+ggsave(filename=here("figs","Fig4sup1-haiti-indiv-ab-trajectories-meas.TIFF"),plot = indivp_meas2, device='tiff', width=6,height=12)
 
 ```
 

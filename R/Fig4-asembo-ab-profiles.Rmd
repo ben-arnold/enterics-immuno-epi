@@ -1,6 +1,6 @@
 ---
 title: Enteropathogen seroepidemiology among children in low-resource settings
-subtitle: Asembo, Kenya antibody profiles, Figure 5
+subtitle: Asembo, Kenya antibody profiles, Figure 4
 output:
   html_document:
     highlight: haddock
@@ -200,7 +200,7 @@ pp
 
 ```
 
-# Figure 5, antibody trajectories
+# Figure 4, antibody trajectories
 ```{r change in antibody seroincidence figure subset, fig.height=9, fig.width=6}
 #-----------------------------
 # final figure, excluding cholera
@@ -237,8 +237,8 @@ pp2 <- ggplot(data=dl3,aes(x=svy,y=logmfi,group=factor(childid),color=icat_comp)
 pp2
 
 # save PDF and TIFF versions
-ggsave(here("figs","Fig5-asembo-ab-trajectories.pdf"),plot=pp2,device=cairo_pdf,width=6,height=10)
-ggsave(here("figs","Fig5-asembo-ab-trajectories.TIFF"),plot=pp2,device="tiff",width=6,height=10)
+ggsave(here("figs","Fig4-asembo-ab-trajectories.pdf"),plot=pp2,device=cairo_pdf,width=6,height=10)
+ggsave(here("figs","Fig4-asembo-ab-trajectories.TIFF"),plot=pp2,device="tiff",width=6,height=10)
 
 ```
 
