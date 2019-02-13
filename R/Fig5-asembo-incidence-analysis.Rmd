@@ -30,6 +30,7 @@ here()
 
 # load packages
 library(tidyverse)
+library(viridis)
 library(gridExtra)
 
 # set up for parallel computing
@@ -459,100 +460,125 @@ est_seror %>%
 
 
 
-# Fig 5 Incidence rate figure
-**This is Figure 5 in the manuscript**
-```{r seroincidence rate figure}
-
-# reshape the incident rate estimates to long
-rate_ests_i <- rate_ests %>% 
-  select(pathogen,antigen,antigenf,n=ni,nt=nit,rate=seroi,rate_lb=seroi_lb,rate_ub=seroi_ub) %>%
-  mutate(outcome="Seroconversion")
-
-rate_ests_r <- rate_ests %>% 
-  select(pathogen,antigen,antigenf,n=nr,nt=nrt,rate=seror,rate_lb=seror_lb,rate_ub=seror_ub) %>%
-  mutate(outcome="Seroreversion")
-rate_ests_long <- bind_rows(rate_ests_i,rate_ests_r) %>%
-  arrange(antigenf,outcome)
-
-# Drop cholera because of potential cross-reactivity with ETEC heat labile toxin beta subunit
-rate_plot_d <- rate_ests_long %>%
-  filter(pathogen!="V. cholerae")
-
-# bright color-blind palette defined in an earlier code chunk
-pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cgrey)
-# pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
-
-rateplot <- ggplot(data=rate_plot_d,
-                 aes(x=antigenf,y=rate,
-                     color=antigenf,fill=antigenf, 
-                     shape=outcome)) +
-  geom_pointrange(aes(ymin=rate_lb,ymax=rate_ub,group=outcome),bg="white",
-                  position=position_nudge(x=rep(c(-0.1,0.1),6) ) ) +
-  labs(x="",y="Incidence rate per child-year\n") +
-  scale_y_continuous(breaks=0:6)+
-  scale_shape_manual(values=c(19,22)) +
-  scale_fill_manual(values=pcols) +
-  scale_color_manual(values=pcols) +
-  guides(color = FALSE, fill = FALSE)+
-  coord_cartesian(ylim=c(0,6))+
-  theme_minimal() +
-  theme(legend.position = "top", legend.title=element_blank(),
-        axis.text.x=element_blank()) 
-
-
-```
+# Incidence Proportion Figure
 
 ```{r seroincidence proportion figure}
+
+# sort pathogens by rates
+ratelabs <- c("E. histolytica LecA",
+              "Salmonella LPS groups B or D",
+              "Giardia VSP-3 or VSP-5",
+              "Cryptosporidium Cp17 or Cp23",
+              "ETEC LT β subunit",
+              "Campylobacter p18 or p39")
 
 
 # bind the incidence proportion estimates together for plot aesthetics
 est_sero <- est_seroi %>%
-  mutate(outcome="Seroconversion") %>%
+  mutate(outcome="proportion seroconverted") %>%
   bind_rows(est_seror) %>%
-  mutate(outcome=ifelse(is.na(outcome),"Seroreversion",outcome)) %>%
-  arrange(antigenf,outcome)
+  mutate(outcome=ifelse(is.na(outcome),"proportion seroreverted",outcome)) %>%
+  arrange(antigenf,desc(outcome))
 
 # Drop cholera because of potential cross-reactivity with ETEC heat labile toxin beta subunit
+# reverse antigen factor order for coordinate-flipped figure
 cuminc_plot_d <- est_sero %>%
-  filter(pathogen!="V. cholerae")
+  filter(pathogen!="V. cholerae")  %>%
+  mutate(antigenf=factor(antigenf,levels=ratelabs))
 
 # bright color-blind palette defined in an earlier code chunk
-pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cgrey)
-# pcols <- c(corange,cred,cmagent,cblue,cteal,cgreen,cgrey)
+# pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cgrey)
+# pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
+
+vircols <- viridis(n=4,alpha=1,begin=0.2,end=0.97)
+pcol <- vircols[2]
 
 seroip <- ggplot(data=cuminc_plot_d,
                  aes(x=antigenf,y=mean,
-                     color=antigenf,fill=antigenf, 
-                     shape=outcome)) +
-  geom_pointrange(aes(ymin=min95,ymax=max95,group=outcome),bg="white",
-                  position=position_nudge(x=rep(c(-0.1,0.1),6) ) ) +
+                     # color=antigenf,fill=antigenf
+                     )) +
+  geom_pointrange(aes(ymin=min95,ymax=max95,group=outcome),color=pcol,size=0.5 ) +
+  facet_grid(.~outcome)+
   
   # facet_wrap(~factor(outcome),nrow=2,ncol=1)+
-  labs(x="",y="Proportion seroconverted (6 month period)") +
+  labs(x="",y="risk over a 6 month period") +
   scale_y_continuous(breaks=seq(0,1,by=0.2))+
-  scale_shape_manual(values=c(19,22)) +
-  scale_fill_manual(values=pcols) +
-  scale_color_manual(values=pcols) +
   guides(color = FALSE, fill = FALSE)+
-  coord_cartesian(ylim=c(0,1))+
+  coord_flip(ylim=c(0,1))+
   theme_minimal() +
   theme(legend.position = "none", legend.title=element_blank(),
-        axis.text.x=element_text(size=8,angle=45,hjust = 1,color=pcols),
-        strip.text = element_text(size=12)) 
+        axis.title.y=element_text(color="gray20"),
+        axis.title.x=element_text(size=9)) 
 
-
+seroip
 
 ```
 
-```{r composite rate figure}
-ratep <- grid.arrange(rateplot,seroip,ncol=1,nrow=2,heights=c(4,5))
+# Figure 5, incidence rate figure
 
+**This is Figure 5 a in the manuscript**
+```{r seroincidence rate figure}
+
+# sort pathogens by rates
+ratelabs <- c("E. histolytica LecA",
+              "Salmonella LPS groups B or D",
+              "Giardia VSP-3 or VSP-5",
+              "Cryptosporidium Cp17 or Cp23",
+              "ETEC LT β subunit",
+              "Campylobacter p18 or p39")
+
+# reshape the incident rate estimates to long
+rate_ests_i <- rate_ests %>% 
+  select(pathogen,antigen,antigenf,n=ni,nt=nit,rate=seroi,rate_lb=seroi_lb,rate_ub=seroi_ub) %>%
+  mutate(outcome="seroconversion rate (force of infection)")
+
+rate_ests_r <- rate_ests %>% 
+  select(pathogen,antigen,antigenf,n=nr,nt=nrt,rate=seror,rate_lb=seror_lb,rate_ub=seror_ub) %>%
+  mutate(outcome="seroreversion rate")
+rate_ests_long <- bind_rows(rate_ests_i,rate_ests_r) %>%
+  arrange(antigenf,desc(outcome))
+
+# Drop cholera because of potential cross-reactivity with ETEC heat labile toxin beta subunit
+# make a custom antigen order to sort by rates
+rate_plot_d <- rate_ests_long %>%
+  filter(pathogen!="V. cholerae") %>%
+  mutate(antigenf=factor(antigenf,levels=ratelabs))
+
+
+# bright color-blind palette defined in an earlier code chunk
+# pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cgrey)
+# pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
+
+vircols <- viridis(n=4,alpha=1,begin=0.2,end=0.97)
+pcol <- vircols[2]
+
+rateplot <- ggplot(data=rate_plot_d,
+                 aes(x=antigenf,y=rate)) +
+  geom_pointrange(aes(ymin=rate_lb,ymax=rate_ub,group=outcome),bg="white",color=pcol,size=0.5 ) + 
+  #position=position_nudge(x=rep(c(-0.2,0.2),6) 
+  facet_grid(.~outcome)+
+  labs(x="",y="incidence per child-year at risk") +
+  scale_y_continuous(breaks=0:7)+
+  scale_shape_manual(values=c(19,22)) +
+  # scale_fill_manual(values=pcols) +
+  # scale_color_manual(values=pcols) +
+  guides(color = FALSE, fill = FALSE)+
+  # coord_cartesian(ylim=c(0,6))+
+  coord_flip() +
+  theme_minimal() +
+  theme(legend.position = c(0.8,0.9), legend.title=element_blank(),
+        axis.title.y=element_text(color="gray20"),
+        axis.title.x=element_text(size=9)
+        ) 
+
+rateplot
 
 # save pdf and a TIFF version
-ggsave(file=here("figs","Fig5-asembo-seroincidence.pdf"),plot=ratep,device=cairo_pdf,height=8,width=4.5)
-ggsave(file=here("figs","Fig5-asembo-seroincidence.TIFF"),plot=ratep,device="tiff",height=8,width=4.5)
+ggsave(file=here("figs","Fig5a-asembo-seroincidence.pdf"),plot=rateplot,device=cairo_pdf,height=2.4,width=8)
+ggsave(file=here("figs","Fig5a-asembo-seroincidence.TIFF"),plot=rateplot,device="tiff",height=2.4,width=8)
 
 ```
+
 
 # Compare seroconversion rates with seroprevalence
 For pathogens without seroreversion, age-dependent seroprevalence is a measure of the cumulative distribution of exposure. In turn, this is a measure of the cumulative incidence of seroconversion. Since the seroreversion rate approahed zero for many pathogens studied, we would hypothesize there would be a strong relationship between seroprevalence and the average seroconversion rate over the period.  Examine this relationship for each pathogen.  Store results of this comparison for plotting in the separate Figure 7 notebook that also includes estimates from the Haiti cohort.
