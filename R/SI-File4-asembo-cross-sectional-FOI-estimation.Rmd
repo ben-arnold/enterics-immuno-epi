@@ -28,6 +28,7 @@ library(here)
 here()
 # load packages
 library(tidyverse)
+library(viridis)
 library(mgcv)
 library(grid)
 
@@ -196,7 +197,7 @@ rcp <- function(h,r,t) h/(r+h)*(1-exp(-(r+h)*t))
 # of the data
 #--------------------------------
 est_r <- readRDS("~/enterics-seroepi/output/asembo-enteric-ab-ests-incidencerates.rds") %>%
-  filter(outcome=="Seroreversion") %>%
+  filter(outcome=="seroreversion rate") %>%
   mutate(antigenf=droplevels(antigenf)) %>%
   # convert rates to per-month (rather than per-year)
   mutate(rate=rate/12,rate_lb=rate_lb/12,rate_ub=rate_ub/12) %>%
@@ -761,37 +762,67 @@ rate_comp <- bind_rows(est_long,est_xc,est_cr,est_rcm) %>%
 
 Create a figure to summarize the comparison
 
-**This is Figure 5 - supplement 1**
+**This is Figure 5 B**
 
 ```{r incidence long xc comp figure}
 
+
+# sort pathogens by rates
+ratelabs <- c("E. histolytica LecA",
+              "Salmonella LPS groups B or D",
+              "Giardia VSP-3 or VSP-5",
+              "Cryptosporidium Cp17 or Cp23",
+              "ETEC LT β subunit",
+              "Campylobacter p18 or p39")
+rate_comp2 <- rate_comp %>%
+  mutate(antigenf=factor(antigenf,levels=ratelabs),
+         method=factor(method,levels=rev(levels(method)))) %>%
+  arrange(antigenf,method)
+
 # pcols <- c(cblack,corange,cteal,cmagent)
-pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+# pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
 # pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
+vircols <- viridis(n=4,alpha=1,begin=0.2,end=0.97)
+pcols <- vircols[c(4,3,1,2)]
 
 
-
-ratecomp_plot <- ggplot(data=rate_comp,aes(x=antigenf,y=rate,color=antigenf,fill=method,shape=method)) +
-  geom_pointrange(aes(ymin=rate_lb,ymax=rate_ub),
-                  fill="white",size=0.5,
-                  position=position_nudge(x=rep(c(-0.3,-0.1,0.1,0.3),3)) )+
-  
-  labs(x="",y="Force of infection\n(seroconversion rate per child-year)") +
+ratecomp_plot <- ggplot(data=rate_comp2,
+                        aes(x=antigenf,y=rate,color=method)) +
+  geom_errorbar(aes(ymin=rate_lb,ymax=rate_ub),
+                  width=0,
+                  position=position_nudge(x=rep(c(-0.3,-0.1,0.1,0.3),3)))+
+  geom_point(size=3,
+             position=position_nudge(x=rep(c(-0.3,-0.1,0.1,0.3),3)))+
+  labs(x="",y="seroconversion rate per child-year at risk") +
   scale_y_continuous(breaks=0:7)+
-  # scale_fill_manual(values=pcols) +
-  scale_color_manual(values=pcols,guide=FALSE) +
-  scale_shape_manual(values=c(21,22,23,24),guide_legend(title="Estimation method"))+
-  coord_cartesian(ylim=c(0,7.5))+
-  theme_minimal() +
-  theme(legend.position = "right",
-        axis.text.x=element_text(size=8,angle=45,hjust = 1,color=pcols),
-        strip.text = element_text(size=12),)
+  scale_fill_manual(values=pcols) +
+  scale_color_manual(values=pcols) +
+  # scale_shape_manual(values=c(21,22,23,24),guide_legend(title="Estimation method"))+
+  guides(color=guide_legend(title="force of infection method", 
+                            reverse=TRUE,
+                            keywidth=0.2,
+                            keyheight=0.15,
+                            default.unit="inch",
+                            ncol=1))+
+  coord_flip()+
+  theme_minimal(base_size = 16) +
+  theme(
+        legend.position = "top",
+        # legend.background=element_rect(color="white"),
+        legend.title=element_text(size=12,vjust=1),
+        legend.margin=margin(0,0,0,0),
+        legend.box.margin=margin(b=-10,t=10,l=-10,r=-10),
+        legend.box.just="left",
+        # legend.title=element_text(size=12),
+        legend.text=element_text(size=8),
+        axis.title.x = element_text(size=12)
+        )
 
 ratecomp_plot
 
 # save PDF and TIFF versions
-ggsave(here("figs","Fig5sup1-asembo-ab-foi-comparison.pdf"),plot=ratecomp_plot,device=cairo_pdf,width=7.5,height=4)
-ggsave(here("figs","Fig5sup1-asembo-ab-foi-comparison.TIFF"),plot=ratecomp_plot,device="tiff",width=7.5,height=4)
+ggsave(here("figs","Fig5b-asembo-ab-foi-comparison.pdf"),plot=ratecomp_plot,device=cairo_pdf,width=7,height=5)
+ggsave(here("figs","Fig5b-asembo-ab-foi-comparison.TIFF"),plot=ratecomp_plot,device="tiff",width=7,height=5)
 
 ```
 Put the estimates on separate scales for lower and higher transmission pathogens to enable clearer comparisons
@@ -799,15 +830,17 @@ Put the estimates on separate scales for lower and higher transmission pathogens
 ```{r incidence long xc comp figure 2 panel}
 
 # pcols <- c(cblack,corange,cteal,cmagent)
-pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+# pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
 # pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
+vircols <- viridis(n=4,alpha=1,begin=0.2,end=0.97)
+pcols <- vircols[c(2,1,3,4)]
 
-rate_comp2 <- rate_comp %>%
+rate_comp3 <- rate_comp2 %>%
   mutate(pathgroup=ifelse(antigenf %in% c("ETEC LT β subunit","Campylobacter p18 or p39"),"Higher transmission","Lower transmission"),
          pathgroup=factor(pathgroup,levels=c("Lower transmission","Higher transmission")))
 
 
-ratecomp_plot2 <- ggplot(data=rate_comp2,aes(color=antigenf,fill=method,shape=method)) +
+ratecomp_plot2 <- ggplot(data=rate_comp3,aes(color=method,fill=method)) +
   facet_wrap(~pathgroup,scales="free")+
   geom_pointrange(aes(x=antigenf,y=rate,ymin=rate_lb,ymax=rate_ub),
                   fill="white",size=0.5,
@@ -816,19 +849,21 @@ ratecomp_plot2 <- ggplot(data=rate_comp2,aes(color=antigenf,fill=method,shape=me
   scale_y_continuous(breaks=0:7)+
   scale_x_discrete(drop=TRUE,aesthetics=c("color"))+
   # scale_fill_manual(values=pcols) +
-  scale_color_manual(values=pcols,guide=FALSE) +
-  scale_shape_manual(values=c(21,22,23,24),guide_legend(title="Estimation method"))+
+  scale_color_manual(values=pcols) +
+    guides(color=guide_legend(title="force of infection method", 
+                            reverse=TRUE,
+                            keywidth=0.2,
+                            keyheight=0.15,
+                            default.unit="inch",
+                            ncol=1))+
   # coord_cartesian(ylim=c(0,7.5))+
+  coord_flip()+
   theme_minimal() +
   theme(legend.position = "top",
-        axis.text.x=element_text(size=8,angle=45,hjust = 1),
         strip.text = element_text(size=12))
 
 ratecomp_plot2
 
-# save PDF and TIFF versions
-# ggsave(here("figs","Fig6sup1-asembo-ab-seroincidence-rate-comparison.pdf"),plot=ratecomp_plot2,device="pdf",width=8,height=4)
-# ggsave(here("figs","Fig6sup1-asembo-ab-seroincidence-rate-comparison.TIFF"),plot=ratecomp_plot2,device="tiff",width=8,height=4)
 
 ```
 
