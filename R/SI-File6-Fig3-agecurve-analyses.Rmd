@@ -27,9 +27,9 @@ here()
 
 
 library(tidyverse)
+library(viridis)
 library(gridExtra)
 library(kableExtra) # devtools::install_github("haozhu233/kableExtra")
-library(mixtools)
 
 options(knitr.table.format = "html") 
 
@@ -50,6 +50,9 @@ cred <- "#EE3333"
 corange <- "#EEA722"
 cyellow <- "#FFEE33"
 cgrey <- "#777777"
+
+# viridis color palette
+vircols <- viridis(n=7,alpha=1,begin=0.2,end=0.97)
 
 ```
 
@@ -426,7 +429,8 @@ dplot <- pgamfits %>%
 
 
 # bright color-blind palette defined in an earlier code chunk
-pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cmagent)
+# pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cmagent)
+pcols <- vircols[c(1:5,7,7)]
 
 ppcurve <- ggplot(data=dplot,aes(x=age,color=antigenf,fill=antigenf)) +
   # approximate simultaneous CI from spline fit
@@ -487,11 +491,13 @@ plabs <- gamfits %>%
 
 
 # custom color blind color palette is in the preamble chunck
-pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cmagent)
+# pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cmagent)
+pcols <- vircols[c(1:5,6,6)]
+
 
 pcurve <- ggplot(data=gamfits,aes(x=age,color=pathogeng,fill=pathogeng)) +
   # approximate simultaneous CI from spline fit
-  geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA,fill=cgrey) +
+  geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.4,color=NA,fill=cgrey) +
   # actual measurements
   geom_jitter(aes(y=logmfi),width=0.2,height=0,alpha=0.4,size=0.3) +
   # spline fit
@@ -522,15 +528,17 @@ pplabs <- pgamfits %>%
   slice(1)
 
 # bright color-blind palette defined in an earlier code chunk
-pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cmagent)
+# pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cmagent)
+pcols <- vircols[c(1:5,6,6)]
+
 
 ppcurve2 <- ggplot(data=dplot,aes(x=age,color=antigenf,fill=antigenf)) +
   # approximate simultaneous CI from spline fit
-  geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA) +
+  geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,fill=cgrey,color=NA) +
   # actual measurements
-  geom_point(aes(y=seropos),color="black",alpha=0.4,size=0.3) +
+  geom_point(aes(y=seropos),alpha=0.7,size=1.5,pch="|") +
   # spline fit
-  geom_line(aes(y=fit)) +
+  geom_line(aes(y=fit),color="black") +
   # labels
   geom_text(data=pplabs,aes(x=0,y=1.03,label=antigenf,hjust=0,vjust=0),color="gray20")+
   # plot aesthetics
@@ -698,8 +706,9 @@ log10labs <- c(
 )
 
 # bright color-blind palette defined in an earlier code chunk
-pcols <- c(cred,corange,cgreen,cteal,cblue,cgrey,cmagent)
+# pcols <- c(cred,corange,cgreen,cteal,cblue,cgrey,cmagent)
 # pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
+pcols <- vircols[c(1:7)]
 
 
 pcurve <- ggplot(data=gamfits,aes(x=age,group=pathogen,color=pathogen,fill=pathogen)) +
@@ -883,8 +892,9 @@ The spline fits are colored and the highly adaptive ensemble fits are black. The
 
 
 # bright color-blind palette defined in an earlier code chunk
-pcols <- c(cred,corange,cgreen,cteal,cblue,cgrey,cmagent)
+# pcols <- c(cred,corange,cgreen,cteal,cblue,cgrey,cmagent)
 # pcols <- c(corange,cred,cmagent,cblue,cteal,cgreen,cgrey)
+pcols <- vircols
 
 
 ppcurve <- ggplot(data=pgamfits,aes(x=age,color=antigenf,fill=antigenf)) +
@@ -954,8 +964,9 @@ plabs <- dplot %>%
 
 
 # bright color-blind palette defined in an earlier code chunk
-pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+# pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
 # pcols <- c(corange,cred,cmagent,cblue,cteal,cgreen,cgrey)
+pcols <- vircols[c(1:5,7)]
 
 
 pcurve <- ggplot(data=filter(dplot,age<=17),aes(x=age,group=pathogen,color=pathogen,fill=pathogen)) +
@@ -985,8 +996,9 @@ Seroprevalence curves
 ```{r age-curve seroprevalence figure kenya, fig.height=9, fig.width=6}
 
 # bright color-blind palette defined in an earlier code chunk
-pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+# pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
 # pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
+pcols <- vircols[c(1:5,7)]
 
 dplot <- pgamfits %>%
   filter(age<=17 & antigen!="cholera")
@@ -1000,11 +1012,11 @@ pplabs <- dplot %>%
 
 ppcurve2 <- ggplot(data=dplot,aes(x=age,color=antigenf,fill=antigenf)) +
   # approximate simultaneous CI from spline fit
-  geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA) +
+  geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA,fill=cgrey) +
   # actual measurements
-  geom_jitter(aes(y=seropos),width=0.2,height=0,color="black",alpha=0.4,size=0.3) +
+  geom_jitter(aes(y=seropos),width=0.2,height=0,alpha=0.4,size=1.5,pch="|") +
   # spline fit
-  geom_line(aes(y=fit)) +
+  geom_line(aes(y=fit),color="black") +
   # labels
   geom_text(data=pplabs,aes(x=4,y=1.03,label=antigenf,hjust=0,vjust=0),color="gray20")+
   # plot aesthetics
@@ -1154,7 +1166,8 @@ log10labs <- c(
 )
 
 # custom color blind color palette is in the preamble chunck
-pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cgrey)
+# pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cgrey)
+pcols <- vircols
 
 pcurveall <- ggplot(data=gamfits,aes(x=age+0.5,group=pathogen,color=pathogen,fill=pathogen)) +
   # approximate simultaneous CI from spline fit
@@ -1331,7 +1344,8 @@ Plot all of the estimates together. The spline fits are colored and the highly a
 ```{r age-curve seroprevalence figure all tanzania, fig.height=9, fig.width=6}
 
 # bright color-blind palette defined in an earlier code chunk
-pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+# pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+pcols <- vircols
 
 ppcurve <- ggplot(data=pgamfits,aes(x=age+0.5,color=pathogen,fill=pathogen)) +
   # approximate simultaneous CI from spline fit
@@ -1397,11 +1411,12 @@ plabs <- dplot %>%
 
 
 # custom color blind color palette is in the preamble chunck
-pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+# pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+pcols <- vircols[c(1:5,7)]
 
 pcurve <- ggplot(data=dplot,aes(x=age+0.5,color=pathogen,fill=pathogen)) +
   # approximate simultaneous CI from spline fit
-  geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA,fill=cgrey) +
+  geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.3,color=NA,fill=cgrey) +
   # actual measurements
   geom_jitter(aes(y=logmfi),width=0.2,height=0,alpha=0.3,size=0.3) +
   # spline fit
@@ -1443,15 +1458,17 @@ pplabs <- data.frame(pathogen=c("Giardia","Cryptosporidium","E. histolytica","Sa
 # pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
 # for reasons unclear, fill for Giardia is mapping to arg #5 in pcols
 # tired of thrashing around with it, so just patching it here:
-pcols <- c(cred,corange,cgreen,cteal,cred,cmagent)
+# pcols <- c(cred,corange,cgreen,cteal,cred,cmagent)
+pcols <- vircols[c(1:5,7)]
+
 
 ppcurve2 <- ggplot(data=dplot2,aes(x=age+0.5,color=antigenf,fill=antigenf)) +
   # approximate simultaneous CI from spline fit
-  geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA) +
+  geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA,fill=cgrey) +
   # actual measurements (do not plot -- not informative b/c too many points)
   # geom_jitter(aes(y=seropos),width=0.2,height=0,color="black",alpha=0.4,size=0.3) +
   # spline fit
-  geom_line(aes(y=fit)) +
+  geom_line(aes(y=fit),color="black") +
   # labels
   geom_text(data=pplabs,aes(x=0,y=1.03,label=antigenf,hjust=0,vjust=0),color="gray20")+
   # plot aesthetics
