@@ -1,6 +1,6 @@
 ---
 title: Enteropathogen seroepidemiology among children in low-resource settings
-subtitle: Rates of seroconversion and seroreversion in Asembo, Kenya, Figure 5
+subtitle: Rates of seroconversion and seroreversion in Asembo, Kenya, Figure 6A
 output:
   html_document:
     highlight: haddock
@@ -50,6 +50,11 @@ cred <- "#EE3333"
 corange <- "#EEA722"
 cyellow <- "#FFEE33"
 cgrey <- "#777777"
+
+# safe color blind palette
+# http://jfly.iam.u-tokyo.ac.jp/color/
+# http://www.cookbook-r.com/Graphs/Colors_(ggplot2)/
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
 ```
 
@@ -514,9 +519,12 @@ seroip
 
 ```
 
-# Figure 5 A, incidence rate figure
+The incidence proportion summarizes the cumulative risk over the period, but masks some variation in differences between pathogens, particularly those with highest transmission. The next figure summarizes average incidence among among person-time at risk (force of infection), which provides a slightly more granual assessment of variation in exposure between pathogens.
 
-**This is Figure 5 A in the manuscript**
+
+# Figure 6 A, incidence rate figure
+
+**This is Figure 6 A in the manuscript**
 ```{r seroincidence rate figure}
 
 # sort pathogens by rates
@@ -597,11 +605,11 @@ d_serop <- bind_rows(d_seropi,d_serop4fold) %>%
   mutate(method=factor(method))
 
 
-pcols <- c(cred,corange,cgreen,cteal,cblue,cgrey,cmagent)
+# pcols <- c(cred,corange,cgreen,cteal,cblue,cgrey,cmagent)
+pcols <- cbPalette
 
 pserop <- ggplot(data=d_serop,aes(x=seroprev,y=seroi,color=antigenf)) +
   geom_pointrange(aes(,ymin=seroi_lb,ymax=seroi_ub),size=0.7) +
-  # geom_text(aes(label=antigenf),nudge_x = d_serop$nudge,hjust=d_serop$just,size=2)+
   facet_grid(.~method)+
   scale_x_continuous(breaks=seq(0,1,by=0.2),labels=seq(0,100,by=20))+
   scale_y_continuous(breaks=0:7)+
