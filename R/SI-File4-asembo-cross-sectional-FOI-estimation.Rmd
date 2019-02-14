@@ -767,11 +767,11 @@ rate_comp <- bind_rows(est_long,est_xc,est_cr,est_rcm) %>%
   arrange(antigenf,method)
 
 ```
-# Figure 5 B, FOI Comparison
+# Figure 6B, FOI Comparison
 
 Create a figure to summarize the comparison
 
-**This is Figure 5 B in the manuscript**
+**This is Figure 6B in the manuscript**
 
 ```{r incidence long xc comp figure}
 
@@ -830,8 +830,8 @@ ratecomp_plot <- ggplot(data=rate_comp2,
 ratecomp_plot
 
 # save PDF and TIFF versions
-ggsave(here("figs","Fig5b-asembo-ab-foi-comparison.pdf"),plot=ratecomp_plot,device=cairo_pdf,width=7,height=5)
-ggsave(here("figs","Fig5b-asembo-ab-foi-comparison.TIFF"),plot=ratecomp_plot,device="tiff",width=7,height=5)
+ggsave(here("figs","Fig6b-asembo-ab-foi-comparison.pdf"),plot=ratecomp_plot,device=cairo_pdf,width=7,height=5)
+ggsave(here("figs","Fig6b-asembo-ab-foi-comparison.TIFF"),plot=ratecomp_plot,device="tiff",width=7,height=5)
 
 ```
 Put the estimates on separate scales for lower and higher transmission pathogens to enable clearer comparisons
@@ -854,7 +854,7 @@ ratecomp_plot2 <- ggplot(data=rate_comp3,aes(color=method,fill=method)) +
   geom_pointrange(aes(x=antigenf,y=rate,ymin=rate_lb,ymax=rate_ub),
                   fill="white",size=0.5,
                   position=position_nudge(x=rep(c(-0.3,-0.1,0.1,0.3),3)) )+
-  labs(x="",y="Force of infection\n(seroconversion rate per child-year)") +
+  labs(x="",y="force of infection\n(seroconversion rate per child-year)") +
   scale_y_continuous(breaks=0:7)+
   scale_x_discrete(drop=TRUE,aesthetics=c("color"))+
   # scale_fill_manual(values=pcols) +
