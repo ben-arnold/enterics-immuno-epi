@@ -54,6 +54,9 @@ cgrey <- "#777777"
 # viridis color palette
 vircols <- viridis(n=7,alpha=1,begin=0.2,end=0.97)
 
+# subdued colorblind palette
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
 ```
 
 ## Reused Functions
@@ -497,11 +500,11 @@ pcols <- vircols[c(1:5,6,6)]
 
 pcurve <- ggplot(data=gamfits,aes(x=age,color=pathogeng,fill=pathogeng)) +
   # approximate simultaneous CI from spline fit
-  geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.4,color=NA,fill=cgrey) +
+  geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.4,color=NA) +
   # actual measurements
-  geom_jitter(aes(y=logmfi),width=0.2,height=0,alpha=0.4,size=0.3) +
+  geom_jitter(aes(y=logmfi),width=0.2,height=0,alpha=0.4,size=0.3,color=cgrey) +
   # spline fit
-  geom_line(aes(y=fit),color="black") +
+  geom_line(aes(y=fit)) +
   # labels
   geom_text(data=plabs,aes(x=0,y=4.55,label=antigenf,hjust=0,vjust=0),color="gray20")+
   # plot aesthetics
@@ -534,11 +537,11 @@ pcols <- vircols[c(1:5,6,6)]
 
 ppcurve2 <- ggplot(data=dplot,aes(x=age,color=antigenf,fill=antigenf)) +
   # approximate simultaneous CI from spline fit
-  geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,fill=cgrey,color=NA) +
+  geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.4,color=NA) +
   # actual measurements
-  geom_point(aes(y=seropos),alpha=0.7,size=1.5,pch="|") +
+  geom_point(aes(y=seropos),alpha=0.5,size=1.5,pch="|",color=cgrey) +
   # spline fit
-  geom_line(aes(y=fit),color="black") +
+  geom_line(aes(y=fit)) +
   # labels
   geom_text(data=pplabs,aes(x=0,y=1.03,label=antigenf,hjust=0,vjust=0),color="gray20")+
   # plot aesthetics
@@ -971,11 +974,11 @@ pcols <- vircols[c(1:5,7)]
 
 pcurve <- ggplot(data=filter(dplot,age<=17),aes(x=age,group=pathogen,color=pathogen,fill=pathogen)) +
   # approximate simultaneous CI from spline fit
-  geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA,fill=cgrey) +
+  geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.4,color=NA) +
   # actual measurements
-  geom_jitter(aes(y=logmfi),width=0.2,height=0,alpha=0.4,size=0.3) +
+  geom_jitter(aes(y=logmfi),width=0.2,height=0,alpha=0.4,size=0.3,color=cgrey) +
   # spline fit
-  geom_line(aes(y=fit),color="black") +
+  geom_line(aes(y=fit)) +
   # labels
   geom_text(data=plabs,aes(x=4,y=4.55,label=antigenf,hjust=0,vjust=0),color="gray20")+
   # plot aesthetics
@@ -1012,11 +1015,11 @@ pplabs <- dplot %>%
 
 ppcurve2 <- ggplot(data=dplot,aes(x=age,color=antigenf,fill=antigenf)) +
   # approximate simultaneous CI from spline fit
-  geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA,fill=cgrey) +
+  geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.4,color=NA) +
   # actual measurements
-  geom_jitter(aes(y=seropos),width=0.2,height=0,alpha=0.4,size=1.5,pch="|") +
+  geom_jitter(aes(y=seropos),width=0.2,height=0,alpha=0.5,size=1.5,pch="|",color=cgrey) +
   # spline fit
-  geom_line(aes(y=fit),color="black") +
+  geom_line(aes(y=fit)) +
   # labels
   geom_text(data=pplabs,aes(x=4,y=1.03,label=antigenf,hjust=0,vjust=0),color="gray20")+
   # plot aesthetics
@@ -1416,11 +1419,11 @@ pcols <- vircols[c(1:5,7)]
 
 pcurve <- ggplot(data=dplot,aes(x=age+0.5,color=pathogen,fill=pathogen)) +
   # approximate simultaneous CI from spline fit
-  geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.3,color=NA,fill=cgrey) +
+  geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.4,color=NA) +
   # actual measurements
-  geom_jitter(aes(y=logmfi),width=0.2,height=0,alpha=0.3,size=0.3) +
+  geom_jitter(aes(y=logmfi),width=0.2,height=0,alpha=0.2,size=0.2,color=cgrey) +
   # spline fit
-  geom_line(aes(y=fit),color="black") +
+  geom_line(aes(y=fit)) +
   # labels
   geom_text(data=plabs,aes(x=0,y=4.55,label=antigenf,hjust=0,vjust=0),color="gray20")+
   # plot aesthetics
@@ -1459,16 +1462,16 @@ pplabs <- data.frame(pathogen=c("Giardia","Cryptosporidium","E. histolytica","Sa
 # for reasons unclear, fill for Giardia is mapping to arg #5 in pcols
 # tired of thrashing around with it, so just patching it here:
 # pcols <- c(cred,corange,cgreen,cteal,cred,cmagent)
-pcols <- vircols[c(1:5,7)]
+pcols <- vircols[c(1:4,1,5:7)]
 
 
 ppcurve2 <- ggplot(data=dplot2,aes(x=age+0.5,color=antigenf,fill=antigenf)) +
   # approximate simultaneous CI from spline fit
-  geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA,fill=cgrey) +
+  geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.3,color=NA) +
   # actual measurements (do not plot -- not informative b/c too many points)
   # geom_jitter(aes(y=seropos),width=0.2,height=0,color="black",alpha=0.4,size=0.3) +
   # spline fit
-  geom_line(aes(y=fit),color="black") +
+  geom_line(aes(y=fit)) +
   # labels
   geom_text(data=pplabs,aes(x=0,y=1.03,label=antigenf,hjust=0,vjust=0),color="gray20")+
   # plot aesthetics
