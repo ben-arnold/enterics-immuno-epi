@@ -58,6 +58,11 @@ corange <- "#EEA722"
 cyellow <- "#FFEE33"
 cgrey <- "#777777"
 
+# safe color blind palette
+# http://jfly.iam.u-tokyo.ac.jp/color/
+# http://www.cookbook-r.com/Graphs/Colors_(ggplot2)/
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
 # viridis color palette
 vircols <- viridis(n=7,alpha=1,begin=0.2,end=0.97)
 
@@ -88,7 +93,8 @@ mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptospori
 # custom color blind color palette is in the preamble chunck
 # pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
 # pcols <- c(corange,cred,cmagent,cblue,cteal,cgreen)
-pcols <- vircols[c(1:6)]
+# pcols <- vircols[c(1:6)]
+pcols <- cbPalette[c(2:4,6:8)]
 
 
 # custom log labels
@@ -212,7 +218,8 @@ plotmixdens <- mixdens %>%
 # defined in a previous code chunk
 # pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
 # pcols <- c(corange,cred,cmagent,cblue,cteal,cgreen)
-pcols <- vircols[c(1:6)]
+# pcols <- vircols[c(1:6)]
+pcols <- cbPalette[c(2:4,6:8)]
 
 
 pmix <- ggplot(data=filter(dl,age<=1),aes(x=logmfi,group=pathogen,color=pathogen,fill=pathogen)) +
@@ -305,7 +312,8 @@ dl <- left_join(dl,dlunexp2,by="antigen")
 #-----------------------------
 # pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
 # pcols <- c(corange,cred,cmagent,cblue,cteal,cgreen)
-pcols <- vircols[c(1:6)]
+# pcols <- vircols[c(1:6)]
+pcols <- cbPalette[c(2:4,6:8)]
 
 
 punexp <- ggplot(data=filter(dl,unexp=="Presumed unexposed" & !is.na(unexpcut)), aes(x=logmfi,group=pathogen,color=pathogen,fill=pathogen)) +
@@ -344,7 +352,8 @@ dl <- dl %>%
 # custom color blind color palette is in the preamble chunck
 # pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
 # pcols <- c(corange,cred,cmagent,cblue,cteal,cgreen)
-pcols <- vircols[c(1:6)]
+# pcols <- vircols[c(1:6)]
+pcols <- cbPalette[c(2:4,6:8)]
 
 
 # custom log labels

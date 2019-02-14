@@ -1,6 +1,6 @@
 ---
 title: Enteropathogen seroepidemiology among children in low-resource settings
-subtitle: Supplementary Information File 4. Estimation of force of infection assuming cross-sectional ("current status") data in Kenya. Figure 5 - supplement 1
+subtitle: Supplementary Information File 4. Estimation of force of infection assuming cross-sectional ("current status") data in Kenya. Figure 5 B
 output:
   html_document:
     highlight: haddock
@@ -49,6 +49,13 @@ cred <- "#EE3333"
 corange <- "#EEA722"
 cyellow <- "#FFEE33"
 cgrey <- "#777777"
+
+# safe color blind palette
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+# viridis color palette
+vircols <- viridis(n=4,alpha=1,begin=0.2,end=0.97)
+
 
 ```
 
@@ -112,7 +119,7 @@ Quick plot to confirm approximate monotonicity assumptions.
 
 
 pcurve <- ggplot(data=dfoi,aes(x=age)) +
-  geom_smooth(aes(y=seropos),se=FALSE,method="loess")+
+  geom_smooth(aes(y=seropos),se=FALSE,method="loess",color=vircols[1])+
   # plot aesthetics
   facet_wrap(~antigenf,nrow=6,ncol=2) +
   scale_x_continuous(breaks=seq(4,18,by=2))+
@@ -481,8 +488,10 @@ gamfoi <- foreach(ab=levels(dfoi$antigenf),.combine=rbind) %dopar% {
 Faceted figure that includes 95% CIs
 ```{r foi figure}
 # bright color-blind palette defined in an earlier code chunk
-pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cgrey)
+# pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cgrey)
 # pcols <- c(corange,cred,cmagent,cblue,cteal,cgreen,cgrey)
+vircols <- viridis(n=7,alpha=1,begin=0.2,end=0.97)
+pcols <- cbPalette[c(1:4,6,8)]
 
 
 pfoi <- ggplot(data=gamfoi,aes(x=age,fill=antigenf,color=antigenf)) +
@@ -509,9 +518,9 @@ pfoi
 Compact figure with all pathogens on the same panel
 ```{r foi figure small}
 # bright color-blind palette defined in an earlier code chunk
-pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cgrey)
+# pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cgrey)
 # pcols <- c(corange,cred,cmagent,cblue,cteal,cgreen,cgrey)
-
+pcols <- cbPalette[c(1:4,6,8)]
 
 
 plabs <- gamfoi %>%
@@ -723,7 +732,7 @@ Retrieve the results from the longitudinal analysis of the data and compare esti
 # interpretation
 #--------------------------------
 est_long <- readRDS("~/enterics-seroepi/output/asembo-enteric-ab-ests-incidencerates.rds") %>%
-  filter(outcome=="Seroconversion" & antigen!="cholera") %>%
+  filter(outcome=="seroconversion rate (force of infection)" & antigen!="cholera") %>%
   mutate(method="Longitudinal") %>% 
   select(method,antigenf,starts_with("rate")) %>%
   # convert rates to per-month (rather than per-year)
@@ -758,11 +767,11 @@ rate_comp <- bind_rows(est_long,est_xc,est_cr,est_rcm) %>%
   arrange(antigenf,method)
 
 ```
-#Figure 5 - supplement 1, FOI Comparison
+# Figure 5 B, FOI Comparison
 
 Create a figure to summarize the comparison
 
-**This is Figure 5 B**
+**This is Figure 5 B in the manuscript**
 
 ```{r incidence long xc comp figure}
 
@@ -783,24 +792,24 @@ rate_comp2 <- rate_comp %>%
 # pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
 # pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
 vircols <- viridis(n=4,alpha=1,begin=0.2,end=0.97)
-pcols <- vircols[c(4,3,1,2)]
+pcols <- rev(vircols)
 
 
 ratecomp_plot <- ggplot(data=rate_comp2,
-                        aes(x=antigenf,y=rate,color=method)) +
+                        aes(x=antigenf,y=rate,color=method,fill=method)) +
   geom_errorbar(aes(ymin=rate_lb,ymax=rate_ub),
                   width=0,
                   position=position_nudge(x=rep(c(-0.3,-0.1,0.1,0.3),3)))+
-  geom_point(size=3,
+  geom_point(size=3,pch=21,color="black",
              position=position_nudge(x=rep(c(-0.3,-0.1,0.1,0.3),3)))+
   labs(x="",y="seroconversion rate per child-year at risk") +
   scale_y_continuous(breaks=0:7)+
   scale_fill_manual(values=pcols) +
-  scale_color_manual(values=pcols) +
+  scale_color_manual(values=pcols,guide=FALSE) +
   # scale_shape_manual(values=c(21,22,23,24),guide_legend(title="Estimation method"))+
-  guides(color=guide_legend(title="force of infection method", 
+  guides(fill=guide_legend(title="force of infection method", 
                             reverse=TRUE,
-                            keywidth=0.2,
+                            keywidth=0.15,
                             keyheight=0.15,
                             default.unit="inch",
                             ncol=1))+
@@ -833,7 +842,7 @@ Put the estimates on separate scales for lower and higher transmission pathogens
 # pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
 # pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
 vircols <- viridis(n=4,alpha=1,begin=0.2,end=0.97)
-pcols <- vircols[c(2,1,3,4)]
+pcols <- vircols
 
 rate_comp3 <- rate_comp2 %>%
   mutate(pathgroup=ifelse(antigenf %in% c("ETEC LT β subunit","Campylobacter p18 or p39"),"Higher transmission","Lower transmission"),

@@ -491,7 +491,7 @@ cuminc_plot_d <- est_sero %>%
 # pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
 
 vircols <- viridis(n=4,alpha=1,begin=0.2,end=0.97)
-pcol <- vircols[2]
+pcol <- vircols[1]
 
 seroip <- ggplot(data=cuminc_plot_d,
                  aes(x=antigenf,y=mean,
@@ -514,9 +514,9 @@ seroip
 
 ```
 
-# Figure 5, incidence rate figure
+# Figure 5 A, incidence rate figure
 
-**This is Figure 5 a in the manuscript**
+**This is Figure 5 A in the manuscript**
 ```{r seroincidence rate figure}
 
 # sort pathogens by rates
@@ -550,7 +550,7 @@ rate_plot_d <- rate_ests_long %>%
 # pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
 
 vircols <- viridis(n=4,alpha=1,begin=0.2,end=0.97)
-pcol <- vircols[2]
+pcol <- vircols[1]
 
 rateplot <- ggplot(data=rate_plot_d,
                  aes(x=antigenf,y=rate)) +
@@ -604,9 +604,9 @@ pserop <- ggplot(data=d_serop,aes(x=seroprev,y=seroi,color=antigenf)) +
   # geom_text(aes(label=antigenf),nudge_x = d_serop$nudge,hjust=d_serop$just,size=2)+
   facet_grid(.~method)+
   scale_x_continuous(breaks=seq(0,1,by=0.2),labels=seq(0,100,by=20))+
-  scale_y_continuous(breaks=0:10)+
+  scale_y_continuous(breaks=0:7)+
   scale_color_manual(values=pcols,guide=guide_legend(title="Pathogen")) +
-  coord_cartesian(xlim=c(0,1),ylim=c(0,10))+
+  coord_cartesian(xlim=c(0,1),ylim=c(0,7))+
   labs(x="Seroprevalence (%)",y="Force of Infection\n(seroconversion rate per child-year)")+
   theme_minimal() 
   # theme(legend.position="none")

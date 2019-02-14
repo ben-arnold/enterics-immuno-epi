@@ -52,6 +52,11 @@ corange <- "#EEA722"
 cyellow <- "#FFEE33"
 cgrey <- "#777777"
 
+# safe color blind palette
+# http://jfly.iam.u-tokyo.ac.jp/color/
+# http://www.cookbook-r.com/Graphs/Colors_(ggplot2)/
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
 # viridis color palette
 vircols <- viridis(n=7,alpha=1,begin=0.2,end=0.97)
 
@@ -84,7 +89,9 @@ dl <- dl %>%
 
 # custom color blind color palette is in the preamble chunck
 # pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cgrey,cchartr)
-pcols <- c(vircols[c(1:5)],cgrey,vircols[7:6])
+# pcols <- c(vircols[c(1:5)],cgrey,vircols[7:6])
+pcols <- cbPalette[c(2:4,6,7,5,8,1)]
+
 
 
 # custom log labels
@@ -262,8 +269,8 @@ dlplot <- dl %>%
 # custom color blind color palette is in the preamble chunck
 # pcols <- c(cred,corange,cgreen,cteal,cblue,cgrey,cmagent)
 # pcols <- c(corange,cred,cmagent,cblue,cteal,cgreen,cgrey)
-pcols <- vircols
-
+# pcols <- vircols
+pcols <- cbPalette[c(2:4,6,7,5,8,1)]
 
 
 # custom log labels
@@ -321,7 +328,8 @@ dlplot <- dl %>%
 
 # custom color blind color palette is in the preamble chunck
 # pcols <- c(cred,cgrey)
-pcols <- vircols[c(1,7)]
+# pcols <- vircols[c(1,7)]
+pcols <- cbPalette[c(2,3)]
 
 # custom log labels
 log10labs <- c( 

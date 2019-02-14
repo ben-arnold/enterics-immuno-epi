@@ -26,6 +26,7 @@ here()
 
 # load packages
 library(tidyverse)
+library(viridis)
 library(gridExtra)
 
 # set up for parallel computing
@@ -47,6 +48,9 @@ cred <- "#EE3333"
 corange <- "#EEA722"
 cyellow <- "#FFEE33"
 cgrey <- "#777777"
+
+# viridis color palette
+vircols <- viridis(n=4,alpha=1,begin=0.2,end=0.97)
 
 ```
 
@@ -94,7 +98,8 @@ d <- bind_rows(dk,dh) %>%
 ```{r rates v seroprevalence}
 
 
-pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cchartr,cbPalette[c(8,5)])
+# pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cchartr,cbPalette[c(8,5)])
+pcols <- cbPalette
 
 pserop <- ggplot(data=d,aes(x=log(seroprev),y=log(seroi))) +
   geom_smooth(data=filter(d,antigen!="rotavirus"),aes(x=log(seroprev),y=log(seroi)),se=FALSE,color="gray50",size=0.5,method="glm",alpha=0.5,linetype="dashed")+
@@ -120,8 +125,8 @@ pserop
 ```{r rates v seroprevalence2}
 
 
-pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cchartr,cbPalette[c(8,5)])
-
+# pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cchartr,cbPalette[c(8,5)])
+pcols <- cbPalette[c(1:4,6:8,5)]
 
 pserop2 <- ggplot(data=d,aes(x=seroprev*100,y=seroi)) +
   geom_pointrange(aes(ymin=seroi_lb,ymax=seroi_ub,color=antigenf)) +
@@ -144,19 +149,25 @@ pserop2
 
 # Separate figures with separate axes
 
-** Figure 6 in the manuscript **
-
 ```{r separate panels}
 
 # Kenya original scale
-kd <- d %>% filter(country=="Kenya" & method=="seroconversion definition:\n4-fold increase in IgG")
-pk <- ggplot(data=kd,aes(x=seroprev,y=seroi)) +
-  geom_smooth(se=FALSE,color="gray50",size=0.5,method="glm",alpha=0.5,linetype="dashed")+
-  geom_pointrange(aes(ymin=seroi_lb,ymax=seroi_ub,color=antigenf)) +
+kd <- d %>% filter(country=="Kenya" & method=="seroconversion definition:\ncrossed seropositivity cutoff")
+pk <- ggplot(data=kd,aes(x=seroprev,y=seroi,color=antigenf,fill=antigenf)) +
+  # geom_smooth(se=FALSE,color="gray50",size=0.5,method="loess",alpha=0.5,linetype="dashed")+
+  geom_errorbar(aes(ymin=seroi_lb,ymax=seroi_ub),width=0) +
+  geom_point(size=2.5,pch=21,color="black") +
   scale_x_continuous(breaks=seq(0,1,by=0.2),labels=seq(0,100,by=20))+
-  scale_y_continuous(breaks=0:4)+
-  scale_color_manual(values=pcols,guide=guide_legend(title="Pathogen")) +
-  coord_cartesian(xlim=c(0,1),ylim=c(0,4))+
+  scale_y_continuous(breaks=0:7)+
+  scale_color_manual(values=pcols,guide=FALSE) +
+  scale_fill_manual(values=pcols) +
+  guides(fill=guide_legend(title="Pathogen", 
+                            reverse=TRUE,
+                            keywidth=0.15,
+                            keyheight=0.15,
+                            default.unit="inch",
+                            ncol=1))+
+  coord_cartesian(xlim=c(0,1),ylim=c(0,7))+
   labs(title="Kenya, ages 4-17 months",x="seroprevalence (%)",y="force of infection\n(seroconversion rate per child-year)")+
   theme_minimal() +
   theme(
@@ -168,13 +179,21 @@ pk <- ggplot(data=kd,aes(x=seroprev,y=seroi)) +
 
 
 # Haiti original scale
-hd <- d %>% filter(country=="Haiti" & method=="seroconversion definition:\n4-fold increase in IgG")
-ph <- ggplot(data=hd,aes(x=seroprev,y=seroi)) +
-  geom_smooth(se=FALSE,color="gray50",size=0.5,method="glm",alpha=0.5,linetype="dashed")+
-  geom_pointrange(aes(ymin=seroi_lb,ymax=seroi_ub,color=antigenf)) +
+hd <- d %>% filter(country=="Haiti" & method=="seroconversion definition:\ncrossed seropositivity cutoff")
+ph <- ggplot(data=hd,aes(x=seroprev,y=seroi,color=antigenf,fill=antigenf)) +
+  # geom_smooth(se=FALSE,color="gray50",size=0.5,method="loess",alpha=0.5,linetype="dashed")+
+  geom_errorbar(aes(ymin=seroi_lb,ymax=seroi_ub),width=0) +
+  geom_point(size=2.5,pch=21,color="black") +
   scale_x_continuous(breaks=seq(0.6,1,by=0.1),labels=seq(60,100,by=10))+
   scale_y_continuous(breaks=seq(0,1.5,by=0.5))+
-  scale_color_manual(values=pcols[c(1:5,8,9)],guide=guide_legend(title="Pathogen")) +
+  scale_color_manual(values=pcols[c(1:5,7:8)],guide=FALSE) +
+  scale_fill_manual(values=pcols[c(1:5,7:8)]) +
+  guides(fill=guide_legend(title="Pathogen", 
+                            reverse=TRUE,
+                            keywidth=0.15,
+                            keyheight=0.15,
+                            default.unit="inch",
+                            ncol=1))+
   coord_cartesian(xlim=c(0.6,1),ylim=c(0,1.5))+
   labs(title="Haiti, ages 0 - 11 years",x="seroprevalence (%)",y="force of infection\n(seroconversion rate per child-year)")+
   theme_minimal() +
@@ -193,6 +212,9 @@ ggsave(file=here("figs","Fig6-asembo-haiti-foi-vs-seroprev.TIFF"),plot=ivsp_comp
 
   
 ```
+
+
+
 
 # Session Info
 ```{r session info}
