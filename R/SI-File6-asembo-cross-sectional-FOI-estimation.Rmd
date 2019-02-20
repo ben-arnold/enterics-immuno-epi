@@ -1,6 +1,6 @@
 ---
 title: Enteropathogen seroepidemiology among children in low-resource settings
-subtitle: Supplementary Information File 4. Estimation of force of infection assuming cross-sectional ("current status") data in Kenya. Figure 5 B
+subtitle: Supplementary Information File 6. Estimation of force of infection assuming cross-sectional ("current status") data in Kenya. Figure 6 B
 output:
   html_document:
     highlight: haddock
@@ -101,11 +101,11 @@ Suppose $T_1$ denotes the time of actual seroconversion. For enteric infections 
 
 Note that:
 \begin{eqnarray*}
-P(Y = 1 | A, X, W) & = &  P(T_1 \leq A < T_2 | A, X, W) \\
- & = & P(T_1 \leq A, T_2 > A | A, X, W) \\
-  & = & [ P(T_1 \leq A, T_2 > A | A, X, W) +  \\
-  & & \qquad P(T_1 < A, T_2 \leq A | A, X, W) ] -  P(T_1 < A, T_2 \leq A | A, X, W)\\
-  & = & P(T_1 \leq A | A, X, W) - P(T_2 \leq A | A, X, W) 
+P(Y = 1 | A, W) & = &  P(T_1 \leq A < T_2 | A, W) \\
+ & = & P(T_1 \leq A, T_2 > A | A, W) \\
+  & = & [ P(T_1 \leq A, T_2 > A | A, W) +  \\
+  & & \qquad P(T_1 < A, T_2 \leq A | A, W) ] -  P(T_1 < A, T_2 \leq A | A, W)\\
+  & = & P(T_1 \leq A | A, W) - P(T_2 \leq A | A, W) 
 \end{eqnarray*}
 
 Thus the age-dependent seroprevalence curve is the difference between the cumulative distribution functions of seroconversion times and seroreversion times. In the special case where seroreversion is unlikely during the age window,  $P(Y=1 | A, W) = P(T_1 ≤ A | A, W)$. This is classic "current status" data – an extreme example of interval censored data in survival analysis. If an individual has seroconverted $(Y= 1)$ we know the event happened sometime between birth and their observed age $A$ (left censored); if the individual has not seroconverted $(Y= 0)$, they are right-censored.
@@ -264,7 +264,7 @@ Cubic splines are one, flexible approach to model age-dependent seroprevalence, 
 
 Below is a function to estimate the age-specific FOI under a GAM model with cubic splines for age. It also estimates approximate point-wise and simultaneous confidence intervals for the FOI.  We have derived this estimator from methods inspired by Prof. Gavin Simpson's approach to estimate simultaneous confidence intervals for the derivatives of smooths (https://www.fromthebottomoftheheap.net/2017/03/21/simultaneous-intervals-for-derivatives-of-smooths/). 
 
-The basic insight -- originally articulated by *Schkedy 2003* and published with more elaboration in *Hens et al. 2012* -- is that within generalized linear models, we can express the force of infection (hazard of seroconversion) as the derivative of the linear predictor multiplied by the predicted response.  The relationships for a variety of link functions are summarized in Table 5.1 of Hens et al. 2012 ( _Modeling Infectious Disease Parameters Based on Serological and Social Contact Data_. Springer), and can be derived using basic calculus.  Here, we focus on the logit transformation. 
+The basic insight -- originally articulated by *Shkedy 2003* and published with more elaboration in *Hens et al. 2012* -- is that within generalized linear models, we can express the force of infection (hazard of seroconversion) as the derivative of the linear predictor multiplied by the predicted response.  The relationships for a variety of link functions are summarized in Table 5.1 of Hens et al. 2012 ( _Modeling Infectious Disease Parameters Based on Serological and Social Contact Data_. Springer), and can be derived using basic calculus.  Here, we focus on the logit transformation. 
 
 Let $\eta[ P(Y=1|A)] = \textrm{logit}~P(Y=1|A) = g(A)$ for seropositivity indicator $Y$ and age $A$, where $g(A)$ is an arbitrary function (here, estimated semiparametrically with cubic splines). The age specific prevalence predicted from the model is: $\hat E(Y|A=a) = \frac{\exp[\hat\eta(a)]}{1+\exp[\hat\eta(a)]}$ and the age-specific force of infection is: $\lambda(a) = \eta'(a)\frac{\exp[\hat\eta(a)]}{1+\exp[\hat\eta(a)]}$, where $\eta'(a)$ is the first derivative of the linear predictor from the logit model. We estimate $\eta'(a)$ using finite differences, which requires predicting prevalence over a fine grid of ages and then differncing the predictions to estimate the derivative. Although this study rounded age in months, the prediction grid needs to be at high resolution (much finer than months) to accurately estimate the derivative using finite differences. Below, we predict over a grid of ages in 0.01 months.
 
@@ -638,7 +638,7 @@ popavgfoi <- foreach(ab=levels(dfoi$antigenf),.combine=rbind) %dopar% {
 }
 
 knitr::kable(select(popavgfoi,-foi_se),digits=3,
-             caption="Population-average incidence rate per child month estimated from a cross-sectional seroprevalence curve",
+             caption="Population-average force of infection estimated from a cross-sectional seroprevalence curve",
              col.names = c("Pathogen","Incidence per month","min95","max95"),
              row.names = FALSE)
 
@@ -842,7 +842,7 @@ Put the estimates on separate scales for lower and higher transmission pathogens
 # pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
 # pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
 vircols <- viridis(n=4,alpha=1,begin=0.2,end=0.97)
-pcols <- vircols
+pcols <- rev(vircols)
 
 rate_comp3 <- rate_comp2 %>%
   mutate(pathgroup=ifelse(antigenf %in% c("ETEC LT β subunit","Campylobacter p18 or p39"),"Higher transmission","Lower transmission"),
@@ -878,7 +878,7 @@ ratecomp_plot2
 
 For most pathogens, the semiparametric estimate of force of infection using splines was close to the parameter estimated prospectively. In all cases, uncertainty in spline-based estimates of the force of infection derived from seroprevalence was much higher than the prospective  estimates, as reflected by wider 95% credible intervals.   As Jewell and Emerson (**2013**) demonstrate under a parametric exponential survival model, the asymptotic relative efficiency of a cross-sectional, current-status analysis compared to a longitudinal analysis is 96.1% if the cumulative proportion of failures is 0.5, but only 65.5% if the proportion of failures is 0.9. These results are broadly consistent with that analysis, with the loss in efficiency much higher among ETEC and _Campylobacter_ with seroprevalence that approached 100% by ages 10-12 months in this cohort.
 
-For most pathogens, force of infection estimates from cross-sectional analysis were biased downward compared to the longitudinal analysis -- a result that would be expected in the case of seroreversion, which was common in this cohort for all but ETEC and _Campylobacter_.  The parametric cross-sectional analyses assumed a constant rate without seroreversion (exponential survival model, SIR model) or with seroreversion (reversible catalytic model, SIS model), and were genearlly further from the longitudinal estimates than the semiparametric spline; exceptions include _E. histolytica_ and _Salmonella_. Age-specific force of infection estimates under the spline model suggest that force of infection was generally not constant over age, so this suggests the parametric models could be slightly more biased. Allowing for sero-reversion in the reversible catalytic model did not remove the bias.
+For most pathogens, force of infection estimates from cross-sectional analysis were biased downward compared to the longitudinal analysis -- a result that would be expected in the case of seroreversion, which was common in this cohort for all but ETEC and _Campylobacter_.  The parametric cross-sectional analyses assumed a constant rate without seroreversion (exponential survival model, SIR model) or with seroreversion (reversible catalytic model, SIS model), and were genearlly further from the longitudinal estimates than the semiparametric spline; exceptions include _E. histolytica_ and _Salmonella_. Age-specific force of infection estimates under the spline model suggest that force of infection was generally not constant over age, so this suggests the parametric models could be slightly more biased. Nevertheless, all estimation methods were rank-preserving across pathogens, and many estimates were reasonably close with one-another. Overall, these results show that longitudinal designs should be preferred to estimate enteropathogen force of infection from serological antibody levels, but that modeling approaches based on age-structured seroprevalence reasonably capture relative differences between pathogens in this study.
 
 # Session Info
 ```{r session info}
