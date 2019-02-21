@@ -1,8 +1,8 @@
 ---
 title: Enteropathogen seroepidemiology among children in low-resource settings
-subtitle: Supplementary Information File 5. Sensitivity analysis of change in IgG used to identify presumed unexposed measurements in Haiti and Kenya.
+subtitle: Supplementary Information File 4. Sensitivity analysis of change in IgG used to identify presumed unexposed measurements in Haiti and Kenya.
 output: 
-  html_notebook:
+  html_document:
     theme: default
     highlight: haddock
     toc: true
