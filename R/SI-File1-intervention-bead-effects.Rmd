@@ -1,5 +1,5 @@
 ---
-title: Enteropathogen seroepidemiology among children in low-resource settings
+title: Enteropathogen antibody dynamics and force of infection among children in low-resource settings
 subtitle: Supplementary Information File 1. No effect of intervention or bead lot on enteropathogen antibody response in Kenya and Tanzania.
 output: 
   html_document:
@@ -18,12 +18,11 @@ output:
 
 This notebook compares antibody measurements among children assigned to different treatment arms in the Asembo, Kenya household water filter trial and in the Kongwa, Tanzania annual azithromycin distribution trial. For additional details on the interventions and design, please see the main text and previously published articles related to the trials:
 
-Morris JF, Murphy J, Fagerli K, Schneeberger C, Jaron P, Moke F, et al. A Randomized Controlled Trial to Assess the Impact of Ceramic Water Filters on Prevention of Diarrhea and Cryptosporidiosis in Infants and Young Children-Western Kenya, 2013. _Am J Trop Med Hyg._ 2018;98: 1260–1268. https://www.ncbi.nlm.nih.gov/pubmed/29611500
+Morris, J. F., Murphy, J., Fagerli, K., Schneeberger, C., Jaron, P., Moke, F., Juma, J., Ochieng, J. B., Omore, R., Roellig, D., Xiao, L., Priest, J. W., Narayanan, J., Montgomery, J. M., Hill, V., Mintz, E., Ayers, T. L. & O’Reilly, C. E. A Randomized Controlled Trial to Assess the Impact of Ceramic Water Filters on Prevention of Diarrhea and Cryptosporidiosis in Infants and Young Children-Western Kenya, 2013. _Am. J. Trop. Med. Hyg._ 98, 1260–1268 (2018). https://www.ncbi.nlm.nih.gov/pubmed/29611500
 
-**XX Citation for Kongwa, Tanzania to be added XX**
+Wilson, N., Goodhew, B., Mkocha, H., Joseph, K., Bandea, C., Black, C., Igietseme, J., Munoz, B., West, S. K., Lammie, P., Kasubi, M. & Martin, D. L. Evaluation of a Single Dose of Azithromycin for Trachoma in Low-Prevalence Communities. _Ophthalmic Epidemiol._ 26, 1–6 (2019). https://www.ncbi.nlm.nih.gov/pubmed/30543311
 
 The results show that the interventions did not effect enteropathogen antibody response. Based on these results, we pooled data across treatment arms in all analyses.
-
 
 The final section of this notebook stratifies the analyses from Tanzania in years 1 versus years 2-4. The Tanania study  used different bead lots in year 1 versus years 2-4 of the study. Different bead lots could theoretically have different antigen coupling efficiency, which could introduce differences in the MFI-bg measurements, since they are on an arbitrary scale that depends on how much antibody from the sample binds to the beads. Results of the stratified analyses show that the patterns observed were qualitatively and quantitatively similar for year 1 (n=902) versus years 2-4 (n=4,087). Owing to the much larger number of samples from later years, the results of this analysis also show that the pooled results match almost exactly the estimates from years 2-4.
 

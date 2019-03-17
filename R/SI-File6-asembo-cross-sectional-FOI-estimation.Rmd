@@ -1,6 +1,6 @@
 ---
-title: Enteropathogen seroepidemiology among children in low-resource settings
-subtitle: Supplementary Information File 6. Estimation of force of infection assuming cross-sectional ("current status") data in Kenya. Figure 6 B
+title: Enteropathogen antibody dynamics and force of infection among children in low-resource settings
+subtitle: Supplementary Information File 6. Estimation of force of infection assuming cross-sectional ("current status") data in Kenya. Figure 6B
 output:
   html_document:
     highlight: haddock
@@ -17,6 +17,8 @@ output:
 # Summary
 
 For enteric antibodies with defined cutoffs for seropositivity and approximately monotonically increasing age-dependent seroprevalence, estimate the hazard of seroconversion, or seroconversion rate, which is one measure of a pathogen's force of infection.
+
+This analysis focuses on the Asembo, Kenya cohort and estimates force of infection with three separate approaches: constant hazard, constant hazard with seroreversion, and age-varying hazard modeled with semiparametric cubic splines.  At the end of the notebook, the estimates from cross-sectional estimators are compared to the nonparametric prospective analysis of the same parameter, which is Figure 6B in the manuscript.
 
 
 # Script preamble
@@ -876,9 +878,11 @@ ratecomp_plot2
 
 ```
 
-For most pathogens, the semiparametric estimate of force of infection using splines was close to the parameter estimated prospectively. In all cases, uncertainty in spline-based estimates of the force of infection derived from seroprevalence was much higher than the prospective  estimates, as reflected by wider 95% credible intervals.   As Jewell and Emerson (**2013**) demonstrate under a parametric exponential survival model, the asymptotic relative efficiency of a cross-sectional, current-status analysis compared to a longitudinal analysis is 96.1% if the cumulative proportion of failures is 0.5, but only 65.5% if the proportion of failures is 0.9. These results are broadly consistent with that analysis, with the loss in efficiency much higher among ETEC and _Campylobacter_ with seroprevalence that approached 100% by ages 10-12 months in this cohort.
+For most pathogens, the semiparametric estimate of force of infection using splines was close to the parameter estimated prospectively. In all cases, uncertainty in spline-based estimates of the force of infection derived from seroprevalence was much higher than the prospective  estimates, as reflected by wider 95% credible intervals.   As Jewell and Emerson (2013) demonstrate under a parametric exponential survival model, the asymptotic relative efficiency of a cross-sectional, current-status analysis compared to a longitudinal analysis is 96.1% if the cumulative proportion of failures is 0.5, but only 65.5% if the proportion of failures is 0.9. These results are broadly consistent with that analysis, with the loss in efficiency much higher among ETEC and _Campylobacter_ with seroprevalence that approached 100% by ages 10-12 months in this cohort.
 
 For most pathogens, force of infection estimates from cross-sectional analysis were biased downward compared to the longitudinal analysis -- a result that would be expected in the case of seroreversion, which was common in this cohort for all but ETEC and _Campylobacter_.  The parametric cross-sectional analyses assumed a constant rate without seroreversion (exponential survival model, SIR model) or with seroreversion (reversible catalytic model, SIS model), and were genearlly further from the longitudinal estimates than the semiparametric spline; exceptions include _E. histolytica_ and _Salmonella_. Age-specific force of infection estimates under the spline model suggest that force of infection was generally not constant over age, so this suggests the parametric models could be slightly more biased. Nevertheless, all estimation methods were rank-preserving across pathogens, and many estimates were reasonably close with one-another. Overall, these results show that longitudinal designs should be preferred to estimate enteropathogen force of infection from serological antibody levels, but that modeling approaches based on age-structured seroprevalence reasonably capture relative differences between pathogens in this study.
+
+Jewell, N. P. & Emerson, R. Current Status Data: An Illustration with Data on Avalanche Victims, in _Handbook of Survival Analysis_ (eds. Klein, J. P., van Houwelingen, H. C., Ibrahim, J. G. & Scheike, T. H.) 391–412 (Chapman and Hall, 2013).
 
 # Session Info
 ```{r session info}

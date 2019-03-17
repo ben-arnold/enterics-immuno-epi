@@ -1,6 +1,6 @@
 ---
-title: "Enteropathogen seroepidemiology among children in low-resource settings"
-subtitle: "Supporting Information File 5: Estimation of age-dependent means and seroprevalence using multiple approaches, Figure 3"
+title: "Enteropathogen antibody dynamics and force of infection among children in low-resource settings"
+subtitle: "Supplementary Information File 5: Estimation of age-dependent means and seroprevalence using multiple approaches, Figure 3"
 output: 
   html_document:
     theme: default

@@ -1,5 +1,5 @@
 ---
-title: Enteropathogen seroepidemiology among children in low-resource settings
+title: Enteropathogen antibody dynamics and force of infection among children in low-resource settings
 subtitle: Supplementary Information File 2. Classification agreement between different seropositivity cutoff approaches.
 output:
   html_document:
@@ -22,7 +22,7 @@ This notebook compares agreement between seropositivity cutoff values estimated 
 
 **Finite Gaussian mixture models**: Estimated by fitting a 2-component, finite Gaussian mixture model to the antibody distributions among children 1 year old or younger. Then, we estimated the mean plus 3 standard deviations of the lower component to define a seropositivity cutoff. In many cases the mixture model-based cutoffs were very unrealistic because the model failed to identify a reasonable seronegative distribution. We only examine agreement among antigens for which we could estimate reasonable cutoff values.
 
-**Distribution of antibody levels among children who seroconverted**: In longitudinal cohorts (Haiti, Kenya), we identified children who had antibody levels increase by at least 2 on the log10 scale. We then estimated the mean plus 3 standard deviations of the measurements before the change to define a seropositivity cutoff.
+**Distribution of antibody levels among children who were presumed unexposed**: In longitudinal cohorts (Haiti, Kenya), we identified children who had antibody levels increase by at least 2 on the log10 scale. We then estimated the mean plus 3 standard deviations of the measurements before the change to define a seropositivity cutoff.
 
 Below, we make all possible comparisons between methods, but not all three cutoff values are available for every antibody in every cohort. ROC-based cutoffs were available for _Giardia sp._, _Cryptosporidium spp._, and _E. histolytica_ (Haiti, Tanzania only).  Mixture model-based cutoffs were only available if mixture models fit a reasonable distribution for the lower component. Cutoff values based on the distribution of antibody measurements before children seroconverted could only be estimated in the two longitudinal cohorts (Haiti, Kenya).  
 

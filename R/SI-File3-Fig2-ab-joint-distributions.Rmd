@@ -1,8 +1,8 @@
 ---
-title: Enteropathogen seroepidemiology among children in low-resource settings
+title: Enteropathogen antibody dynamics and force of infection among children in low-resource settings
 subtitle: Supplementary Information File 3. Joint distributions of antibody response.
 output: 
-  html_notebook:
+  html_document:
     theme: default
     highlight: haddock
     toc: true
@@ -170,7 +170,7 @@ dsmooths <- foreach(countryi=levels(dw$country),.combine=rbind) %:%
 
 # Figure 2
 Summary composite figure, **Figure 2 in the main text**
-```{r composite figure,fig.width=7,fig.height=9 }
+```{r composite figure,fig.width=15,fig.height=15 }
 
 vircols <- viridis(n=4,alpha=1,begin=0.2,end=0.97)
 pcol <- vircols[2]
@@ -262,6 +262,7 @@ scatterloess<-function(x,y,cex=0.4,...){
 
 ```
 
+
 ## Haiti
 ```{r haiti pairs plot,fig.width=7,fig.height=7}
 
@@ -280,6 +281,7 @@ pairs(hmat[mbavars],labels=mbalabs,cex=0.1,las=1,
 )
 
 ```
+
 ## Kenya
 ```{r kenya pairs plot,fig.width=7,fig.height=7}
 # list the enteric antigens in Asembo Kenya and formatted labels for them
@@ -298,6 +300,7 @@ pairs(kmat[mbavars],labels=mbalabs,cex=0.1,las=1,
 )
 
 ```
+
 ## Tanzania
 
 There are a few blank panels in this figure. The reason is that some antigens were included only in year 1, and the cholera beta toxin was only included in years 2-4.  Table 1 and the Methods of the article include additional details.
