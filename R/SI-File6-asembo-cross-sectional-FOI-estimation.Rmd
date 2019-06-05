@@ -196,23 +196,55 @@ Lrcm <- function(h,r,data) {
 	sum( - (k)*log(p) - (n-k)*log(1-p) )
 }
 
-# reverse catalytic model probability function
+# reversible catalytic model probability function
 # (not used)
 rcp <- function(h,r,t) h/(r+h)*(1-exp(-(r+h)*t))
 
 #--------------------------------
-# estimates of the sero-reversion
-# rate from prospective analysis
-# of the data
+# Add up the person-time at risk
+# for each child and create indicators of 
+# seroreversion using the longitudinal
+# data. These are used below in the
+# reversible catalytic model to
+# provide additional information
+# about sero-reversion, which is
+# technically not present in a 
+# cross-sectional survey.
 #--------------------------------
-est_r <- readRDS("~/enterics-seroepi/output/asembo-enteric-ab-ests-incidencerates.rds") %>%
-  filter(outcome=="seroreversion rate") %>%
-  mutate(antigenf=droplevels(antigenf)) %>%
-  # convert rates to per-month (rather than per-year)
-  mutate(rate=rate/12,rate_lb=rate_lb/12,rate_ub=rate_ub/12) %>%
-  select(antigenf,rev_rate=rate)
-est_r
-drcm <- left_join(dfoi,est_r,by="antigenf")
+dsr <- readRDS(here("data","asembo_analysis2.rds"))
+dsr <- dsr %>%
+  group_by(antigen,antigenf,childid) %>%
+  mutate(measA=ifelse(time=="A",1,0),
+         measA=max(measA),
+         measB=ifelse(time=="B",1,0),
+         measB=max(measB),
+         seroposA=ifelse(time=="A",seropos,NA),
+         seroposA=max(seroposA,na.rm=TRUE),
+         seroposB=ifelse(time=="B",seropos,NA),
+         seroposB=max(seroposB,na.rm=TRUE),
+         seror=ifelse(seroposB==0 & seroposA==1,1,0),
+  ) %>%
+  filter(measA==1 & measB==1) %>%
+  filter(pathogen!="V. cholerae")
+
+dsr2 <- dsr %>%
+  ungroup() %>% 
+  group_by(pathogen,childid) %>%
+  mutate(seror=max(seror)) %>%
+  group_by(pathogen,childid,time) %>%
+  slice(1) %>%
+  filter(time=="A") %>%
+  mutate(ptr = ifelse(seropos==1,agediff,0),
+         ptr = ifelse(seropos==1 & seror==1,agediff/2,ptr)) %>%
+  ungroup() %>%
+  select(pathogen,childid,seror,ptr)
+
+#--------------------------------
+# add-in the sero-reversion
+# indicator and person time vars
+#--------------------------------
+drcm <- left_join(dfoi,dsr2,by=c("pathogen","childid")) %>%
+  mutate(pathogen=droplevels(pathogen))
 
 #--------------------------------
 # estimate seroconversion rates
@@ -225,9 +257,16 @@ drcm <- left_join(dfoi,est_r,by="antigenf")
 # uncertainty in the seroreversion
 # rate)
 #--------------------------------
-rcmests <- foreach(ab=levels(dfoi$antigenf),.combine=rbind) %dopar%  {
-    pd <- filter(drcm, antigenf==ab & age<=17) 
-    ri <- pd$rev_rate[1]
+rcmests <- foreach(ab=levels(drcm$pathogen),.combine=rbind) %dopar%  {
+    # subset the data to children <=17 months for a particular pathogen
+    pd <- filter(drcm, pathogen==ab & age<=17) 
+    # estimate empirical sero-reversion rate to use in the model
+    dri <- pd %>%
+      ungroup() %>%
+      select(seror,ptr) %>%
+      summarise_all(function(x) sum(x,na.rm=T))
+    ri <- dri$seror/dri$ptr
+    # collapse data to counts by age in months
     pd <- pd %>%
       select(age,seropos) %>%
       mutate(n=1) %>%
@@ -240,20 +279,103 @@ rcmests <- foreach(ab=levels(dfoi$antigenf),.combine=rbind) %dopar%  {
     minll <- optim(c(0.1),fn=Lrcm,r=ri,data=pd,
     hessian=TRUE,method="Brent",lower=0,upper=1)
     lambda_hat <- minll$par
-    # retrieve SE and CI from the inverse information matrix
+    # estimate SE and CI from the inverse information matrix
     I <- solve(minll$hessian)
     lambda_se <- sqrt(diag(I))
     lambda_lb <- lambda_hat-1.96*lambda_se
     lambda_ub <- lambda_hat+1.96*lambda_se
-    di <- data.frame(antigenf=ab,rho=ri,lambda=lambda_hat,lambda_lb,lambda_ub)
+    di <- data.frame(pathogen=ab,rho=ri,lambda=lambda_hat,lambda_lb,lambda_ub)
     return(di)
 }
 
 knitr::kable(rcmests,digits=3,
              caption="Average force of infection estimated from a cross-sectional seroprevalence curve, reversible catalytic model",
-             col.names = c("Pathogen","Sero-reversion rate","Incidence per month","min95","max95"),
+             col.names = c("Pathogen","Seroreversion rate","Seroconversion rate per month","min95","max95"),
              row.names = FALSE)
 
+```
+
+The above estimates do not account for uncertainty in estimates of the seroreversion rate.  Below is a slightly modified approach to the estimate of seroconversion rate parameter variance that incorporates uncertainty in the seroreversion rate as well. It uses information in the longitudinal data and a nonparametric bootstrap that resamples children with replacement, and in each replicate estimates the seroreversion rate. With the seroreversion rate estimated in each replicate, it then fits the reversible catalytic model.  95% confidence intervals are then estimated using the 2.5% and 97.5% tiles of the bootstrap distribution.
+
+```{r RC model with bootstrap CIs}
+#--------------------------------
+# estimate bootstrap CIs
+# that resample children with 
+# replacement, and within each
+# replicate estimate the 
+# longitudinal seroreversion 
+# rate and then the seroconversion
+# rate within a reversible catalytic
+# model that uses the seroconversion rate
+# from the bootstrap replicate as a fixed
+# parameter
+#--------------------------------
+dboot <- drcm %>%
+  group_by(pathogen) %>%
+  select(childid,pathogen,age,seropos,seror,ptr) %>%
+  mutate(childid=as.character(childid))
+set.seed(123)
+nreps <- 1000
+ids <- unique(dboot$childid)
+bsamp <- matrix(sample(ids,size=length(ids)*nreps,replace=TRUE),
+                nrow=length(ids),ncol=nreps)
+bootests <- foreach(ab=levels(dboot$pathogen),.combine=rbind) %:%
+  foreach(brep=1:nreps,.combine=rbind) %dopar% {
+    di <- dboot %>% filter(pathogen==ab & age<=17)
+    di <- left_join(data.frame(childid=bsamp[,brep]),di,by=c("childid")) 
+    dri <- di %>%
+      ungroup() %>%
+      select(seror,ptr) %>%
+      summarise_all(function(x) sum(x,na.rm=T))
+    ri <- dri$seror/dri$ptr
+    di <- di %>%
+      select(age,seropos) %>% 
+      mutate(n=1) %>%
+      group_by(age) %>%
+      summarize_all(function(x) sum(x,na.rm=TRUE)) %>%
+      select(age,n,seropos)
+    minll <- try(optim(c(0.1),fn=Lrcm,r=ri,data=di,method="Brent",lower=0,upper=1),silent=TRUE)
+    if(class(minll)=="try-error") {
+      resi <- data.frame(pathogen=ab,lambda=NA,rho=NA)
+    } else{
+      resi <- data.frame(pathogen=ab,lambda=minll$par,rho=ri)
+    }
+    
+  }
+
+boot_cis <-  bootests %>% 
+  group_by(pathogen) %>%
+  # restrict to replicates where the model converged
+  summarize(lambda_boot_lb = quantile(lambda,probs=c(0.025),na.rm=T),
+            lambda_boot_ub = quantile(lambda,probs=c(0.975),na.rm=T),
+            rho_boot_lb = quantile(rho,probs=c(0.025),na.rm=T),
+            rho_boot_ub = quantile(rho,probs=c(0.975),na.rm=T)
+  )
+
+# join the estimates to the bootstrap CIs
+rcmests <- rcmests %>%
+  left_join(boot_cis,by="pathogen") %>%
+  select(pathogen,lambda,lambda_lb,lambda_ub,lambda_boot_lb,lambda_boot_ub,rho,rho_boot_lb,rho_boot_ub)
+
+knitr::kable(rcmests,digits=3,
+             caption="Average force of infection estimated from a cross-sectional seroprevalence curve, reversible catalytic model",
+             col.names = c("Pathogen","Seroconversion rate per month","min95","max95","boot_min95","boot_max95","Seroreversion rate per month","min95","max95"),
+             row.names = FALSE)
+
+```
+Including sampling variability in the seroreversion rate widened the 95% confidence intervals on the seroconversion rate slightly, but not substantially.  For ETEC and Campylobacter, which had no evidence for seroreversion during the study, the 95% CIs based on the information matrix and the nonparametric bootstrap were almost identical.
+
+Below are the estimates converted to average rates per year.
+```{r rcm estimates per year}
+# convert from rates per month to rates per year
+rcmests_yr <- rcmests %>%
+  mutate(lambda=lambda*12,lambda_lb=lambda_lb*12,lambda_ub=lambda_ub*12,lambda_boot_lb=lambda_boot_lb*12,lambda_boot_ub=lambda_boot_ub*12,rho=rho*12,rho_boot_lb=rho_boot_lb*12,rho_boot_ub=rho_boot_ub*12) %>%
+  select(pathogen,lambda,lambda_lb,lambda_ub,lambda_boot_lb,lambda_boot_ub,rho,rho_boot_lb,rho_boot_ub)
+
+knitr::kable(select(rcmests_yr,-lambda_lb,-lambda_ub),digits=1,
+             caption="Average force of infection estimated from a cross-sectional seroprevalence curve, reversible catalytic model",
+             col.names = c("Pathogen","Seroconversion rate per year","min95","max95","Seroreversion rate per year","min95","max95"),
+             row.names = FALSE)
 
 ```
 
@@ -266,9 +388,9 @@ Cubic splines are one, flexible approach to model age-dependent seroprevalence, 
 
 Below is a function to estimate the age-specific FOI under a GAM model with cubic splines for age. It also estimates approximate point-wise and simultaneous confidence intervals for the FOI.  We have derived this estimator from methods inspired by Prof. Gavin Simpson's approach to estimate simultaneous confidence intervals for the derivatives of smooths (https://www.fromthebottomoftheheap.net/2017/03/21/simultaneous-intervals-for-derivatives-of-smooths/). 
 
-The basic insight -- originally articulated by *Shkedy 2003* and published with more elaboration in *Hens et al. 2012* -- is that within generalized linear models, we can express the force of infection (hazard of seroconversion) as the derivative of the linear predictor multiplied by the predicted response.  The relationships for a variety of link functions are summarized in Table 5.1 of Hens et al. 2012 ( _Modeling Infectious Disease Parameters Based on Serological and Social Contact Data_. Springer), and can be derived using basic calculus.  Here, we focus on the logit transformation. 
+The basic insight -- originally articulated by *Shkedy 2003* and published with more elaboration in *Hens et al. 2012* -- is that within generalized linear models, it is possible to express the force of infection (hazard of seroconversion) as the derivative of the linear predictor multiplied by the predicted response.  The relationships for a variety of link functions are summarized in Table 5.1 of Hens et al. 2012 ( _Modeling Infectious Disease Parameters Based on Serological and Social Contact Data_. Springer), and can be derived using basic calculus.  Here, we focus on the logit transformation. 
 
-Let $\eta[ P(Y=1|A)] = \textrm{logit}~P(Y=1|A) = g(A)$ for seropositivity indicator $Y$ and age $A$, where $g(A)$ is an arbitrary function (here, estimated semiparametrically with cubic splines). The age specific prevalence predicted from the model is: $\hat E(Y|A=a) = \frac{\exp[\hat\eta(a)]}{1+\exp[\hat\eta(a)]}$ and the age-specific force of infection is: $\lambda(a) = \eta'(a)\frac{\exp[\hat\eta(a)]}{1+\exp[\hat\eta(a)]}$, where $\eta'(a)$ is the first derivative of the linear predictor from the logit model. We estimate $\eta'(a)$ using finite differences, which requires predicting prevalence over a fine grid of ages and then differncing the predictions to estimate the derivative. Although this study rounded age in months, the prediction grid needs to be at high resolution (much finer than months) to accurately estimate the derivative using finite differences. Below, we predict over a grid of ages in 0.01 months.
+Let $\eta[ P(Y=1|A)] = \textrm{logit}~P(Y=1|A) = g(A)$ for seropositivity indicator $Y$ and age $A$, where $g(A)$ is an arbitrary function (here, estimated semiparametrically with cubic splines). The age specific prevalence predicted from the model is: $\hat E(Y|A=a) = \frac{\exp[\hat\eta(a)]}{1+\exp[\hat\eta(a)]}$ and the age-specific force of infection is: $\lambda(a) = \eta'(a)\frac{\exp[\hat\eta(a)]}{1+\exp[\hat\eta(a)]}$, where $\eta'(a)$ is the first derivative of the linear predictor from the logit model. Below, we estimate $\eta'(a)$ using finite differences, which requires predicting prevalence over a fine grid of ages and then differncing the predictions to estimate the derivative. Although this study rounded age in months, the prediction grid needs to be at high resolution (much finer than months) to accurately estimate the derivative using finite differences. Below, we predict over a grid of ages in 0.01 months.
 
 ```{r foi simultaneous CI}
 
@@ -349,7 +471,7 @@ foiCI <- function(m,newdata,eps=1e-07,level=0.95,nreps=10000) {
 }
 ```
 
-Ensure that the FOI estimation procedure is doing what it should be -- namely that the simultaneous CIs have correct coverage. Use _Campylobacter_ p18 + p39 as an example.
+Ensure that the FOI estimation procedure is doing what it should be -- namely that the simultaneous CIs have correct coverage. Use _Campylobacter_ as an example.
 ```{r test foi}
 #----------------------------
 # subset the data to 
