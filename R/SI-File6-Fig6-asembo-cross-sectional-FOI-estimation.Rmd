@@ -1,6 +1,6 @@
 ---
 title: Enteropathogen antibody dynamics and force of infection among children in low-resource settings
-subtitle: Supplementary Information File 6. Estimation of force of infection assuming cross-sectional ("current status") data in Kenya. Figure 6B
+subtitle: Supplementary Information File 6. Estimation of force of infection assuming cross-sectional ("current status") data in Kenya. Figure 6.
 output:
   html_document:
     highlight: haddock
@@ -18,7 +18,7 @@ output:
 
 For enteric antibodies with defined cutoffs for seropositivity and approximately monotonically increasing age-dependent seroprevalence, estimate the hazard of seroconversion, or seroconversion rate, which is one measure of a pathogen's force of infection.
 
-This analysis focuses on the Asembo, Kenya cohort and estimates force of infection with three separate approaches: constant hazard, constant hazard with seroreversion, and age-varying hazard modeled with semiparametric cubic splines.  At the end of the notebook, the estimates from cross-sectional estimators are compared to the nonparametric prospective analysis of the same parameter, which is Figure 6B in the manuscript.
+This analysis focuses on the Asembo, Kenya cohort and estimates force of infection with three separate approaches: constant hazard, constant hazard with seroreversion, and age-varying hazard modeled with semiparametric cubic splines.  At the end of the notebook, the estimates from cross-sectional estimators are compared to the nonparametric prospective analysis of the same parameter, which is Figure 6 in the manuscript.
 
 
 # Script preamble
@@ -362,8 +362,33 @@ knitr::kable(rcmests,digits=3,
              col.names = c("Pathogen","Seroconversion rate per month","min95","max95","boot_min95","boot_max95","Seroreversion rate per month","min95","max95"),
              row.names = FALSE)
 
+# add-back the antigen labels to later merge with the other estimates
+rcmests <- rcmests %>%
+  mutate(antigenf = case_when(
+    pathogen == "Giardia" ~ "Giardia VSP-3 or VSP-5",
+    pathogen == "Cryptosporidium" ~ "Cryptosporidium Cp17 or Cp23",
+    pathogen == "E. histolytica" ~ "E. histolytica LecA",
+    pathogen == "Salmonella" ~ "Salmonella LPS groups B or D",
+    pathogen == "ETEC" ~ "ETEC LT β subunit",
+    pathogen == "Campylobacter" ~ "Campylobacter p18 or p39")
+  ) %>%
+  mutate(antigenf=factor(antigenf,levels=levels(dfoi$antigenf)))
+
 ```
-Including sampling variability in the seroreversion rate widened the 95% confidence intervals on the seroconversion rate slightly, but not substantially.  For ETEC and Campylobacter, which had no evidence for seroreversion during the study, the 95% CIs based on the information matrix and the nonparametric bootstrap were almost identical.
+Including sampling variability in the seroreversion rate widened the 95% confidence intervals on the seroconversion rate slightly, but not substantially.  For ETEC and Campylobacter, which had no evidence for seroreversion during the study, asymptotic 95% CIs based on the information matrix and the nonparametric bootstrap were almost identical (figure below).
+
+```{r rcm se comparison}
+rcmp <- ggplot(data=rcmests,aes(x=antigenf,y=lambda*12))+
+  geom_pointrange(aes(ymin=lambda_lb*12,ymax=lambda_ub*12),position=position_nudge(x=-0.1),color=cblue)+
+  geom_pointrange(aes(ymin=lambda_boot_lb*12,ymax=lambda_boot_ub*12),position=position_nudge(x=0.1),color=corange)+
+  annotate("text",x=6.3,y=3,label="boostrap CIs with variable seroreversion",color=corange)+
+  annotate("text",x=5.7,y=3,label="asymptotic CIs with fixed seroreversion",color=cblue)+
+  labs(y="seroconversion rate per year")+
+  coord_flip()+
+  theme_minimal()
+
+rcmp
+```
 
 Below are the estimates converted to average rates per year.
 ```{r rcm estimates per year}
@@ -856,29 +881,33 @@ Retrieve the results from the longitudinal analysis of the data and compare esti
 # interpretation
 #--------------------------------
 est_long <- readRDS("~/enterics-seroepi/output/asembo-enteric-ab-ests-incidencerates.rds") %>%
-  filter(outcome=="seroconversion rate (force of infection)" & antigen!="cholera") %>%
+  filter(antigen!="cholera") %>%
   mutate(method="Longitudinal") %>% 
-  select(method,antigenf,starts_with("rate")) %>%
-  # convert rates to per-month (rather than per-year)
-  mutate(rate=rate,rate_lb=rate_lb,rate_ub=rate_ub)
+  mutate(outcome = case_when(
+    outcome=="seroconversion rate (force of infection)" ~ "seroconversion (force of infection)",
+    outcome=="seroreversion rate" ~ "seroreversion")) %>%
+  select(method,outcome,antigenf,starts_with("rate"))
 
 # rename columns and stack the data for plotting
 # re-scale monthly rates to per year
 est_xc <- popavgfoi %>%
   mutate(method="Cross sectional, spline",foi=foi*12,foi_lb=foi_lb*12,foi_ub=foi_ub*12) %>%
-  select(method,antigenf,rate=foi,rate_lb=foi_lb,rate_ub=foi_ub)
+  select(method,antigenf,rate=foi,rate_lb=foi_lb,rate_ub=foi_ub) %>%
+  mutate(outcome="seroconversion (force of infection)")
 
 # estimates from constant rate (exponential) model
 est_cr <- glmfoi %>%
   mutate(method="Cross sectional, exponential",
          lambda=lambda*12,lambda_lb=lambda_lb*12,lambda_ub=lambda_ub*12) %>%
-  select(method,antigenf,rate=lambda,rate_lb=lambda_lb,rate_ub=lambda_ub)
+  select(method,antigenf,rate=lambda,rate_lb=lambda_lb,rate_ub=lambda_ub) %>%
+  mutate(outcome="seroconversion (force of infection)")
 
-# estimates from RC model
+# estimates from RC model, use bootstrap estimates of 95% CIs
 est_rcm <- rcmests %>%
   mutate(method="Cross sectional, RCM",
-         lambda=lambda*12,lambda_lb=lambda_lb*12,lambda_ub=lambda_ub*12) %>%
-  select(method,antigenf,rate=lambda,rate_lb=lambda_lb,rate_ub=lambda_ub)
+         lambda=lambda*12,lambda_lb=lambda_boot_lb*12,lambda_ub=lambda_boot_ub*12) %>%
+  select(method,antigenf,rate=lambda,rate_lb=lambda_lb,rate_ub=lambda_ub) %>%
+  mutate(outcome="seroconversion (force of infection)")
 
 
 #--------------------------------
@@ -888,18 +917,16 @@ est_rcm <- rcmests %>%
 rate_comp <- bind_rows(est_long,est_xc,est_cr,est_rcm) %>%
   mutate(antigenf=factor(antigenf,levels=levels(est_long$antigenf)),
          method=factor(method,levels=c("Longitudinal","Cross sectional, spline","Cross sectional, exponential","Cross sectional, RCM"))) %>%
-  arrange(antigenf,method)
+  arrange(antigenf,outcome,method)
 
 ```
-# Figure 6B, FOI Comparison
+# Figure 6, FOI Comparison
 
 Create a figure to summarize the comparison
 
-**This is Figure 6B in the manuscript**
+**This is Figure 6 in the manuscript**
 
-```{r incidence long xc comp figure}
-
-
+```{r incidence long xc comp figure,fig.width=10,fig.height=5}
 # sort pathogens by rates
 ratelabs <- c("E. histolytica LecA",
               "Salmonella LPS groups B or D",
@@ -910,7 +937,7 @@ ratelabs <- c("E. histolytica LecA",
 rate_comp2 <- rate_comp %>%
   mutate(antigenf=factor(antigenf,levels=ratelabs),
          method=factor(method,levels=rev(levels(method)))) %>%
-  arrange(antigenf,method)
+  arrange(antigenf,outcome,method)
 
 # pcols <- c(cblack,corange,cteal,cmagent)
 # pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
@@ -922,26 +949,27 @@ pcols <- rev(vircols)
 ratecomp_plot <- ggplot(data=rate_comp2,
                         aes(x=antigenf,y=rate,color=method,fill=method)) +
   geom_errorbar(aes(ymin=rate_lb,ymax=rate_ub),
-                  width=0,
-                  position=position_nudge(x=rep(c(-0.3,-0.1,0.1,0.3),3)))+
-  geom_point(size=3,pch=21,color="black",
-             position=position_nudge(x=rep(c(-0.3,-0.1,0.1,0.3),3)))+
-  labs(x="",y="seroconversion rate per child-year at risk") +
+                  width=0.15,
+                  position=position_nudge(x=rep(c(-0.3,-0.1,0.1,0.3,0),6)))+
+  geom_point(size=2.5,pch=21,color="black",
+             position=position_nudge(x=rep(c(-0.3,-0.1,0.1,0.3,0),6)))+
+  facet_grid(~outcome)+
+  labs(x="",y="rate per child-year at risk") +
   scale_y_continuous(breaks=0:7)+
   scale_fill_manual(values=pcols) +
   scale_color_manual(values=pcols,guide=FALSE) +
   # scale_shape_manual(values=c(21,22,23,24),guide_legend(title="Estimation method"))+
-  guides(fill=guide_legend(title="force of infection method", 
+  guides(fill=guide_legend(title="method", 
                             reverse=TRUE,
                             keywidth=0.15,
                             keyheight=0.15,
                             default.unit="inch",
                             ncol=1))+
-  coord_flip()+
+  coord_flip(ylim=c(0,7.5))+
   theme_minimal(base_size = 16) +
   theme(
-        legend.position = "top",
-        # legend.background=element_rect(color="white"),
+        legend.position = c(0.35,0.17),
+        legend.background=element_rect(color="white"),
         legend.title=element_text(size=12,vjust=1),
         legend.margin=margin(0,0,0,0),
         legend.box.margin=margin(b=-10,t=10,l=-10,r=-10),
@@ -954,8 +982,8 @@ ratecomp_plot <- ggplot(data=rate_comp2,
 ratecomp_plot
 
 # save PDF and TIFF versions
-ggsave(here("figs","Fig6b-asembo-ab-foi-comparison.pdf"),plot=ratecomp_plot,device=cairo_pdf,width=7,height=5)
-ggsave(here("figs","Fig6b-asembo-ab-foi-comparison.TIFF"),plot=ratecomp_plot,device="tiff",width=7,height=5)
+ggsave(here("figs","Fig6-asembo-ab-foi-comparison.pdf"),plot=ratecomp_plot,device=cairo_pdf,width=10,height=4.5)
+ggsave(here("figs","Fig6-asembo-ab-foi-comparison.TIFF"),plot=ratecomp_plot,device="tiff",width=10,height=4.5)
 
 ```
 Put the estimates on separate scales for lower and higher transmission pathogens to enable clearer comparisons
@@ -969,6 +997,7 @@ vircols <- viridis(n=4,alpha=1,begin=0.2,end=0.97)
 pcols <- rev(vircols)
 
 rate_comp3 <- rate_comp2 %>%
+  filter(outcome=="seroconversion (force of infection)") %>%
   mutate(pathgroup=ifelse(antigenf %in% c("ETEC LT β subunit","Campylobacter p18 or p39"),"Higher transmission","Lower transmission"),
          pathgroup=factor(pathgroup,levels=c("Lower transmission","Higher transmission")))
 

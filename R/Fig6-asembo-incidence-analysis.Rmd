@@ -1,6 +1,6 @@
 ---
 title: Enteropathogen seroepidemiology among children in low-resource settings
-subtitle: Rates of seroconversion and seroreversion in Asembo, Kenya, Figure 6A
+subtitle: Rates of seroconversion and seroreversion in Asembo, Kenya, Figure 6
 output:
   html_document:
     highlight: haddock
@@ -19,6 +19,8 @@ output:
 This script estimates prospective seroincidence rates and the incidence proportion (cumulative incidence) over a 6-7 month period of seroconversion and seroreversion.
 
 The Asembo study was longitudinal and followed children prospectively. We can estimate the average seroconversion rate among children who were at risk (seronegative) at enrollment and seroconverted during the study. We can also estimate the sero-reversion rate, albeit with much less precision since very few children were at risk (seropositive) at enrollment.
+
+Estimates generated in this notebook are saved and used to create figures 5 and 6 in the main text.
 
 # Script preamble
 ```{r preamble}
@@ -522,9 +524,9 @@ seroip
 The incidence proportion summarizes the cumulative risk over the period, but masks some variation in differences between pathogens, particularly those with highest transmission. The next figure summarizes average incidence among among person-time at risk (force of infection), which provides a slightly more granual assessment of variation in exposure between pathogens.
 
 
-# Figure 6 A, incidence rate figure
+# Incidence rate figure
 
-**This is Figure 6 A in the manuscript**
+These estimates contribute to Figure 6 in the article, but they are first combined with cross-sectional estimators of the force of infection in the notebook `SI-File6-Fig6-asembo-cross-sectional-FOI-estimation.Rmd`
 ```{r seroincidence rate figure}
 
 # sort pathogens by rates
@@ -581,15 +583,10 @@ rateplot <- ggplot(data=rate_plot_d,
 
 rateplot
 
-# save pdf and a TIFF version
-ggsave(file=here("figs","Fig6a-asembo-seroincidence.pdf"),plot=rateplot,device=cairo_pdf,height=2.4,width=8)
-ggsave(file=here("figs","Fig6a-asembo-seroincidence.TIFF"),plot=rateplot,device="tiff",height=2.4,width=8)
-
 ```
 
-
 # Compare seroconversion rates with seroprevalence
-For pathogens without seroreversion, age-dependent seroprevalence is a measure of the cumulative distribution of exposure. In turn, this is a measure of the cumulative incidence of seroconversion. Since the seroreversion rate approahed zero for many pathogens studied, we would hypothesize there would be a strong relationship between seroprevalence and the average seroconversion rate over the period.  Examine this relationship for each pathogen.  Store results of this comparison for plotting in the separate Figure 7 notebook that also includes estimates from the Haiti cohort.
+For pathogens without seroreversion, age-dependent seroprevalence is a measure of the cumulative distribution of exposure. In turn, this is a measure of the cumulative incidence of seroconversion. Since the seroreversion rate approahed zero for many pathogens studied, we would hypothesize there would be a strong relationship between seroprevalence and the average seroconversion rate over the period.  Examine this relationship for each pathogen.  Store results of this comparison for plotting in the separate Figure 5 notebook that also includes estimates from the Haiti cohort: `Fig5-foi-v-prev-asembo-haiti.Rmd`
 
 ```{r seroprevalence}
 serop <- dlp2 %>%
@@ -609,7 +606,7 @@ d_serop <- bind_rows(d_seropi,d_serop4fold) %>%
 pcols <- cbPalette
 
 pserop <- ggplot(data=d_serop,aes(x=seroprev,y=seroi,color=antigenf)) +
-  geom_pointrange(aes(,ymin=seroi_lb,ymax=seroi_ub),size=0.7) +
+  geom_pointrange(aes(ymin=seroi_lb,ymax=seroi_ub),size=0.7) +
   facet_grid(.~method)+
   scale_x_continuous(breaks=seq(0,1,by=0.2),labels=seq(0,100,by=20))+
   scale_y_continuous(breaks=0:7)+
