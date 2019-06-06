@@ -22,6 +22,8 @@ The Asembo study was longitudinal and followed children prospectively. We can es
 
 Estimates generated in this notebook are saved and used to create figures 5 and 6 in the main text.
 
+The primary analysis uses a definition of seroconversion whereby IgG levels cross seropositivity cutoffs determined for each antigen. A secondary analysis uses a 4-fold change in IgG levels to define incident boosting and waning. A 4-fold change was used because it is commonly used a criterion for seroconversion, e.g. in vaccine immunogenicity studies. However, choice of fold-increase is somewhat arbitrary. The final portion of this notebook includes a sensitivity analysis that examines seroconversion and seroreversion rates across a range of possible criteria for changes in IgG levels.
+
 # Script preamble
 ```{r preamble}
 #-----------------------------
@@ -621,7 +623,6 @@ pserop
 
 ```
 
-
 # Save incidence estimates
 ```{r save estimates}
 saveRDS(rate_ests_long,file=here("output","asembo-enteric-ab-ests-incidencerates.rds"))
@@ -630,6 +631,186 @@ saveRDS(est_seror,file=here("output","asembo-enteric-ab-ests-seroreversion.rds")
 saveRDS(d_serop,file=here("output","asembo-enteric-ab-ests-seroprev-vs-rates.rds"))
 
 ```
+
+# Sensitivity analysis of fold-changes in IgG
+
+The alternative analysis above assumed a 4-fold change in IgG to define a change in serostatus. A 4-fold increase is a magnitude of change that vaccine immunogenicity studies often use to define seroconversion and was the basis for our choice. Below, we examine the influence of choosing fold-changes in IgG on seroconversion and seroreversion rates in the study. In all cases, seroconversion was defined as a fold-increase in IgG to above a seropositivity cutoff, and seroreversion was defined as a fold-decrease in IgG from above a seropositivity cutoff. We examined from 1 to 10-fold changes.  All estimates include bootstrapped 95% confidence intervals, as in the primary analyses above.
+
+```{r fold change sensitivity analysis}
+#-----------------------------
+# restrict to children measured 
+# longitudinally
+# exclude cholera CTB because
+# it cannot be differentiated 
+# from ETEC LTB (per main analysis)
+# store MFI at each time point
+# A or B
+#-----------------------------
+dsens <- dl %>%
+  ungroup() %>% 
+  filter(pathogen!="V. cholerae") %>%
+  mutate(pathogen=droplevels(pathogen)) %>%
+  group_by(antigenf,childid) %>%
+  mutate(nobs=n()) %>%
+  filter(nobs>1) %>% 
+  mutate(mfiA=ifelse(time=="A",logmfi,NA), mfiA=max(mfiA,na.rm=TRUE),
+         mfiB=ifelse(time=="B",logmfi,NA), mfiB=max(mfiB,na.rm=TRUE)
+  ) %>%
+  filter(time=="A")%>%
+  select(pathogen,antigen,antigenf,childid,age,agediff,logmfidiff,serocut,mfiA,mfiB) %>%
+  ungroup() %>%
+  group_by(pathogen,childid) # group by pathogen and child for aggregating info over antigens in sens analysis
+
+
+#-----------------------------
+# loop over pathogens and
+# fold-changes in IgG
+#-----------------------------
+set.seed(12)
+dsens_res <- foreach(ab=levels(dsens$pathogen),.combine=rbind) %:%
+  foreach(deltafold=seq(1,10,by=0.1),.combine=rbind) %dopar% {
+    
+    #-----------------------------
+    # identify incident 
+    # seroconversions and reversions
+    # based on a fold change in MFI
+    # to above the cutoff (seroconversion)
+    # or starting above cutoff (seroreversion)
+    # aggregate information over
+    # multiple antigens if available
+    #-----------------------------
+    dsensi <- dsens %>%
+      filter(pathogen==ab) %>%
+      mutate(seroi=ifelse(logmfidiff >   log10(deltafold) & mfiB>serocut,1,0),
+             seror=ifelse(logmfidiff < - log10(deltafold) & mfiA>serocut,1,0)
+      ) %>%
+      mutate(seroi=max(seroi),
+             seror=max(seror)
+      ) %>%
+      slice(1)
+    
+    #-----------------------------
+    # estimate time at risk
+    # for seroconversion and reversion
+    # assumed to be 1/2 of time
+    # between measurements
+    # if indivs are seropositive
+    # at measurement 1 they are
+    # not at risk for seroconversion
+    # (and vice-versa for seroreversion)
+    #-----------------------------
+    dsensi <- dsensi %>%
+      mutate(ptc = ifelse(mfiA<serocut,agediff,0),
+             ptc = ifelse(seroi==1,agediff/2,ptc),
+             ptr = ifelse(mfiA>serocut,agediff,0),
+             ptr = ifelse(seror==1,agediff/2,ptr)
+      )
+    
+    #-----------------------------
+    # estimate seroconversion
+    # and seroreversion rates
+    # for each pathogen
+    # units are episodes per child-year
+    # (dividing person time in months by 12)
+    #-----------------------------
+    dsensi_ests <- dsensi %>%
+      group_by(pathogen) %>%
+      summarize(ni=sum(seroi,na.rm=T),
+                nit=sum(ptc,na.rm=T)/12,
+                nr=sum(seror,na.rm=T),
+                nrt=sum(ptr,na.rm=T)/12) %>%
+      mutate(scr=ni/nit,
+             srr=nr/nrt)
+    
+    #-----------------------------
+    # estimate bootstrap CIs
+    #-----------------------------
+    dsens_boot <- dsensi %>%
+      group_by(pathogen) %>%
+      select(pathogen,seroi,seror,ptc,ptr)
+    nboot <- 1000
+    dsens_bootests <- matrix(NA,nrow=nboot,ncol=2)
+    i <- 1
+    while(i <= nboot) {
+      di <- sample_frac(dsens_boot,size=1,replace=TRUE) %>%
+        summarize_all(function(x) sum(x,na.rm=TRUE))
+      dsens_bootests[i,] <- c(di$seroi/(di$ptc/12), di$seror/(di$ptr/12))
+      i <- i+1
+    }
+    dsens_bootests <- data.frame(pathogen=ab,scr=dsens_bootests[,1],srr=dsens_bootests[,2])
+    dsensi_cis <- dsens_bootests %>% 
+      group_by(pathogen) %>%
+      summarize(scr_lb = quantile(scr,probs=c(0.025),na.rm=T),
+                scr_ub = quantile(scr,probs=c(0.975),na.rm=T),
+                srr_lb = quantile(srr,probs=c(0.025),na.rm=T),
+                srr_ub = quantile(srr,probs=c(0.975),na.rm=T)
+      )
+    dsensi_res <- left_join(dsensi_ests,dsensi_cis,by="pathogen") %>%
+      mutate(foldchange=deltafold) %>%
+      select(pathogen,foldchange,ni,nit,starts_with("scr"),nr,nrt,starts_with("srr")) 
+    dsensi_res
+    }
+    
+# reshape the results for ggplot
+dsens_res2 <- dsens_res %>%
+  mutate(antigenf = case_when(
+    pathogen == "Giardia" ~ "Giardia VSP-3 or VSP-5",
+    pathogen == "Cryptosporidium" ~ "Cryptosporidium Cp17 or Cp23",
+    pathogen == "E. histolytica" ~ "E. histolytica LecA",
+    pathogen == "Salmonella" ~ "Salmonella LPS groups B or D",
+    pathogen == "ETEC" ~ "ETEC LT β subunit",
+    pathogen == "Campylobacter" ~ "Campylobacter p18 or p39"),
+    antigenf = factor(antigenf,levels=levels(dlp2$antigenf)),
+    antigenf = droplevels(antigenf)
+  )
+dsens_res_scr <- dsens_res2 %>%
+  select(antigenf,foldchange,starts_with("scr")) %>%
+  mutate(outcome="incident boosting") %>%
+  rename(rate=scr,rate_lb=scr_lb,rate_ub=scr_ub)
+dsens_res_srr <- dsens_res2 %>%
+  select(antigenf,foldchange,starts_with("srr")) %>%
+  mutate(outcome="incident waning") %>%
+  rename(rate=srr,rate_lb=srr_lb,rate_ub=srr_ub)
+dsens_plot <- bind_rows(dsens_res_scr,dsens_res_srr)
+
+```
+## Figure of results
+```{r foldchange sens figure,fig.height=8,fig.width=8}
+# color palette
+pcols <- cbPalette[c(2,6)]
+
+# rate estimates for horizontal lines
+scr_plot <- rate_ests %>% mutate(outcome="incident boosting") %>% filter(antigen!="cholera")
+srr_plot <- rate_ests %>% mutate(outcome="incident waning") %>% filter(antigen!="cholera")
+
+dsensp <- ggplot(data=dsens_plot,aes(x=foldchange,color=outcome,fill=outcome))+
+  facet_grid(antigenf~outcome)+
+  geom_vline(xintercept = 4,alpha=0.5,linetype="dashed")+
+  geom_hline(data=scr_plot,aes(yintercept=seroi),linetype="dashed",alpha=0.5)+
+  geom_hline(data=srr_plot,aes(yintercept=seror),linetype="dashed",alpha=0.5)+  
+  geom_ribbon(aes(ymin=rate_lb,ymax=rate_ub),alpha=0.2,color=NA)+
+  geom_line(aes(y=rate))+
+  scale_color_manual(values=pcols)+
+  scale_fill_manual(values=pcols)+
+  scale_x_continuous(breaks=1:10)+
+  labs(x="fold change in IgG used to define change in serostatus",y="rate per child-year")+
+  coord_cartesian(ylim=c(0,4),x=c(1,10))+
+  theme_minimal() +
+  theme(
+    legend.position = "none",
+    legend.title=element_blank(),
+    strip.text=element_text(hjust=0),
+    strip.text.y=element_text(angle=0)
+  )
+
+dsensp
+
+```
+
+**Figure caption:** Estimates of prospective rates of incident boosting and waning by pathogen across a range of fold-changes in IgG used to define a change in serostatus. Estimates derived from 199 children ages 4-18 months in Asembo, Kenya measured prospectively over a 6-month period in 2013. Shaded regions indicate bootstrapped 95% confidence intervals. Horizontal dashed lines mark each pathogen's seroconversion rate (boosting panels) or seroreversion rate (waning panels) estimated in the cohort using seropositivity cutoffs. Vertical dashed lines mark a 4-fold increase in IgG, commonly used to define seroconversion in challenge studies and vaccine immunogenicity studies.
+
+The results show that incident boosting rate (force of infection) estimates were insensitive to choice of fold-change in IgG in this study, and that incident waning rates stabilized for _Giardia_ and _Salmonella_ at approximately a 4-fold decrease. The incident waning rate for _E. histolytica_ continued to decline until a 6.5 fold decrease in IgG, but events were rare for this pathogen with at most 6 waning events across the 199 children at the least stringent change assessed (1-fold decrease).
+
 
 # Session Info
 ```{r session info}
