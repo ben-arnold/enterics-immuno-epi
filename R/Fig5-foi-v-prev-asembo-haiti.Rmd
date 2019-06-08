@@ -1,8 +1,8 @@
 ---
 title: Enteropathogen seroepidemiology among children in low-resource settings
-subtitle: Comparison of seroprevalence with seroconversion rates (force of infection) in Haiti and Kenya, Figure 5
+subtitle: Comparison of seroprevalence with seroconversion rates (force of infection) in Haiti and Kenya, Figure 5, including Fig 5 supplement 1
 output:
-  html_notebook:
+  html_document:
     highlight: haddock
     theme: default
     toc: yes
@@ -67,6 +67,8 @@ cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2",
 #-----------------------------
 dk <- readRDS(here("output","asembo-enteric-ab-ests-seroprev-vs-rates.rds"))
 dh <- readRDS(here("output","haiti-enteric-ab-ests-seroprev-vs-rates.rds"))
+dha <- readRDS(here("output","haiti-enteric-ab-ests-seroprev-vs-rates-byage.rds"))
+
 
 #-----------------------------
 # bind together and create
@@ -79,7 +81,7 @@ dh <- readRDS(here("output","haiti-enteric-ab-ests-seroprev-vs-rates.rds"))
 dk <- dk %>% mutate(country="Kenya")
 dh <- dh %>% mutate(country="Haiti")
 d <- bind_rows(dk,dh) %>%
-  filter(antigen!="cholera") %>%
+  filter(antigenf!="Cholera toxin β subunit") %>%
   mutate(antigenf=factor(antigenf,levels=c("Giardia VSP-3 or VSP-5",
                                            "Cryptosporidium Cp17 or Cp23",
                                            "E. histolytica LecA",
@@ -90,7 +92,7 @@ d <- bind_rows(dk,dh) %>%
                                            "Norovirus GII.4.NO"
                                            )),
          country=factor(country,levels=c("Kenya","Haiti")),
-         method=factor(method,levels=c("4-fold increase in MFI","Seropositivity cutoff"),labels=c("seroconversion definition:\n4-fold increase in IgG","seroconversion definition:\ncrossed seropositivity cutoff"))
+         method=factor(method,levels=c("4-fold increase in MFI","Seropositivity cutoff"),labels=c("seroincidence definition:\n4-fold increase in IgG","seroincidence definition:\ncrossed seropositivity cutoff"))
          )
 
 # 
@@ -134,7 +136,7 @@ pserop2
 # Kenya original scale
 # order antigens by seroprev + foi 
 kd <- d %>% 
-  filter(country=="Kenya" & method=="seroconversion definition:\ncrossed seropositivity cutoff") %>%
+  filter(country=="Kenya" & method=="seroincidence definition:\ncrossed seropositivity cutoff") %>%
   mutate(antigeno = factor(antigenf,levels=c("E. histolytica LecA",
                                              "Salmonella LPS groups B or D",
                                              "Giardia VSP-3 or VSP-5",
@@ -142,7 +144,8 @@ kd <- d %>%
                                              "ETEC LT β subunit",
                                              "Campylobacter p18 or p39")))
 
-pcols <- cbPalette[c(4:1,6:8,5)]
+# (colors ordered to be consistent across countries)
+pcols <- cbPalette[c(4,6,2,3,7,8)]
 
 pk <- ggplot(data=kd,aes(x=seroprev,y=seroi,color=antigeno,fill=antigeno)) +
   geom_errorbar(aes(ymin=seroi_lb,ymax=seroi_ub),width=0) +
@@ -169,7 +172,7 @@ pk <- ggplot(data=kd,aes(x=seroprev,y=seroi,color=antigeno,fill=antigeno)) +
 # order antigens by seroprev + foi 
 
 hd <- d %>% 
-  filter(country=="Haiti" & method=="seroconversion definition:\ncrossed seropositivity cutoff") %>%
+  filter(country=="Haiti" & method=="seroincidence definition:\ncrossed seropositivity cutoff") %>%
   mutate(antigeno = factor(antigenf,levels=c("E. histolytica LecA",
                                              "Giardia VSP-3 or VSP-5",
                                              "Norovirus GI.4",
@@ -180,10 +183,9 @@ hd <- d %>%
 
 
 # (colors ordered to be consistent across countries)
-pcols <- cbPalette[c(4,2,5,3,1,8,6)]
+pcols <- cbPalette[c(4,2,5,6,3,8,7)]
 
 ph <- ggplot(data=hd,aes(x=seroprev,y=seroi,color=antigeno,fill=antigeno)) +
-  # geom_smooth(se=FALSE,color="gray50",size=0.5,method="loess",alpha=0.5,linetype="dashed")+
   geom_errorbar(aes(ymin=seroi_lb,ymax=seroi_ub),width=0) +
   geom_point(size=2.5,pch=21,color="black") +
   scale_x_continuous(breaks=seq(0.6,1,by=0.1),labels=seq(60,100,by=10))+
@@ -215,7 +217,55 @@ ggsave(file=here("figs","Fig5-asembo-haiti-foi-vs-seroprev.TIFF"),plot=ivsp_comp
   
 ```
 
+# Haiti estimates by age bands
 
+** This is Figure 5 - supplement 1 in the manuscript **
+```{r separate panels}
+
+# Haiti, stratified by age bands
+# order antigens by seroprev + foi 
+
+dha <- dha %>% 
+  mutate(antigeno = factor(antigenf,levels=c("E. histolytica LecA",
+                                             "Norovirus GI.4",
+                                             "Giardia VSP-3 or VSP-5",
+                                             "Salmonella LPS groups B or D",
+                                             "Cryptosporidium Cp17 or Cp23",
+                                             "Norovirus GII.4.NO",
+                                             "ETEC LT β subunit")))
+
+
+# (colors ordered to be consistent across countries)
+pcols <- cbPalette[c(4,5,2,6,3,8,7)]
+
+pha <- ggplot(data=dha,aes(x=seroprev,y=seroi,color=antigeno,fill=antigeno)) +
+  facet_grid(~agecat)+
+  geom_text(aes(x=0.2,y=2.8,label=nlab),color="gray40")+
+  geom_errorbar(aes(ymin=seroi_lb,ymax=seroi_ub),width=0) +
+  geom_point(size=2.5,pch=21,color="black") +
+  scale_y_continuous(breaks=0:3)+
+  scale_x_continuous(breaks=seq(0,1,by=0.2),labels=sprintf("%1.0f",seq(0,1,by=0.2)*100))+
+  scale_color_manual(values=pcols,guide=FALSE)+
+  scale_fill_manual(values=pcols)+
+  labs(x="seroprevalence (%)",y="force of infection\n(seroconversion rate per child-year)")+
+  coord_cartesian(xlim=c(0,1),ylim=c(0,3))+
+  guides(fill=guide_legend(title="Pathogen", 
+                            reverse=TRUE,
+                            keywidth=0.15,
+                            keyheight=0.15,
+                            default.unit="inch",
+                            ncol=1))+
+  theme_minimal() +
+  theme(
+     legend.position="right",
+     strip.text=element_text(size=12,hjust=0)
+  )
+
+# save PDF and TIFF versions
+ggsave(file=here("figs","Fig5sup1-haiti-foi-vs-seroprev-byage.pdf"),plot=pha,device=cairo_pdf,height=3,width=11)
+ggsave(file=here("figs","Fig5sup1-haiti-foi-vs-seroprev-byage.TIFF"),plot=pha,device="tiff",height=3,width=11)
+  
+```
 
 
 # Session Info
