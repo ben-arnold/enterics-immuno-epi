@@ -587,14 +587,11 @@ d_serop4fold <- left_join(rate_ests_4fold,serop,by="antigenf")  %>%
 d_serop <- bind_rows(d_seropi,d_serop4fold) %>%
   mutate(method=factor(method))
 
-
-pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent,cgrey)
+# custom color blind color palette is in the preamble chunck
+pcols <- cbPalette[c(2:4,6:8,5)]
 
 pserop <- ggplot(data=d_serop,aes(x=seroprev,y=seroi,color=antigenf)) +
   geom_pointrange(aes(ymin=seroi_lb,ymax=seroi_ub),size=0.7) +
-  # geom_smooth(aes(x=seroprev,y=seroi),se=FALSE,color="gray40",lwd=0.25,method="glm")+
-  # geom_smooth(aes(x=seroprev,y=seroi),se=FALSE,color="gray40",lwd=0.25,lty="dashed",method="loess")+
-  # geom_text(aes(label=antigenf),nudge_x = d_serop$nudge,hjust=d_serop$just,size=2)+
   facet_grid(.~method)+
   scale_x_continuous(breaks=seq(0.6,1,by=0.2),labels=seq(60,100,by=20))+
   scale_y_continuous(breaks=seq(0,2,by=0.5))+
@@ -608,14 +605,120 @@ pserop
 
 
 ```
-Interestingly, there is a strong relationship between the two measures, in spite of significant levels of seroreversion. This figure will be combined with results from Kenya in a separate notebook (hence, results saved in output for re-use).
+Interestingly, there is a strong relationship between the two measures, despite significant levels of seroreversion. This figure will be combined with results from Kenya in a separate notebook (hence, results saved in output for re-use).
+
+# Sensitivity analysis of age on incidence-seroprevalence relationship
+The analyses above include all measurements among children ages 0-11 years old. Below, we examined the effect of restricting the analysis dataset to progressivly younger age bands to determine whether the relationship changes. This analysis was done in response to comparing results from this Haitian cohort with those from the younger cohort in Asembo, Kenya, where the relationship was steeper.  The results of this sensitivity analysis show that indeed the relationship flattens as older age periods are added to the analysis: seroprevalence increased on average for pathogens besides ETEC, and average force of infection declined. A final figure will be created alongside the Kenya results in a separate notebook (hence, results saved in output for re-use, below).
+
+```{r incidence seroprevalence by age}
+#-----------------------------
+# re-estimate seroconversion
+# rates and seroprevalence
+# for each pathogen over different
+# age windows. Estimate 95%CIs
+# for incidence 
+# draw from the dl5 data.frame
+# created above
+#-----------------------------
+set.seed(123)
+scr_byage <- foreach(ab=levels(dl5$antigenf),.combine=rbind) %:%
+  foreach(maxage=seq(2,5,by=1),.combine=rbind) %dopar% {
+    di <- dl5 %>% 
+      ungroup() %>%
+      filter(antigenf==ab & age<=maxage) %>%
+      select(id,seropos,seroi,ptc)
+      
+    
+    #-----------------------------
+    # estimate incidence rates
+    # and seroprevalence
+    #-----------------------------
+    rate_estsi <- di %>%
+      summarize(seroprev=mean(seropos),
+                N=n(),
+                ni=sum(seroi,na.rm=T),
+                nit=sum(ptc,na.rm=T)
+                ) %>%
+      mutate(seroi=ni/nit)
+    
+    #-----------------------------
+    # bootstrap CIs
+    # resampling children with 
+    # replacement due to repeated
+    # measures
+    #-----------------------------
+    nreps <- 1000
+    ids <- unique(di$id)
+    bsamp <- matrix(sample(ids,size=length(ids)*nreps,replace=TRUE),
+                    nrow=length(ids),ncol=nreps)
+    bootestsi <- as.numeric(NA,length=nreps)
+    i <- 1
+    while(i <= nreps) {
+      bi <- left_join(data.frame(id=bsamp[,i]),di,by=c("id"))
+      bisum <- colSums(bi[c("seroi","ptc")],na.rm=T)
+      bootestsi[i] <- bisum[1]/bisum[2]
+      i <- i+1
+    }
+    seroi_lbi <- quantile(bootestsi,probs=c(0.025),na.rm=T)
+    seroi_ubi <- quantile(bootestsi,probs=c(0.975),na.rm=T)
+    
+    #-----------------------------
+    # return results
+    #-----------------------------
+    res <- data.frame(antigenf=ab,
+                      maxage=maxage,
+                      n=rate_estsi$N,
+                      seroprev=rate_estsi$seroprev,
+                      seroi=rate_estsi$seroi,
+                      seroi_lb=seroi_lbi,
+                      seroi_ub=seroi_ubi)
+    res
+  }
+
+```
+
+Figure of results
+```{r incidence prevalence by age figure,fig.width=8,fig.height=4}
+# create more informative age group labels
+scr_byage2 <- scr_byage %>%
+  mutate(
+    agecat= case_when(
+    maxage == 2 ~ "ages 0-2 y",
+    maxage == 3 ~ "ages 0-3 y",
+    maxage == 4 ~ "ages 0-4 y",
+    maxage == 5 ~ "ages 0-5 y"),
+    nlab = paste("n = ",n,sep="")
+    )
+
+# custom color blind color palette is in the preamble chunck
+pcols <- cbPalette[c(2:4,6:8,5)]
+
+
+scr_serop_byage_p <- ggplot(data=scr_byage2,aes(x=seroprev,y=seroi,color=antigenf,fill=antigenf))+
+  facet_grid(.~agecat)+
+  geom_pointrange(aes(ymin=seroi_lb,ymax=seroi_ub))+
+  geom_text(aes(x=0.1,y=2.8,label=nlab),color="gray20")+
+  scale_y_continuous(breaks=0:3)+
+  scale_x_continuous(breaks=seq(0,1,by=0.2),labels=sprintf("%1.0f",seq(0,1,by=0.2)*100))+
+  scale_color_manual(values=pcols)+
+  scale_fill_manual(values=pcols)+
+  labs(x="seroprevalence (%)",y="force of infection\n(seroconversion rate per child-year)")+
+  coord_cartesian(xlim=c(0,1))+
+  theme_minimal(base_size=14) + 
+  theme(
+    legend.title=element_blank()
+  )
+
+scr_serop_byage_p
+
+```
 
 # Save incidence estimates
 ```{r save estimates}
 saveRDS(rate_ests,file=here("output","haiti-enteric-ab-ests-incidencerates.rds"))
 saveRDS(rate_ests_4fold,file=here("output","haiti-enteric-ab-ests-incidencerates-4fold.rds"))
 saveRDS(d_serop,file=here("output","haiti-enteric-ab-ests-seroprev-vs-rates.rds"))
-
+saveRDS(scr_byage2,file=here("output","haiti-enteric-ab-ests-seroprev-vs-rates-byage.rds"))
 
 ```
 
