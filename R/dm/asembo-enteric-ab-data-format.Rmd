@@ -1,7 +1,7 @@
 ---
 title: "Format the Asembo enteric antibody data"
 output: 
-  html_notebook:
+  html_document:
     theme: default
     highlight: haddock
     toc: true
@@ -20,8 +20,10 @@ This script loads the raw data and formats it for all of the analyses
 #-----------------------------
 # preamble
 #-----------------------------
-rm(list=ls())
+library(here)
+here()
 library(tidyverse)
+library(lubridate)
 
 
 ```
@@ -34,16 +36,12 @@ library(tidyverse)
 # load the data
 #-----------------------------
 
-d <- readRDS("~/dropbox/asembo/data/final/assembo_sero.rds")
-
-# exclude 6 measurements with missing age 
-d <- d %>%
-  filter(!is.na(age))
+d <- readRDS("~/dropbox/asembo/data/final/asembo_sero.rds")
 
 # list the enteric antigens and make formatted labels for them
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","etec","cholera","p18","p39")
 
-mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Salmonella LPS group B","Salmonella LPS group D","ETEC LT β subunit","Cholera toxin β subunit","Campylobacter p18","Campylobacter p39")
+mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Salmonella LPS group B","Salmonella LPS group D","ETEC LT B subunit","Cholera toxin B subunit","Campylobacter p18","Campylobacter p39")
 
 
 #-----------------------------
@@ -51,8 +49,8 @@ mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptospori
 # to log10 values
 #-----------------------------
 dl <- d %>%
-  select(childid,time,sex,age,tr,mbavars) %>%
-  gather(antigen,mfi,-childid,-time,-sex,-age,-tr)
+  select(childid,time,mdate,sex,age,tr,mbavars) %>%
+  gather(antigen,mfi,-childid,-time,-mdate,-sex,-age,-tr)
 
 # set negative and zero values to 1 before the log10 transform
 dl <- dl %>%
@@ -104,15 +102,28 @@ dl$pathogen[dl$antigen %in% c("p18","p39")] <- "Campylobacter"
 dl <- dl %>%
   mutate(pathogen = factor(pathogen,levels=c("Giardia","Cryptosporidium","E. histolytica","Salmonella","ETEC","V. cholerae","Campylobacter")),
          antigenf=factor(antigen,levels=mbavars,labels=mbalabs)) %>%
-  select(pathogen,antigen,antigenf,childid,time,sex,age,agediff,tr,mfi,logmfi,logmfidiff)
+  select(pathogen,antigen,antigenf,childid,time,mdate,sex,age,agediff,tr,mfi,logmfi,logmfidiff)
      
+
+#-----------------------------
+# reformat measurement date
+# to year and week of the year
+# to more completely de-identify
+# the data
+#-----------------------------
+dl <- dl %>%
+  mutate(year=year(mdate),
+         month=month(mdate),
+         week=week(mdate)) %>%
+  select(pathogen,antigen,antigenf,childid,time,year,month,week,sex,age,agediff,tr,mfi,logmfi,logmfidiff)
+
 #-----------------------------
 # save a long version of the
 # dataset for all future 
 # analyses
 #-----------------------------
-saveRDS(dl,file="~/enterics-seroepi/data/asembo_analysis.rds")
-write_csv(dl,path="~/enterics-seroepi/data/asembo_analysis.csv")
+saveRDS(dl,file=here::here("data","asembo_analysis.rds"))
+write_csv(dl,path=here::here("data","asembo_analysis.csv"))
 ```
 # Session Info
 ```{r session info}
