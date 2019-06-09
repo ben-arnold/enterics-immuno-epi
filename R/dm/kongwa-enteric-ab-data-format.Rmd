@@ -1,7 +1,7 @@
 ---
 title: "Format the Kongwa enteric antibody data"
 output: 
-  html_notebook:
+  html_document:
     theme: default
     highlight: haddock
     toc: true
@@ -44,7 +44,7 @@ d <- readRDS("~/dropbox/kongwa/data/final/kongwa-mba-kids.rds")
 # list the enteric antigens and make formatted labels for them
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","etec","cholera","p18","p39","pgp3")
 
-mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Salmonella LPS group B","Salmonella LPS group D","ETEC LT β subunit","Cholera toxin β subunit","Campylobacter p18","Campylobacter p39","C. trachomatis pgp3")
+mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Salmonella LPS group B","Salmonella LPS group D","ETEC LT B subunit","Cholera toxin B subunit","Campylobacter p18","Campylobacter p39","C. trachomatis pgp3")
 
 #-----------------------------
 # filter to just the relevant
