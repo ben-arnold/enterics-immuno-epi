@@ -1,6 +1,6 @@
 ---
 title: Enteropathogen antibody dynamics and force of infection among children in low-resource settings
-subtitle: Supplementary Information File 1. No effect of intervention or bead lot on enteropathogen antibody response in Kenya and Tanzania.
+subtitle: Supplementary Information File 1. Effect of interventions, bead lots, and season on enteropathogen antibody response.
 output: 
   html_document:
     highlight: haddock
@@ -24,7 +24,9 @@ Wilson, N., Goodhew, B., Mkocha, H., Joseph, K., Bandea, C., Black, C., Igietsem
 
 The results show that the interventions did not effect enteropathogen antibody response. Based on these results, we pooled data across treatment arms in all analyses.
 
-The final section of this notebook stratifies the analyses from Tanzania in years 1 versus years 2-4. The Tanania study  used different bead lots in year 1 versus years 2-4 of the study. Different bead lots could theoretically have different antigen coupling efficiency, which could introduce differences in the MFI-bg measurements, since they are on an arbitrary scale that depends on how much antibody from the sample binds to the beads. Results of the stratified analyses show that the patterns observed were qualitatively and quantitatively similar for year 1 (n=902) versus years 2-4 (n=4,087). Owing to the much larger number of samples from later years, the results of this analysis also show that the pooled results match almost exactly the estimates from years 2-4.
+The second section of this notebook stratifies the analyses from Tanzania in years 1 versus years 2-4. The Tanania study  used different bead lots in year 1 versus years 2-4 of the study. Different bead lots could theoretically have different antigen coupling efficiency, which could introduce differences in the MFI-bg measurements, since they are on an arbitrary scale that depends on how much antibody from the sample binds to the beads. Results of the stratified analyses show that the patterns observed were qualitatively and quantitatively similar for year 1 (n=902) versus years 2-4 (n=4,087). Owing to the much larger number of samples from later years, the results of this analysis also show that the pooled results match almost exactly the estimates from years 2-4.
+
+The third section of this notebook examines the influence of rainy versus dry season in the Leogane, Haiti cohort (the only study with measurements that spanned dry and rainy seasons). The results suggest slightly higher IgG levels and seroprevalence for many pathogens during the wet season compared with the dry season. The increases are of small magnitude, however. For example, increases in seroprevalence associated with the wet season ranged from 1 to 4 percentage points.
 
 # Script preamble
 ```{r preamble}
@@ -60,6 +62,11 @@ cred <- "#EE3333"
 corange <- "#EEA722"
 cyellow <- "#FFEE33"
 cgrey <- "#777777"
+
+# safe color blind palette
+# http://jfly.iam.u-tokyo.ac.jp/color/
+# http://www.cookbook-r.com/Graphs/Colors_(ggplot2)/
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
 ```
 
@@ -216,7 +223,7 @@ gamCI <- function(m,newdata,nreps=10000) {
 library(mgcv)
 pgamfits <- foreach(ab=levels(dlp$antigenf),.combine=rbind) %dopar% {
     pd <- filter(dlp, antigenf==ab)
-    gfit <- mgcv::gam(seropos~s(age, bs="cr")+s(childid,bs="re",by=dummy)+tr, data=pd,family="binomial")
+    gfit <- mgcv::gam(seropos~s(age, bs="cr",by=tr)+s(childid,bs="re",by=dummy)+tr, data=pd,family="binomial")
     newd0 <- pd %>% mutate(dummy=0,tr="Cont")
     newd1 <- pd %>% mutate(dummy=0,tr="Int")
     gsci0 <- gamCI(m=gfit,newdata=newd0,nreps=1000)
@@ -401,7 +408,7 @@ dlp <- bind_rows(dl,dgi,dcr) %>%
 gamfits <- foreach(ab=levels(dl$antigenf),.combine=rbind) %dopar% {
     pd <- filter(dl, antigenf==ab) %>%
       mutate(dummy=1)
-    gfit <- mgcv::gam(logmfi~s(age, bs="cr",k=9)+s(clusterid,bs="re",by=dummy)+tr ,data=pd,family="gaussian")
+    gfit <- mgcv::gam(logmfi~s(age, bs="cr",k=9,by=tr)+s(clusterid,bs="re",by=dummy)+tr ,data=pd,family="gaussian")
     newd0 <- pd %>% mutate(dummy=0,tr="Control")
     newd1 <- pd %>% mutate(dummy=0,tr="Intervention")
     gsci0 <- gamCI(m=gfit,newdata=newd0,nreps=1000)
@@ -861,6 +868,476 @@ pcurve
 ```
 
 The results show that in general the MFI-bg levels were slightly lower in year 1 than in years 2-4, but that the qualitative age-dependent patterns are similar. Since year is perfectly confounded by bead lot, there is no way to distinguish whether differences are due to between-year differences in exposure or due to bead lot effects.  The plots also show that the combined analysis, which pools data over all years, essentially reflects the patterns observed in years 2-4 -- consistent with that bead set contributing >4 times more observations to the analysis (n=4,087 vs n=902).
+
+# Leogane, Haiti seasonal effects
+
+Of the three studies included in this analysis, Haiti was the only cohort that spanned wet and rainy seasons. Following seasonsal definitions for Haiti described by Moss et al. 2004, we examined the effect of season on IgG levels and seroprevalence. 
+
+In Haiti, there are two rainy seasons: from April - June and August - October. We classified measurements collected in these months as wet season measurements, and all others as dry season measurements. We then compared distributions of IgG, mean IgG levels, and seroprevalence between the two seasons. We also compared age-dependent mean IgG levels stratified by season to examine whether the curves suggested evidence for a shift, as has been demonstrated for malaria in a very high transmission setting (Arnold et al. 2017).  We found some evidence for slightly higher IgG levels and seroprevalence, but differences were small and there was no evidence for dramatic shifts in the age-dependent mean curves.
+
+Moss, D. M., Priest, J. W., Hamlin, K., Derado, G., Herbein, J., Petri, W. A., Jr & Lammie, P. J. Longitudinal evaluation of enteric protozoa in Haitian children by stool exam and multiplex serologic assay. Am. J. Trop. Med. Hyg. 90, 653–660 (2014).
+
+Arnold, B. F., van der Laan, M. J., Hubbard, A. E., Steel, C., Kubofcik, J., Hamlin, K. L., Moss, D. M., Nutman, T. B., Priest, J. W. & Lammie, P. J. Measuring changes in transmission of neglected tropical diseases, malaria, and enteric pathogens from quantitative antibody levels. PLoS Negl. Trop. Dis. 11, e0005616 (2017).
+
+## Load the data and format
+```{r load haiti data}
+#-----------------------------
+# load the formatted data
+# with seropositivity indicators
+# created with:
+# haiti-enteric-ab-data-format.Rmd -->
+# Fig1-haiti-enteric-ab-distributions.Rmd
+#-----------------------------
+dl <- readRDS(here("data","haiti_analysis2.rds"))
+
+# list the enteric antigens and make formatted labels for them
+mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","p18","p39","etec","cholera")
+
+mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Salmonella LPS B","Salmonella LPS D","Campylobacter p18","Campylobacter p39","ETEC LT B subunit","Cholera toxin β subunit")
+
+#-----------------------------
+# Following the analysis in
+# Moss et al. 2014, there are
+# generally two annual rainy
+# seasons in Haiti:
+# April - June, August - October
+# Moss, D. M., et al. Am. J. Trop. Med. Hyg. 90, 653–660 (2014).
+#-----------------------------
+dl <- dl %>%
+  mutate(season=ifelse(month %in% c(4,5,6,8,9,10),"wet season","dry season"),
+         season=factor(season,levels=c("dry season","wet season"))
+)
+
+```
+
+## Age and MFI distributions by season
+Examine distribution of measurement ages by season to confirm there is not significant imbalance
+```{r haiti season measures}
+#-----------------------------
+# distribution of measurement
+# ages by season
+#-----------------------------
+dplot_age <- dl %>% filter(pathogen=="ETEC")
+
+page <- ggplot(data=dplot_age,aes(x=age,stat(density),color=season,fill=season)) +
+  geom_density(alpha=0.4)+
+  scale_fill_manual(values=cbPalette[c(2,6)])+
+  scale_color_manual(values=cbPalette[c(2,6)])
+page
+
+page2 <- ggplot(data=dplot_age,aes(x=age,stat(density),color=season,fill=season)) +
+  geom_histogram(alpha=0.4,bins=30)+
+  scale_fill_manual(values=cbPalette[c(2,6)])+
+  scale_color_manual(values=cbPalette[c(2,6)])
+page2
+
+```
+
+Examine MFI by antibody and season
+
+```{r haiti MFI boxplot by season, fig.width=10}
+dlplot <- dl %>% 
+  mutate(season=factor(ifelse(season=="dry season","dry","wet"),levels=c("dry","wet")))
+
+log10labs <- c( 
+  expression(10^0),
+  expression(10^1),
+  expression(10^2),
+  expression(10^3),
+  expression(10^4)
+)
+
+pcols <- cbPalette[c(2:4,6:8)]
+
+pbox_season <- ggplot(data=dlplot,aes(x=season,y=logmfi,color=pathogen,fill=pathogen))+
+  facet_grid(~antigenf)+
+  geom_jitter(height=0,width=0.2,size=0.4,alpha=0.5) +
+  geom_boxplot(outlier.shape=NA,color="gray30",fill=NA)+
+  scale_y_continuous(breaks=0:4,labels=log10labs)+
+  scale_color_manual(values=pcols)+
+  scale_fill_manual(values=pcols)+
+  coord_cartesian(ylim=c(0,4.5))+
+  labs(y="Luminex response (MFI-bg)")+
+  theme(
+    legend.position="none",
+    strip.text=element_text(size=6)
+  )
+
+pbox_season
+
+
+```
+
+The boxplots suggest a slight shift in IgG to higher levels for many pathogens, including Giardia, Cryptosporidium, Salmonella, and norovirus. Below, we examine differences in mean MFI and seroprevalence, adjusting for age and accounting for repeated measures among children.
+
+## MFI by season, adjusted for age
+
+```{r haiti season mean MFI}
+#-----------------------------
+# estimate means by season 
+# and difference between
+# seasons using targeted maximum
+# likelihood estimation
+# get 95% CIs through the
+# influence curve clustered
+# on child ID
+# adjust for age with a GAM
+#-----------------------------
+mfi_tmlemeans <- foreach(seasi=levels(dl$season),.combine=rbind) %:% 
+  foreach(ab=levels(dl$antigenf),.combine=rbind) %dopar% {
+    pd <- filter(dl,season==seasi & antigenf==ab)
+    mu <- tmleAb(Y=pd$logmfi,id=pd$id,W=pd$age,
+                 SL.library=c("SL.gam")
+                 )
+    di <- data.frame(season=seasi,antigenf=ab,mean=mu$psi,se=mu$se,lb=mu$lb,ub=mu$ub)
+    return(di)
+  }
+
+mfi_tmlediffs <- foreach(ab=levels(dl$antigenf),.combine=rbind) %dopar% {
+    pd <- filter(dl,antigenf==ab) %>% mutate(wet=ifelse(season=="wet season",1,0))
+    diffmu <- tmleAb(Y=pd$logmfi,X=pd$wet,W=pd$age,
+                     id=pd$id,SL.library=c("SL.gam")
+                     )
+    di <- data.frame(antigenf=ab,diff=diffmu$psi,lb=diffmu$lb,ub=diffmu$ub,p=diffmu$p)
+    return(di)
+  }
+
+# bring back pathogen info for ploting aesthetics
+haiti_paths <- dl %>%
+  ungroup() %>%
+  group_by(antigenf) %>%
+  select(antigenf,pathogen) %>%
+  slice(1)
+
+mfi_tmlemeans <- mfi_tmlemeans %>% left_join(haiti_paths,by="antigenf") %>%
+  mutate(season=ifelse(season=="dry season","dry","wet"))
+mfi_tmlediffs <- mfi_tmlediffs %>% left_join(haiti_paths,by="antigenf")
+
+```
+
+
+```{r haiti season MFI figure, fig.width=10}
+pcols <- cbPalette[c(2:4,6:8)]
+
+log10labs <- c( 
+  expression(10^1),
+  expression(10^2),
+  expression(10^3),
+  expression(10^4)
+)
+
+p_mfi_season <- ggplot(data=mfi_tmlemeans,aes(x=season,y=mean,color=pathogen,fill=pathogen))+
+  facet_grid(.~antigenf)+
+  geom_errorbar(aes(ymin=lb,ymax=ub),width=0.1)+
+  geom_point()+
+  labs(y="adjusted mean Luminex response (MFI-bg)")+
+  scale_color_manual(values=pcols)+
+  scale_fill_manual(values=pcols)+
+  scale_y_continuous(breaks=1:4,labels=log10labs)+
+  coord_cartesian(ylim=c(1,4.5))+
+  theme(
+    legend.position="none",
+    strip.text=element_text(size=6)
+  )
+
+p_mfi_season
+```
+
+```{r haiti season MFI diff figure,fig.width=8}
+pcols <- cbPalette[c(2:4,6:8)]
+
+p_mfi_diff_season <- ggplot(data=mfi_tmlediffs,aes(x=antigenf,y=diff,color=pathogen,fill=pathogen))+
+  geom_errorbar(aes(ymin=lb,ymax=ub),width=0.1)+
+  geom_point()+
+  geom_hline(yintercept=0,linetype="dashed")+
+  labs(y="increase in response during wet season (log10 MFI-bg)",x="Antibody")+
+  scale_color_manual(values=pcols)+
+  scale_fill_manual(values=pcols)+
+  # scale_y_continuous(breaks=1:4,labels=log10labs)+
+  # coord_cartesian(ylim=c(1,4.5))+
+  theme(
+    legend.position="none",
+    axis.text.x=element_text(angle=45,hjust=1)
+  )
+
+p_mfi_diff_season
+```
+
+This analysis shows that mean MFI is higher across antibodies during the wet season compared to the dry season, even after adjusting for age. However, the magnitude of the differences is small and on the order of 0.1 to 0.2 (log10). Below, we compared seroprevalence by season.
+
+
+## Seroprevalence by season
+```{r haiti season seroprev adjusted}
+
+#----------------------------------
+# create seropositivity indicators 
+# combining information over antigens
+#----------------------------------
+dlp <- dl %>%
+  mutate(pathogen2 = case_when(
+    antigenf == "Norovirus GI.4" ~ "Norovirus GI.4",
+    antigenf == "Norovirus GII.4.NO" ~ "Norovirus GII.4.NO",
+    TRUE ~ as.character(pathogen)),
+    pathogen2=factor(pathogen2,levels=c("Giardia","Cryptosporidium","E. histolytica","Salmonella","ETEC","Norovirus GI.4","Norovirus GII.4.NO"))
+  ) %>%
+  mutate(seropos=ifelse(!is.na(posroc),posroc,posmix),
+         serocut=ifelse(!is.na(posroc),log10(roccut),mixcut),
+         serocut_desc=ifelse(!is.na(posroc),"ROC","Mixture Model")) %>%
+  mutate(seropos=ifelse(!is.na(seropos),seropos,posunex),
+         serocut_desc=ifelse(!is.na(serocut),serocut_desc,"Unexp dist"),
+         serocut=ifelse(!is.na(serocut),serocut,unexpcut)) %>%
+  ungroup() %>% 
+  group_by(pathogen,pathogen2,id,sampleid,agecat,age,season) %>%
+  summarize(seropos=max(seropos))
+
+dlp <- dlp %>%
+  ungroup() %>%
+  mutate(id=as.character(id))
+
+#-----------------------------
+# estimate seroprevalence by season 
+# and difference between
+# seasons using targeted maximum
+# likelihood estimation
+# also estimate the risk ratio
+# get 95% CIs through the
+# influence curve clustered
+# on child ID
+# adjust for age with a GAM
+#-----------------------------
+serop_tmlemeans <- foreach(seasi=levels(dlp$season),.combine=rbind) %:% 
+  foreach(ab=levels(dlp$pathogen2),.combine=rbind) %dopar% {
+    pd <- filter(dlp,season==seasi & pathogen2==ab)
+    mu <- tmleAb(Y=pd$seropos,id=pd$id,W=pd$age,
+                 SL.library=c("SL.gam"),
+                 family="binomial")
+    di <- data.frame(season=seasi,pathogen2=ab,mean=mu$psi,se=mu$se,lb=mu$lb,ub=mu$ub)
+    return(di)
+  }
+
+serop_tmlediffs <- foreach(ab=levels(dlp$pathogen2),.combine=rbind) %dopar% {
+    pd <- filter(dlp,pathogen2==ab) %>% mutate(wet=ifelse(season=="wet season",1,0))
+    diffmu <- tmleAb(Y=pd$seropos,X=pd$wet,W=pd$age,
+                     id=pd$id,SL.library=c("SL.gam"),
+                     family="binomial")
+    di <- data.frame(pathogen2=ab,diff=diffmu$psi,lb=diffmu$lb,ub=diffmu$ub,p=diffmu$p,
+                     rr=diffmu$tmle_fit$estimates$RR$psi,
+                     rr_lb=diffmu$tmle_fit$estimates$RR$CI[1],
+                     rr_ub=diffmu$tmle_fit$estimates$RR$CI[2])
+    return(di)
+  }
+
+# bring back pathogen info for ploting aesthetics
+haiti_paths2 <- dlp %>%
+  ungroup() %>%
+  group_by(pathogen2) %>%
+  select(pathogen2,pathogen) %>%
+  slice(1)
+
+serop_tmlemeans <- serop_tmlemeans %>% left_join(haiti_paths2,by="pathogen2") %>%
+  mutate(season=ifelse(season=="dry season","dry","wet"))
+serop_tmlediffs <- serop_tmlediffs %>% left_join(haiti_paths2,by="pathogen2")
+
+```
+
+```{r haiti season seroprev figure,fig.width=10}
+pcols <- cbPalette[c(2:4,6:8)]
+
+p_serop_season <- ggplot(data=serop_tmlemeans,aes(x=season,y=mean,color=pathogen,fill=pathogen))+
+  facet_grid(.~pathogen2)+
+  geom_errorbar(aes(ymin=lb,ymax=ub),width=0.1)+
+  geom_point()+
+  labs(y="seroprevalence (%)")+
+  scale_color_manual(values=pcols)+
+  scale_fill_manual(values=pcols)+
+  scale_y_continuous(breaks=seq(0,1,by=0.1),labels=sprintf("%1.0f",seq(0,1,by=0.1)*100))+
+  coord_cartesian(ylim=c(0,1))+
+  theme(
+    legend.position="none"
+  )
+
+p_serop_season
+```
+
+
+```{r haiti season seroprev diff figure}
+# custom color blind color palette is in the preamble chunck
+pcols <- cbPalette[c(2:4,6:8)]
+serop_tmlediffs <- serop_tmlediffs %>%
+  mutate(difflab = sprintf("%1.1f",diff*100))
+p_serop_diff_season <- ggplot(data=serop_tmlediffs,aes(x=pathogen2,y=diff,color=pathogen,fill=pathogen))+
+  geom_errorbar(aes(ymin=lb,ymax=ub),width=0.1)+
+  geom_point()+
+  geom_text(aes(y=diff,label=difflab),nudge_x = 0.2)+
+  geom_hline(yintercept=0,linetype="dashed")+
+  labs(y="increase in seroprevalence during wet season (%)",x="Pathogen")+
+  scale_color_manual(values=pcols)+
+  scale_fill_manual(values=pcols)+
+  scale_y_continuous(breaks=seq(-0.04,0.12,by=0.02),labels=sprintf("%1.0f",seq(-0.04,0.12,by=0.02)*100))+
+  coord_cartesian(ylim=c(-0.04,0.12))+
+  theme(
+    legend.position="none",
+    axis.text.x=element_text(angle=45,hjust=1)
+  )
+
+p_serop_diff_season
+
+```
+
+
+```{r haiti season seroprev rr figure}
+# custom color blind color palette is in the preamble chunck
+pcols <- cbPalette[c(2:4,6:8)]
+serop_tmlediffs <- serop_tmlediffs %>%
+  mutate(rrlab = sprintf("%1.2f",rr))
+p_serop_rr_season <- ggplot(data=serop_tmlediffs,aes(x=pathogen2,y=rr,color=pathogen,fill=pathogen))+
+  geom_errorbar(aes(ymin=rr_lb,ymax=rr_ub),width=0.1)+
+  geom_point()+
+  geom_text(aes(y=rr,label=rrlab),nudge_x = 0.2)+
+  geom_hline(yintercept=1,linetype="dashed")+
+  labs(y="wet season prevalence ratio",x="Pathogen")+
+  scale_color_manual(values=pcols)+
+  scale_fill_manual(values=pcols)+
+  scale_y_log10(breaks=c(0.9,1,1.1,1.2))+
+  coord_cartesian(ylim=c(0.9,1.2))+
+  theme(
+    legend.position="none",
+    axis.text.x=element_text(angle=45,hjust=1)
+  )
+
+p_serop_rr_season
+
+```
+
+Consistent with comparisons of IgG levels, this analysis demonstrated that seroprevalence was consistently elevated during the wet season across pathogens, but the increase was small, ranging from 0.8 to 4.8 percentage points, or relative increase of between 1 and 7 percent.
+
+## Estimate age-seroprevalence curves by season
+Above, there was slight evidence for higher IgG levels and seroprevalence across pathogens during the wet season as compared to the dry season. Below, estimate age-dependent mean MFI levels using cubic splines to examine whether season changes these overall patterns by age. The results suggest differences between seasons are very slight, consistent with the results above.
+
+```{r gam functions for simultaneous cis}
+#----------------------------------
+# simulataneous CIs for GAMs
+# estimated by resampling the 
+# Baysian posterior estimates of
+# the variance-covariance matrix
+# assuming that it is multivariate normal
+# the function below also estimates 
+# the unconditional variance-covariance
+# matrix, Vb=vcov(x,unconditional=TRUE), 
+# which allows for undertainty in the actual
+# estimated mean as well 
+# (Marra & Wood 2012 Scandinavian Journal of Statistics, 
+#  Vol. 39: 53–74, 2012, doi: 10.1111/j.1467-9469.2011.00760.x )
+# simultaneous CIs provide much better coverage than pointwise CIs
+# see: http://www.fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/
+#----------------------------------
+
+gamCI <- function(m,newdata,nreps=10000) {
+  require(mgcv)
+  require(dplyr)
+  Vb <- vcov(m,unconditional = TRUE)
+  pred <- predict(m, newdata, se.fit = TRUE)
+  fit <- pred$fit
+  se.fit <- pred$se.fit
+  BUdiff <- MASS::mvrnorm(n=nreps, mu = rep(0, nrow(Vb)), Sigma = Vb)
+  Cg <- predict(m, newdata, type = "lpmatrix")
+  simDev <- Cg %*% t(BUdiff)
+  absDev <- abs(sweep(simDev, 1, se.fit, FUN = "/"))
+  masd <- apply(absDev, 2L, max)
+  crit <- quantile(masd, prob = 0.95, type = 8)
+  pred <- data.frame(newdata,fit=pred$fit,se.fit=pred$se.fit)
+  pred <- mutate(pred,
+                 uprP = fit + (2 * se.fit),
+                 lwrP = fit - (2 * se.fit),
+                 uprS = fit + (crit * se.fit),
+                 lwrS = fit - (crit * se.fit)
+  )
+  return(pred)
+}
+```
+
+Estimate age dependent mean MFI curves by season
+```{r haiti age MFI curves by season }
+#-----------------------------
+# fit cubic spline over age, separately for each 
+# season and antigen
+# estimate approximate simultaneous confidence intervals
+# for the fits
+# set the dummy to 0 to 
+# zero out child-level random effects
+# see posts on Stack Exchange for explanation:
+# https://stats.stackexchange.com/questions/131106/predicting-with-random-effects-in-mgcv-gam/131116#131116
+# https://stats.stackexchange.com/questions/189384/predicting-mean-smooth-in-gam-with-smooth-by-random-factor-interaction
+#-----------------------------
+
+#-----------------------------
+# create a dummy variable equal
+# to 1 for all obs as a trick to
+# get marginal predictions by
+# age while still including REs
+# for child
+#-----------------------------
+dl <- dl %>%
+  ungroup() %>%
+  mutate(dummy=1) %>%
+  mutate(id=as.character(id),
+         fid=factor(id))
+
+library(mgcv)
+gamfits <- foreach(ab=levels(dl$antigenf),.combine=rbind) %dopar% {
+    pd <- filter(dl, antigenf==ab)
+    gfit <- mgcv::gam(logmfi~s(age, bs="cr",by=season)+s(fid,bs="re",by=dummy)+season, data=pd)
+    newd0 <- pd %>% mutate(dummy=0,season="dry season")
+    newd1 <- pd %>% mutate(dummy=0,season="wet season")
+    gsci0 <- gamCI(m=gfit,newdata=newd0,nreps=1000)
+    gsci1 <- gamCI(m=gfit,newdata=newd1,nreps=1000)
+    gsci <- bind_rows(gsci0,gsci1) %>% mutate(antigenf=ab)
+    return(gsci)
+}
+
+# reinstate factors
+gamfits <- gamfits %>%
+  mutate(antigenf=factor(antigenf,levels=levels(dl$antigenf)),
+         season=factor(season,levels=c("dry season","wet season"))
+  )
+  
+```
+
+Figure of age-dependent mean MFI curves
+
+```{r haiti age-MFI by season figure, fig.width=6 , fig.height=12}
+# bright color-blind palette defined in an earlier code chunk
+pcols <- cbPalette[c(2,6)]
+
+log10labs <- c( 
+  expression(10^0),
+  expression(10^1),
+  expression(10^2),
+  expression(10^3),
+  expression(10^4)
+)
+
+pcurve <- ggplot(data=gamfits,aes(x=age,color=season,fill=season)) +
+  # approximate simultaneous CI from spline fit
+  geom_ribbon(aes(ymin=lwrS,ymax=uprS),alpha=0.2,color=NA) +
+  # spline fit
+  geom_line(aes(y=fit)) +
+  # plot aesthetics
+  facet_wrap(~antigenf,nrow=5,ncol=2) +
+  scale_x_continuous(breaks=seq(0,10,by=1))+
+  scale_y_continuous(breaks=0:4,labels=log10labs)+
+  coord_cartesian(ylim=c(0,4.5),xlim=c(0,10))+
+  labs(x="age in years",y="Luminex response (MFI-bg)") +
+  scale_fill_manual(values=pcols) +
+  scale_color_manual(values=pcols) +
+  theme_minimal() +
+  theme(legend.position = "top")
+
+pcurve
+
+```
+
+
 
 # Session Info
 ```{r session info}
