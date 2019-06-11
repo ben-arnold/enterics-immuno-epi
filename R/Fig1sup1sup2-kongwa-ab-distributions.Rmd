@@ -267,11 +267,7 @@ dlplot <- dl %>%
 
 
 # custom color blind color palette is in the preamble chunck
-# pcols <- c(cred,corange,cgreen,cteal,cblue,cgrey,cmagent)
-# pcols <- c(corange,cred,cmagent,cblue,cteal,cgreen,cgrey)
-# pcols <- vircols
 pcols <- cbPalette[c(2:4,6,7,5,8,1)]
-
 
 # custom log labels
 log10labs <- c( 
@@ -286,13 +282,13 @@ log10labs <- c(
 p2 <- ggplot(data=dlplot,aes(x=logmfi,fill=pathogen,color=pathogen)) +
   facet_grid(agecat~antigenf,scales='free')+
   geom_density(aes(y=..density..),color="black",size=0.2,alpha=1)+
+  geom_point(aes(y=-0.05),pch="|",alpha=0.5)+
   geom_vline(aes(xintercept = plotroc)) +
   geom_vline(aes(xintercept = mixcut),linetype=2) +
-  # scale_y_continuous(expand=c(0,0),breaks=seq(0,40,by=10)) +
   coord_cartesian(ylim=c(0, 1.25))+
   scale_x_continuous(expand=c(0,0),limits=c(0,5),breaks=0:4,labels=log10labs) +
-  # scale_y_continuous(expand=c(0,0),breaks=c(0,0.5,1,1.5),labels=c("0","","1","")) +
-  scale_fill_manual(values=pcols,guide_legend(title="Age category"))+
+  scale_fill_manual(values=pcols)+
+  scale_color_manual(values=pcols)+
   labs(title="",x="Luminex Response (MFI-bg)",y="Density") +
   theme_grey()+
   theme(
@@ -344,13 +340,14 @@ log10labs <- c(
 p3 <- ggplot(data=dlplot,aes(x=logmfi,fill=pathogen,color=pathogen)) +
   facet_grid(agecat~antigenf,scales='free')+
   geom_density(aes(y=..density..),color="black",size=0.2,alpha=1)+
+  geom_point(aes(y=-0.05),pch="|",alpha=0.5)+
   geom_vline(aes(xintercept = plotroc)) +
   geom_vline(aes(xintercept = mixcut),linetype=2) +
   # scale_y_continuous(expand=c(0,0),breaks=seq(0,40,by=10)) +
-  coord_cartesian(ylim=c(0, 1.25))+
+  coord_cartesian(ylim=c(-0.05, 1.25))+
   scale_x_continuous(expand=c(0,0),limits=c(0,5),breaks=0:4,labels=log10labs) +
-  # scale_y_continuous(expand=c(0,0),breaks=c(0,0.5,1,1.5),labels=c("0","","1","")) +
-  scale_fill_manual(values=pcols,guide_legend(title="Age category"))+
+  scale_fill_manual(values=pcols)+
+  scale_color_manual(values=pcols)+
   labs(title="",x="Luminex Response (MFI-bg)",y="Density") +
   theme_grey()+
   theme(

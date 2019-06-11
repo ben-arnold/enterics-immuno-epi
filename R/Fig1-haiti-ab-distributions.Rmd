@@ -346,15 +346,11 @@ punexp
 ```{r age stratified distribution figure, fig.width=12,fig.height=6,warning=FALSE}
 dl <- dl %>%
   mutate(agecat = cut(age,breaks=c(0,1,2,3,12),
-                      labels=c("0 years","1 year","2 years","3-11 years"))
+                      labels=c("<1 year","1 year","2 years","3-11 years"))
          )
 
 # custom color blind color palette is in the preamble chunck
-# pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
-# pcols <- c(corange,cred,cmagent,cblue,cteal,cgreen)
-# pcols <- vircols[c(1:6)]
 pcols <- cbPalette[c(2:4,6:8)]
-
 
 # custom log labels
 log10labs <- c( 
@@ -369,13 +365,14 @@ log10labs <- c(
 p2 <- ggplot(data=dl,aes(x=logmfi,fill=pathogen,color=pathogen)) +
   facet_grid(agecat~antigenf,scales='free')+
   geom_density(aes(y=..density..),color="black",size=0.2,alpha=1)+
+  geom_point(aes(y=-0.05),pch="|",alpha=1)+
   geom_vline(aes(xintercept = roccut)) +
   geom_vline(aes(xintercept = mixcut),linetype=2) +
   geom_vline(aes(xintercept = unexpcut),linetype=3) + 
-  coord_cartesian(ylim=c(0, 1.25))+
+  coord_cartesian(ylim=c(-0.05, 1.25))+
   scale_x_continuous(expand=c(0,0),limits=c(0,5),breaks=0:4,labels=log10labs) +
   scale_fill_manual(values=pcols)+
-  # scale_fill_viridis_d(begin=0,end=0.9,option="plasma")+
+  scale_color_manual(values=pcols)+
   labs(title="",x="Luminex Response (MFI-bg)",y="Density") +
   theme_grey()+
   theme(
