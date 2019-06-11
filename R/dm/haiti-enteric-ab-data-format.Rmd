@@ -1,7 +1,7 @@
 ---
 title: "Format the Leogane, Haiti enteric antibody data"
 output: 
-  html_notebook:
+  html_document:
     theme: default
     highlight: haddock
     toc: true
@@ -24,6 +24,7 @@ library(here)
 here()
 
 library(tidyverse)
+library(lubridate)
 library(foreign)
 
 
@@ -51,7 +52,7 @@ d <- d %>% rename(vsp3=vsp3s,sdate=sampledate,age=agey)
 #----------------------------------
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","etec","norogi","norogii")
 
-mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Salmonella LPS group B","Salmonella LPS group D","ETEC LT β subunit","Norovirus GI.4","Norovirus GII.4.NO")
+mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Salmonella LPS group B","Salmonella LPS group D","ETEC LT B subunit","Norovirus GI.4","Norovirus GII.4.NO")
 
 #-----------------------------
 # filter to just the relevant
@@ -92,15 +93,27 @@ dl$pathogen[dl$antigen %in% c("norogi","norogii")] <- "Norovirus"
 dl <- dl %>%
   mutate(pathogen = factor(pathogen,levels=c("Giardia","Cryptosporidium","E. histolytica","Salmonella","ETEC","Norovirus")),
          antigenf=factor(antigen,levels=mbavars,labels=mbalabs)) %>%
-  select(pathogen,antigen,antigenf,id,sampleid,age,mfi,logmfi)
+  select(pathogen,antigen,antigenf,id,sampleid,sdate,age,mfi,logmfi)
      
+#-----------------------------
+# reformat measurement date
+# to year and week of the year
+# to more completely de-identify
+# the data
+#-----------------------------
+dl <- dl %>%
+  mutate(year=year(sdate),
+         month=month(sdate),
+         week=week(sdate)) %>%
+  select(pathogen,antigen,antigenf,id,sampleid,year,month,week,age,mfi,logmfi)
+
 #-----------------------------
 # save a long version of the
 # dataset for all future 
 # analyses
 #-----------------------------
-saveRDS(dl,file=here("data","haiti_analysis.rds"))
-write_csv(dl,path=here("data","haiti_analysis.csv"))
+saveRDS(dl,file=here::here("data","haiti_analysis.rds"))
+write_csv(dl,path=here::here("data","haiti_analysis.csv"))
 ```
 # Session Info
 ```{r session info}
