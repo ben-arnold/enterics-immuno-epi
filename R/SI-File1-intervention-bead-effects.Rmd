@@ -81,7 +81,7 @@ dl <- readRDS(here("data","asembo_analysis2.rds"))
 # list the enteric antigens and make formatted labels for them
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","p18","p39","etec","cholera")
 
-mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Salmonella LPS B","Salmonella LPS D","Campylobacter p18","Campylobacter p39","ETEC LT β subunit","Cholera toxin β subunit")
+mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Salmonella LPS B","Salmonella LPS D","Campylobacter p18","Campylobacter p39","ETEC LT B subunit","Cholera toxin B subunit")
 ```
 
 ```{r composite antigens, warning=FALSE}
@@ -136,8 +136,8 @@ dlp <- bind_rows(dl,dgi,dcr,ds,dcp) %>%
                                   "Cryptosporidium Cp17 or Cp23",
                                   "E. histolytica LecA",
                                   "Salmonella LPS groups B or D",
-                                  "ETEC LT β subunit",
-                                  "Cholera toxin β subunit",
+                                  "ETEC LT B subunit",
+                                  "Cholera toxin B subunit",
                                   "Campylobacter p18 or p39")) ) %>%
   filter(!is.na(antigenf)) %>%
   select(pathogen,antigen,antigenf,
@@ -527,7 +527,7 @@ dl <- readRDS(here("data","kongwa_analysis.rds"))
 # list the enteric antigens and formatted labels for them
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","etec","cholera","p18","p39","pgp3")
 
-mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Salmonella LPS group B","Salmonella LPS group D","ETEC LT β subunit","Cholera toxin β subunit","Campylobacter p18","Campylobacter p39","C. trachomatis pgp3")
+mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Salmonella LPS group B","Salmonella LPS group D","ETEC LT B subunit","Cholera toxin B subunit","Campylobacter p18","Campylobacter p39","C. trachomatis pgp3")
 
 dl <- dl %>%
   mutate(antigen=as.character(antigen))
@@ -835,7 +835,7 @@ dplot <- data.frame(gamfits) %>%
          antigenf=factor(antigenf,levels=c("Giardia VSP-3","Giardia VSP-5",
                                            "Cryptosporidium Cp17","Cryptosporidium Cp23",
                                            "E. histolytica LecA",
-                                           "ETEC LT β subunit")))
+                                           "ETEC LT B subunit")))
 
 pcols <- c(cteal,corange,cblack)
 

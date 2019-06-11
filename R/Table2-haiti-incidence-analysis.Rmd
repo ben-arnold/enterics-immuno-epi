@@ -171,14 +171,14 @@ dl3 <- dl2 %>%
     pathogen == "Cryptosporidium" ~ "Cryptosporidium Cp17 or Cp23",
     pathogen == "E. histolytica" ~ "E. histolytica LecA",
     pathogen == "Salmonella" ~ "Salmonella LPS groups B or D",
-    pathogen == "ETEC" ~ "ETEC LT β subunit",
+    pathogen == "ETEC" ~ "ETEC LT B subunit",
     pathogen == "Norovirus GI.4" ~ "Norovirus GI.4",
     pathogen == "Norovirus GII.4.NO" ~ "Norovirus GII.4.NO"),
     antigenf=factor(antigenf,levels=c("Giardia VSP-3 or VSP-5",
                                   "Cryptosporidium Cp17 or Cp23",
                                   "E. histolytica LecA",
                                   "Salmonella LPS groups B or D",
-                                  "ETEC LT β subunit",
+                                  "ETEC LT B subunit",
                                   "Norovirus GI.4",
                                   "Norovirus GII.4.NO"))
   ) %>%
@@ -936,14 +936,14 @@ dsens_res2 <- dsens_res %>%
     pathogen == "Cryptosporidium" ~ "Cryptosporidium Cp17 or Cp23",
     pathogen == "E. histolytica" ~ "E. histolytica LecA",
     pathogen == "Salmonella" ~ "Salmonella LPS groups B or D",
-    pathogen == "ETEC" ~ "ETEC LT β subunit",
+    pathogen == "ETEC" ~ "ETEC LT B subunit",
     pathogen == "Norovirus GI.4" ~ "Norovirus GI.4",
     pathogen == "Norovirus GII.4.NO" ~ "Norovirus GII.4.NO"),
     antigenf=factor(antigenf,levels=c("Giardia VSP-3 or VSP-5",
                                   "Cryptosporidium Cp17 or Cp23",
                                   "E. histolytica LecA",
                                   "Salmonella LPS groups B or D",
-                                  "ETEC LT β subunit",
+                                  "ETEC LT B subunit",
                                   "Norovirus GI.4",
                                   "Norovirus GII.4.NO"))
   )

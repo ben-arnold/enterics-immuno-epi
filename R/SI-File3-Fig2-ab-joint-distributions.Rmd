@@ -113,8 +113,8 @@ d <- dall %>%
          ylab=ifelse(antigen %in% c("p18","p39"),"p39",ylab),
          xlab=ifelse(antigen %in% c("salb","sald"),"LPS Group B",xlab),
          ylab=ifelse(antigen %in% c("salb","sald"),"LPS Group D",ylab),
-         xlab=ifelse(antigen %in% c("cholera","etec"),"Cholera toxin β subunit",xlab),
-         ylab=ifelse(antigen %in% c("cholera","etec"),"ETEC LT β subunit",ylab),
+         xlab=ifelse(antigen %in% c("cholera","etec"),"Cholera toxin B subunit",xlab),
+         ylab=ifelse(antigen %in% c("cholera","etec"),"ETEC LT B subunit",ylab),
          xlab=ifelse(antigen %in% c("norogi","norogii"),"GII.4.NO",xlab),
          ylab=ifelse(antigen %in% c("norogi","norogii"),"GI.4",ylab)
          ) %>%
@@ -268,7 +268,7 @@ scatterloess<-function(x,y,cex=0.4,...){
 
 # list the enteric antigens in Haiti and formatted labels for them
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","etec","norogi","norogii")
-mbalabs <- c("Giardia\nVSP-3","Giardia\nVSP-5","Cryptosporidium\nCp17","Cryptosporidium\nCp23","E. histolytica\nLecA","Salmonella\nLPS B","Salmonella\nLPS D","ETEC\nLT β subunit","Norovirus\nGI", "Norovirus\nGII")
+mbalabs <- c("Giardia\nVSP-3","Giardia\nVSP-5","Cryptosporidium\nCp17","Cryptosporidium\nCp23","E. histolytica\nLecA","Salmonella\nLPS B","Salmonella\nLPS D","ETEC\nLT B subunit","Norovirus\nGI", "Norovirus\nGII")
 
 hmat <- dall %>%
   filter(country=="Haiti") %>%
@@ -287,7 +287,7 @@ pairs(hmat[mbavars],labels=mbalabs,cex=0.1,las=1,
 # list the enteric antigens in Asembo Kenya and formatted labels for them
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","etec","cholera","p18","p39")
 
-mbalabs <- c("Giardia\nVSP-3","Giardia\nVSP-5","Cryptosporidium\nCp17","Cryptosporidium\nCp23","E. histolytica\nLecA","Salmonella\nLPS B","Salmonella\nLPS D","ETEC\nLT β subunit","Cholera\ntoxin β subunit","Campylobacter\np18","Campylobacter\np39")
+mbalabs <- c("Giardia\nVSP-3","Giardia\nVSP-5","Cryptosporidium\nCp17","Cryptosporidium\nCp23","E. histolytica\nLecA","Salmonella\nLPS B","Salmonella\nLPS D","ETEC\nLT B subunit","Cholera\ntoxin B subunit","Campylobacter\np18","Campylobacter\np39")
 
 kmat <- dall %>%
   filter(country=="Kenya") %>%
@@ -310,7 +310,7 @@ There are a few blank panels in this figure. The reason is that some antigens we
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","etec","cholera","p18","p39")
 
 mbalabs <- c("Giardia\nVSP-3","Giardia\nVSP-5","Cryptosporidium\nCp17","Cryptosporidium\nCp23",
-             "E. histolytica\nLecA","Salmonella\nLPS B","Salmonella\nLPS D","ETEC\nLT β subunit","Cholera\ntoxin β subunit","Campylobacter\np18","Campylobacter\np39")
+             "E. histolytica\nLecA","Salmonella\nLPS B","Salmonella\nLPS D","ETEC\nLT B subunit","Cholera\ntoxin B subunit","Campylobacter\np18","Campylobacter\np39")
 
 tmat <- dall %>%
   filter(country=="Tanzania") %>%

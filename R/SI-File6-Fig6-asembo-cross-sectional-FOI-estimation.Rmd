@@ -369,7 +369,7 @@ rcmests <- rcmests %>%
     pathogen == "Cryptosporidium" ~ "Cryptosporidium Cp17 or Cp23",
     pathogen == "E. histolytica" ~ "E. histolytica LecA",
     pathogen == "Salmonella" ~ "Salmonella LPS groups B or D",
-    pathogen == "ETEC" ~ "ETEC LT β subunit",
+    pathogen == "ETEC" ~ "ETEC LT B subunit",
     pathogen == "Campylobacter" ~ "Campylobacter p18 or p39")
   ) %>%
   mutate(antigenf=factor(antigenf,levels=levels(dfoi$antigenf)))
@@ -932,7 +932,7 @@ ratelabs <- c("E. histolytica LecA",
               "Salmonella LPS groups B or D",
               "Giardia VSP-3 or VSP-5",
               "Cryptosporidium Cp17 or Cp23",
-              "ETEC LT β subunit",
+              "ETEC LT B subunit",
               "Campylobacter p18 or p39")
 rate_comp2 <- rate_comp %>%
   mutate(antigenf=factor(antigenf,levels=ratelabs),
@@ -998,7 +998,7 @@ pcols <- rev(vircols)
 
 rate_comp3 <- rate_comp2 %>%
   filter(outcome=="seroconversion (force of infection)") %>%
-  mutate(pathgroup=ifelse(antigenf %in% c("ETEC LT β subunit","Campylobacter p18 or p39"),"Higher transmission","Lower transmission"),
+  mutate(pathgroup=ifelse(antigenf %in% c("ETEC LT B subunit","Campylobacter p18 or p39"),"Higher transmission","Lower transmission"),
          pathgroup=factor(pathgroup,levels=c("Lower transmission","Higher transmission")))
 
 

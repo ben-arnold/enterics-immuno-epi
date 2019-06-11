@@ -331,7 +331,7 @@ dlp <- bind_rows(dlp,dgi,dcr,ds) %>%
                                   "Cryptosporidium Cp17 or Cp23",
                                   "E. histolytica LecA",
                                   "Salmonella LPS groups B or D",
-                                  "ETEC LT β subunit",
+                                  "ETEC LT B subunit",
                                   "Norovirus GI.4", 
                                   "Norovirus GII.4.NO")) ) %>%
   filter(!is.na(antigenf)) %>%
@@ -804,8 +804,8 @@ dlp <- bind_rows(dl,dgi,dcr,ds,dcp) %>%
                                   "Cryptosporidium Cp17 or Cp23",
                                   "E. histolytica LecA",
                                   "Salmonella LPS groups B or D",
-                                  "ETEC LT β subunit",
-                                  "Cholera toxin β subunit",
+                                  "ETEC LT B subunit",
+                                  "Cholera toxin B subunit",
                                   "Campylobacter p18 or p39")) ) %>%
   filter(!is.na(antigenf)) %>%
   select(pathogen,antigen,antigenf,
@@ -958,7 +958,7 @@ dplot <- gamfits %>%
   filter(pathogen!="V. cholerae") %>%
   mutate(antigenf=factor(antigenf,levels=c("Giardia VSP-3","Giardia VSP-5",
                                            "Cryptosporidium Cp17","Cryptosporidium Cp23",
-                                           "E. histolytica LecA","ETEC LT β subunit",
+                                           "E. histolytica LecA","ETEC LT B subunit",
                                            "Salmonella LPS group B","Salmonella LPS group D",
                                            "Campylobacter p18","Campylobacter p39" )))
 
@@ -1092,7 +1092,7 @@ dl <- readRDS(here("data","kongwa_analysis2.rds"))
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","etec","cholera","p18","p39")
 
 mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23",
-             "E. histolytica LecA","Salmonella LPS B","Salmonella LPS D","ETEC LT β subunit","Cholera toxin β subunit","Campylobacter p18","Campylobacter p39")
+             "E. histolytica LecA","Salmonella LPS B","Salmonella LPS D","ETEC LT B subunit","Cholera toxin B subunit","Campylobacter p18","Campylobacter p39")
 dl <- dl %>% filter(antigen %in% mbavars) %>% mutate(antigenf=droplevels(antigenf))
 ```
 
@@ -1409,7 +1409,7 @@ dplot <- gamfits %>%
   filter(pathogen!="V. cholerae") %>%
   mutate(antigenf=factor(antigenf,levels=c("Giardia VSP-3","Giardia VSP-5",
                                            "Cryptosporidium Cp17","Cryptosporidium Cp23",
-                                           "E. histolytica LecA","ETEC LT β subunit",
+                                           "E. histolytica LecA","ETEC LT B subunit",
                                            "Salmonella LPS group B","Salmonella LPS group D",
                                            "Campylobacter p18","Campylobacter p39" )))
 
@@ -1463,7 +1463,7 @@ dplot2 <- pgamfits %>%
   mutate(antigenf=factor(antigenf,
                          levels=c(levels(antigenf),
                                   "Salmonella LPS groups B or D",
-                                  "ETEC LT β subunit", 
+                                  "ETEC LT B subunit", 
                                   "Campylobacter p18 or p39"))
   )
 

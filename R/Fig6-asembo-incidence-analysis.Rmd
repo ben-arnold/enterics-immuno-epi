@@ -153,8 +153,8 @@ dlp2 <- dlp %>%
                                   "Cryptosporidium Cp17 or Cp23",
                                    "E. histolytica LecA",
                                   "Salmonella LPS groups B or D",
-                                  "ETEC LT β subunit",
-                                  "Cholera toxin β subunit",
+                                  "ETEC LT B subunit",
+                                  "Cholera toxin B subunit",
                                   "Campylobacter p18 or p39")) 
          ) 
 
@@ -478,7 +478,7 @@ ratelabs <- c("E. histolytica LecA",
               "Salmonella LPS groups B or D",
               "Giardia VSP-3 or VSP-5",
               "Cryptosporidium Cp17 or Cp23",
-              "ETEC LT β subunit",
+              "ETEC LT B subunit",
               "Campylobacter p18 or p39")
 
 
@@ -536,7 +536,7 @@ ratelabs <- c("E. histolytica LecA",
               "Salmonella LPS groups B or D",
               "Giardia VSP-3 or VSP-5",
               "Cryptosporidium Cp17 or Cp23",
-              "ETEC LT β subunit",
+              "ETEC LT B subunit",
               "Campylobacter p18 or p39")
 
 # reshape the incident rate estimates to long
@@ -758,7 +758,7 @@ dsens_res2 <- dsens_res %>%
     pathogen == "Cryptosporidium" ~ "Cryptosporidium Cp17 or Cp23",
     pathogen == "E. histolytica" ~ "E. histolytica LecA",
     pathogen == "Salmonella" ~ "Salmonella LPS groups B or D",
-    pathogen == "ETEC" ~ "ETEC LT β subunit",
+    pathogen == "ETEC" ~ "ETEC LT B subunit",
     pathogen == "Campylobacter" ~ "Campylobacter p18 or p39"),
     antigenf = factor(antigenf,levels=levels(dlp2$antigenf)),
     antigenf = droplevels(antigenf)

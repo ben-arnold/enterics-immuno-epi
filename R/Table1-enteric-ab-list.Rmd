@@ -48,7 +48,7 @@ dk <- readRDS(here("data","kongwa_analysis2.rds"))
 
 # re-order antigens in Kenya for consistency with other cohorts
 da <- da %>%
-  mutate(antigenf=factor(antigenf,levels=c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Salmonella LPS group B","Salmonella LPS group D","ETEC LT β subunit","Cholera toxin β subunit","Campylobacter p18","Campylobacter p39")))
+  mutate(antigenf=factor(antigenf,levels=c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Salmonella LPS group B","Salmonella LPS group D","ETEC LT B subunit","Cholera toxin B subunit","Campylobacter p18","Campylobacter p39")))
 ```
 
 # Summary counts and statistics for each study

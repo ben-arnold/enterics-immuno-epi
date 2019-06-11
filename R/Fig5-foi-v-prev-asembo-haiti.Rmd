@@ -81,12 +81,12 @@ dha <- readRDS(here("output","haiti-enteric-ab-ests-seroprev-vs-rates-byage.rds"
 dk <- dk %>% mutate(country="Kenya")
 dh <- dh %>% mutate(country="Haiti")
 d <- bind_rows(dk,dh) %>%
-  filter(antigenf!="Cholera toxin β subunit") %>%
+  filter(antigenf!="Cholera toxin B subunit") %>%
   mutate(antigenf=factor(antigenf,levels=c("Giardia VSP-3 or VSP-5",
                                            "Cryptosporidium Cp17 or Cp23",
                                            "E. histolytica LecA",
                                            "Salmonella LPS groups B or D",
-                                           "ETEC LT β subunit",
+                                           "ETEC LT B subunit",
                                            "Campylobacter p18 or p39",
                                            "Norovirus GI.4",
                                            "Norovirus GII.4.NO"
@@ -141,7 +141,7 @@ kd <- d %>%
                                              "Salmonella LPS groups B or D",
                                              "Giardia VSP-3 or VSP-5",
                                              "Cryptosporidium Cp17 or Cp23",
-                                             "ETEC LT β subunit",
+                                             "ETEC LT B subunit",
                                              "Campylobacter p18 or p39")))
 
 # (colors ordered to be consistent across countries)
@@ -179,7 +179,7 @@ hd <- d %>%
                                              "Salmonella LPS groups B or D",
                                              "Cryptosporidium Cp17 or Cp23",
                                              "Norovirus GII.4.NO",
-                                             "ETEC LT β subunit")))
+                                             "ETEC LT B subunit")))
 
 
 # (colors ordered to be consistent across countries)
@@ -232,7 +232,7 @@ dha <- dha %>%
                                              "Salmonella LPS groups B or D",
                                              "Cryptosporidium Cp17 or Cp23",
                                              "Norovirus GII.4.NO",
-                                             "ETEC LT β subunit")))
+                                             "ETEC LT B subunit")))
 
 
 # (colors ordered to be consistent across countries)
