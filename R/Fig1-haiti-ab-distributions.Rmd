@@ -257,7 +257,8 @@ Children under age 2 years whose antibody levels increased by at least 2 on the 
 # measurements
 #-----------------------------
 dl <- dl %>%
-  group_by(id,antigen) %>%
+  group_by(antigen,id) %>%
+  arrange(antigen,id,age) %>%
   mutate(logmfidiff = lead(logmfi) - logmfi) %>%
   mutate(unexp = ifelse(age<=1 & logmfidiff>=2,"Presumed unexposed","Possibly exposed"))
 
