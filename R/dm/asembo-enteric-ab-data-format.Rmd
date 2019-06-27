@@ -28,7 +28,7 @@ library(lubridate)
 ```
 
 
-#Load and format the data
+# Load and format the serology data
 
 ```{r data format}
 #-----------------------------
@@ -36,10 +36,6 @@ library(lubridate)
 #-----------------------------
 
 d <- readRDS("~/dropbox/asembo/data/final/asembo_sero.rds")
-
-# exclude 6 measurements with missing age 
-d <- d %>%
-  filter(!is.na(age))
 
 # list the enteric antigens and make formatted labels for them
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","etec","cholera","p18","p39")
@@ -117,7 +113,9 @@ dl <- dl %>%
   mutate(year=year(mdate),
          month=month(mdate),
          week=week(mdate)) %>%
-  select(pathogen,antigen,antigenf,childid,time,year,month,week,sex,age,agediff,tr,mfi,logmfi,logmfidiff)
+  select(pathogen,antigen,antigenf,childid,time,year,month,week,sex,age,agediff,tr,mfi,logmfi,logmfidiff) %>%
+  ungroup() %>%
+  mutate(childid=factor(childid))
 
 #-----------------------------
 # save a long version of the
@@ -127,6 +125,30 @@ dl <- dl %>%
 saveRDS(dl,file="~/enterics-seroepi/data/asembo_analysis.rds")
 write_csv(dl,path="~/enterics-seroepi/data/asembo_analysis.csv")
 ```
+
+# Load and format the stool data
+
+```{r stool data format}
+#-----------------------------
+# load and format the stool data
+#-----------------------------
+ds <- readRDS(file="~/dropbox/asembo/data/final/asembo_stool.rds")
+
+# format date as week of year to de-identify data
+ds <- ds %>%
+  mutate(stool_year=year(stool_date),
+         stool_month=month(stool_date),
+         stool_week=week(stool_date)) %>%
+  select(childid,stool_year,stool_month,stool_week,stool_crypto,stool_giardia) %>%
+  arrange(childid,stool_year,stool_month,stool_week) %>%
+  ungroup() %>%
+  mutate(childid=factor(childid))
+
+saveRDS(ds,file="~/enterics-seroepi/data/asembo_stool.rds")
+write_csv(ds,path="~/enterics-seroepi/data/asembo_stool.csv")
+
+```
+
 # Session Info
 ```{r session info}
 sessionInfo()
