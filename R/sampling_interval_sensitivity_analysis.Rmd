@@ -5,7 +5,7 @@ output:
   html_document:
     highlight: haddock
     theme: default
-    code_folding: show
+    code_folding: hide
     df_print: paged
     toc: yes
     toc_depth: '3'
@@ -304,6 +304,7 @@ Below is an algorithm that imputes IgG levels with daily resolution for each chi
 
 The function also allows for a subsample of the time series (default is no subsample)
 Below we illustrate how a 30-day sampling interval captures all of the IgG dynamics in the model given the empirical boosting levels and decay rates.  This simulation could be sped up considerably, possibly by modeling each child's antibody kinetics in 30-day time steps, but we have not had time to implement that refinement.
+
 ```{r igg imputation algorithm}
 ab_impute <- function(d, ab, lambda, nfill = 10, samp_interval = 1) {
   # function arguments:
@@ -524,8 +525,8 @@ psim_ds <- ggplot(data = filter(d_all, sinterval != "daily"), aes(x = agedays/36
 psim_ds
 
 # save the figures
-ggsave(here("figs", "haiti-interval-sim-example1.pdf"), plot = psim, device = cairo_pdf, width = 7, height = 5)
-ggsave(here("figs", "haiti-interval-sim-example2.pdf"), plot = psim_ds, device = cairo_pdf, width = 7, height = 5)
+# ggsave(here("figs", "haiti-interval-sim-example1.pdf"), plot = psim, device = cairo_pdf, width = 7, height = 5)
+# ggsave(here("figs", "haiti-interval-sim-example2.pdf"), plot = psim_ds, device = cairo_pdf, width = 7, height = 5)
 ```
 
 
@@ -660,10 +661,15 @@ sim_res2 <- sim_res %>%
     seror30 = max(ifelse(sinterval==30,seror,-99)),
     ratio30i = seroi/seroi30,
     ratio30r = seror/seror30,
-    diff30i = seroi30 - seroi,
-    diff30r = seror30 - seror
+    diff30i = seroi-seroi30,
+    diff30r = seror-seror30
   ) %>%
   select(-seroi30,-seror30)
+
+#-----------------------------
+# save the simulation results
+#-----------------------------
+saveRDS(sim_res2,file=here("output","haiti-imputation-simulation-results.rds"))
 
 ```  
 
@@ -780,8 +786,8 @@ rate_ests <- left_join(rate_ests,rate_cis,by="antigenf") %>%
 
 ## Figure: seroconversion rates
 
-Create a visualization of the results
-Include empirical estimates as a reference
+**Figure caption:** Seroconversion rates (force of infection) estimated through simulation of daily IgG boosting and waning kinetics with different measurement frequencies. Simulations were based on antibody boosting and decay parameters estimated from Haitian children ages 0-11 years old. Points represent each of the 100 estimates from the simulated datasets and box plots summarize their distribution. Horizontal dashed lines and shaded regions mark the empirical seroconversion rates and 95% confidence intervals estimated in Haitian cohort, which had an approximately annual measurement frequency.  
+
 
 ```{r haiti simulation figure rates,fig.width=5,fig.height=8}
 sim_res_plot <- sim_res2 %>%
@@ -820,12 +826,13 @@ ggsave(filename = here("figs","haiti-interval-sim-rate-ests.pdf"), plot = simres
 
 ```
 
-**Figure caption:** Seroconversion rates (force of infection) estimated through simulation of daily IgG boosting and waning kinetics with different measurement frequencies. Simulations were based on antibody boosting and decay parameters estimated from Haitian children ages 0-11 years old. Points represent each of the 100 estimates from the simulated datasets and box plots summarize their distribution. Horizontal dashed lines and shaded regions mark the empirical seroconversion rates and 95% confidence intervals estimated in Haitian cohort, which had an approximately annual measurement frequency.  
-
 The results of the simulations show that  seroconversion rates estimated with a 360 day sampling interval were internally consistent with the empirical estimates from the cohort. The simulations show that in cases of nearly continuous IgG boosting and waning, less frequenty measured cohorts will underestimate force of infection, but the magnitude of difference was < 1 episode per year for all pathogens except for ETEC (below).
 
 
-## Figure: difference  in rates
+## Figure: difference in rates
+
+**Figure caption:** Simulation-based estimates of the difference in seroconversion rates (force of infection) in the Haitian cohort with longer sampling intervals. Estimates were generated through simulation of longitudinal IgG boosting and waning kinetics with daily resolution using boosting and decay parameters estimated from Haitian children ages 0-11 years old, which were then down-sampled at different frequencies. Points represent each of the 100 estimates from the simulated datasets and horizontal lines indicate median differences from the reference sampling interval of 30 days. Across pathogens, median differences in rates were < 1 episode per year with the exception of ETEC LT B subunit, which was higher.
+
 ```{r haiti simulation figure diff in rates ,fig.width=5,fig.height=10}
 pcols <- cbPalette[c(2:4,6,8,8,7)]
 sim_res_diff <- sim_res_plot 
@@ -833,13 +840,10 @@ sim_res_diff <- sim_res_plot
 simres_diffp <- ggplot(data=sim_res_diff,aes(x=factor(sinterval),y=diff30i,color=antigenf)) +
   facet_wrap(~antigenf,ncol=2,scales="free_y")+
   geom_jitter(width=0.15,alpha=0.3,pch=19,size=0.5)+
-  # geom_boxplot(fill=NA,outlier.shape=NA,color="black")+
   stat_summary(fun.y = median, fun.ymin = median, fun.ymax = median,
                  geom = "crossbar", width = 0.5,color="black",size=0.2)+
   annotate("text",x=1.5,y=0,label="ref.",size=2,color="gray20")+
-  # scale_y_continuous(breaks=seq(1,10,by=0.5))+
   scale_color_manual(values=pcols)+
-  # coord_cartesian(ylim=c(1,6))+
   labs(y="difference in seroconversion rate per child-year, 100 simulations",x="sampling interval, days") +
   theme_minimal()+
   theme(
@@ -854,9 +858,11 @@ ggsave(filename = here("figs","haiti-interval-sim-rate-diff.pdf"), plot = simres
 
 ```
 
-**Figure caption:** Simulation-based estimates of the difference in seroconversion rates (force of infection) in the Haitian cohort with longer sampling intervals. Estimates were generated through simulation of longitudinal IgG boosting and waning kinetics with daily resolution using boosting and decay parameters estimated from Haitian children ages 0-11 years old, which were then down-sampled at different frequencies. Points represent each of the 100 estimates from the simulated datasets and horizontal lines indicate median differences from the reference sampling interval of 30 days. Across pathogens, median differences in rates were < 1 episode per year with the exception of ETEC LT B subunit, which was higher.
-
 ## Figure: ratio of seroconversion rates
+
+**Figure caption:** Simulation-based estimates of the fold-decrease in seroconversion rates (force of infection) in the Haitian cohort with longer sampling intervals. Estimates were generated through simulation of longitudinal IgG boosting and waning kinetics with daily resolution using boosting and decay parameters estimated from Haitian children ages 0-11 years old, which were then down-sampled at different frequencies. Points represent each of the 100 estimates from the simulated datasets and horizontal lines indicate median differences from the reference sampling interval of 30 days. Across pathogens, median differences in rates measured with a 360 day sampling interval were 50-70% lower than when estimated with a 30-day sampling interval.
+
+
 ```{r simulation figure rate ratio,fig.width=5,fig.height=8}
 pcols <- cbPalette[c(2,3,4,6,8,8,7)]
 sim_res_rr <- sim_res_plot 
@@ -867,7 +873,6 @@ simres_rrp <- ggplot(data=sim_res_rr,aes(x=factor(sinterval),y=ratio30i,color=an
   stat_summary(fun.y = median, fun.ymin = median, fun.ymax = median,
                  geom = "crossbar", width = 0.5,color="black",size=0.2)+
   annotate("text",x=1,y=0.9,label="ref.",size=2,color="gray20")+
-  # geom_boxplot(fill=NA,outlier.shape=NA,color="black")+
   scale_y_continuous(breaks=seq(1,0.2,by=-0.2),trans="log")+
   scale_color_manual(values=pcols)+
   coord_cartesian(ylim=c(0.2,1))+
@@ -884,7 +889,6 @@ simres_rrp
 ggsave(filename = here("figs","haiti-interval-sim-rate-ratio.pdf"), plot = simres_rrp,device = cairo_pdf, width = 3.2, height = 6)
 
 ```
-**Figure caption:** Simulation-based estimates of the fold-decrease in seroconversion rates (force of infection) in the Haitian cohort with longer sampling intervals. Estimates were generated through simulation of longitudinal IgG boosting and waning kinetics with daily resolution using boosting and decay parameters estimated from Haitian children ages 0-11 years old, which were then down-sampled at different frequencies. Points represent each of the 100 estimates from the simulated datasets and horizontal lines indicate median differences from the reference sampling interval of 30 days. Across pathogens, median differences in rates measured with a 360 day sampling interval were 50-70% lower than when estimated with a 30-day sampling interval.
 
 
 # Kenya
@@ -1277,10 +1281,15 @@ sim_res2 <- sim_res %>%
     seror30 = max(ifelse(sinterval==30,seror,-99)),
     ratio30i = seroi/seroi30,
     ratio30r = seror/seror30,
-    diff30i = seroi30 - seroi,
-    diff30r = seror30 - seror
+    diff30i = seroi-seroi30,
+    diff30r = seror-seror30
   ) %>%
   select(-seroi30,-seror30)
+
+#-----------------------------
+# save the simulation results
+#-----------------------------
+saveRDS(sim_res2,file=here("output","asembo-imputation-simulation-results.rds"))
 
 ```  
 
@@ -1372,8 +1381,7 @@ rate_ests <- left_join(rate_ests,rate_cis,by="antigenf") %>%
 
 ## Figure: seroconversion rates
 
-Create a visualization of the results
-Include empirical estimates as reference
+**Figure caption:** Seroconversion rates (force of infection) estimated through simulation of daily IgG boosting and waning kinetics with different measurement frequencies. Simulations were based on antibody boosting and decay parameters estimated from Kenyan children ages 4-17 months old. Points represent each of the 100 estimates from the simulated datasets and box plots summarize their distribution. Horizontal dashed lines and shaded regions mark the empirical seroconversion rates and 95% confidence intervals estimated in Kenyan cohort, which was measured twice over 6 months (approximate 180 day sampling interval). 
 
 ```{r kenya simulation figure rates,fig.width=5,fig.height=10}
 sim_res_plot <- sim_res2 %>%
@@ -1408,16 +1416,17 @@ simres_ratep <- ggplot(data=sim_res_plot,aes(y=seroi,color=antigenf)) +
 simres_ratep
 
 # save a figure
-ggsave(filename = here("figs","asembo-interval-sim-rate-ests.pdf"), plot = simres_ratep,device = cairo_pdf, width = 3.4, height = 4.5)
+# ggsave(filename = here("figs","asembo-interval-sim-rate-ests.pdf"), plot = simres_ratep,device = cairo_pdf, width = 3.4, height = 4.5)
 
 ```
-
-**Figure caption:** Seroconversion rates (force of infection) estimated through simulation of daily IgG boosting and waning kinetics with different measurement frequencies. Simulations were based on antibody boosting and decay parameters estimated from Kenyan children ages 4-17 months old. Points represent each of the 100 estimates from the simulated datasets and box plots summarize their distribution. Horizontal dashed lines and shaded regions mark the empirical seroconversion rates and 95% confidence intervals estimated in Kenyan cohort, which was measured twice over 6 months (approximate 180 day sampling interval).  
 
 The results of the simulations show thatseroconversion rates estimated with a 180 day sampling interval were internally consistent with the empirical estimates from the cohort. The simulations show that in cases of nearly continuous IgG boosting and waning, less frequenty measured cohorts will underestimate force of infection, but the magnitude of difference was < 1 episode per year for all pathogens except for ETEC and _Campylobacter_ (below).
 
 
 ## Figure: difference in rates
+
+**Figure caption:** Simulation-based estimates of the difference in seroconversion rates (force of infection) in the Asembo cohort with longer sampling intervals. Estimates were generated through simulation of longitudinal IgG boosting and waning kinetics with daily resolution using boosting and decay parameters estimated from Kenyan children ages 4-17 months old, which were then down-sampled at different frequencies. Points represent each of the 100 estimates from the simulated datasets and horizontal lines indicate median differences from the reference sampling interval of 30 days. Across pathogens, median differences in rates were < 1 episode per year with the exception of ETEC LT B subunit and _Campylobacter_ p18, which were much higher.
+
 ```{r kenya simulation figure diff in rates ,fig.width=5,fig.height=10}
 pcols <- cbPalette[c(2:4,6:8)]
 sim_res_diff <- sim_res_plot 
@@ -1425,13 +1434,10 @@ sim_res_diff <- sim_res_plot
 simres_diffp <- ggplot(data=sim_res_diff,aes(x=factor(sinterval),y=diff30i,color=antigenf)) +
   facet_wrap(~antigenf,ncol=2,scales="free_y")+
   geom_jitter(width=0.15,alpha=0.3,pch=19,size=0.5)+
-  # geom_boxplot(fill=NA,outlier.shape=NA,color="black")+
   stat_summary(fun.y = median, fun.ymin = median, fun.ymax = median,
                  geom = "crossbar", width = 0.5,color="black",size=0.2)+
   annotate("text",x=1.5,y=0,label="ref.",size=2,color="gray20")+
-  # scale_y_continuous(breaks=seq(1,10,by=0.5))+
   scale_color_manual(values=pcols)+
-  # coord_cartesian(ylim=c(1,6))+
   labs(y="difference in seroconversion rate per child-year, 100 simulations",x="sampling interval, days") +
   theme_minimal()+
   theme(
@@ -1442,15 +1448,14 @@ simres_diffp <- ggplot(data=sim_res_diff,aes(x=factor(sinterval),y=diff30i,color
 simres_diffp
 
 # save a figure
-# save a figure
-ggsave(filename = here("figs","asembo-interval-sim-rate-diff.pdf"), plot = simres_diffp,device = cairo_pdf, width = 3.5, height = 4.5)
+# ggsave(filename = here("figs","asembo-interval-sim-rate-diff.pdf"), plot = simres_diffp,device = cairo_pdf, width = 3.5, height = 4.5)
 
 ```
 
-**Figure caption:** Simulation-based estimates of the difference in seroconversion rates (force of infection) in the Asembo cohort with longer sampling intervals. Estimates were generated through simulation of longitudinal IgG boosting and waning kinetics with daily resolution using boosting and decay parameters estimated from Kenyan children ages 4-17 months old, which were then down-sampled at different frequencies. Points represent each of the 100 estimates from the simulated datasets and horizontal lines indicate median differences from the reference sampling interval of 30 days. Across pathogens, median differences in rates were < 1 episode per year with the exception of ETEC LT B subunit and _Campylobacter_ p18, which were much higher.
-
-
 ## Figure: ratio of seroconversion rates
+
+**Figure caption:** Simulation-based estimates of the fold-decrease in seroconversion rates (force of infection) in the Asembo cohort with longer sampling intervals. Estimates were generated through simulation of longitudinal IgG boosting and waning kinetics with daily resolution using boosting and decay parameters estimated from Kenyan children ages 4-17 months old, which were then down-sampled at different frequencies. Points represent each of the 100 estimates from the simulated datasets and horizontal lines indicate median differences from the reference sampling interval of 30 days. Across pathogens, median rates measured with a 180 day sampling interval were 20-80% lower than when estimated with a 30-day sampling interval. Note that the large relative decline in rates for _E. histolytica_ and _Salmonella_ were in part due to very low seroconversion rates overall for those pathogens in this cohort, and do not represent large differences in rates (previous figures). 
+
 ```{r kenya simulation figure rate ratio ,fig.width=5,fig.height=8}
 
 pcols <- cbPalette[c(2:4,6:8)]
@@ -1462,7 +1467,6 @@ simres_rrp <- ggplot(data=sim_res_rr,aes(x=factor(sinterval),y=ratio30i,color=an
   stat_summary(fun.y = median, fun.ymin = median, fun.ymax = median,
                  geom = "crossbar", width = 0.5,color="black",size=0.2)+
   annotate("text",x=1,y=0.9,label="ref.",size=2,color="gray20")+
-  # geom_boxplot(fill=NA,outlier.shape=NA,color="black")+
   scale_y_continuous(breaks=seq(1,0.2,by=-0.2),trans="log")+
   scale_color_manual(values=pcols)+
   coord_cartesian(ylim=c(0.18,1))+
@@ -1476,11 +1480,10 @@ simres_rrp <- ggplot(data=sim_res_rr,aes(x=factor(sinterval),y=ratio30i,color=an
 simres_rrp
 
 # save a figure
-ggsave(filename = here("figs","asembo-interval-sim-rate-ratio.pdf"), plot = simres_rrp,device = cairo_pdf, width = 3.2, height = 4.5)
+# ggsave(filename = here("figs","asembo-interval-sim-rate-ratio.pdf"), plot = simres_rrp,device = cairo_pdf, width = 3.2, height = 4.5)
 
 ```
 
-**Figure caption:** Simulation-based estimates of the fold-decrease in seroconversion rates (force of infection) in the Asembo cohort with longer sampling intervals. Estimates were generated through simulation of longitudinal IgG boosting and waning kinetics with daily resolution using boosting and decay parameters estimated from Kenyan children ages 4-17 months old, which were then down-sampled at different frequencies. Points represent each of the 100 estimates from the simulated datasets and horizontal lines indicate median differences from the reference sampling interval of 30 days. Across pathogens, median rates measured with a 180 day sampling interval were 20-80% lower than when estimated with a 30-day sampling interval. Note that the large relative decline in rates for _E. histolytica_ and _Salmonella_ were in part due to very low seroconversion rates overall for those pathogens in this cohort, and do not represent large differences in rates (previous figures). 
 
 # Session Info
 ```{r session info}
