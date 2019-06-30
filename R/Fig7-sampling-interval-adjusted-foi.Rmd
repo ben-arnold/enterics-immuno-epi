@@ -1,0 +1,180 @@
+---
+title: Enteropathogen antibody dynamics and force of infection among children in low-resource settings
+subtitle: Adjusting force of infection for sampling interval, Figure 7
+output:
+  html_document:
+    highlight: haddock
+    theme: default
+    code_folding: hide
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+---
+
+# Notebook Summary
+
+In the Kenya and Haiti cohorts, plot empirical seroconversion rates alongside simulation results from scenarios that sampled cohorts with a 30-day interval. `SI-File8-sampling-interval-simulation.Rmd (.html)` includes a detailed description of the simulation and more detailed results from the full set of scenarios considered. 
+
+# Script preamble
+```{r preamble}
+#-----------------------------
+# preamble
+#-----------------------------
+library(here)
+here()
+
+# load packages
+library(tidyverse)
+
+# safe color blind palette
+# http://jfly.iam.u-tokyo.ac.jp/color/
+# http://www.cookbook-r.com/Graphs/Colors_(ggplot2)/
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+```
+
+# Load rate estimates and simulation results
+
+```{r load files,warning=FALSE}
+#-----------------------------
+# load the estimates
+# created with 
+# Fig6-asembo-incidence-analysis.Rmd
+# Table2-haiti-incidence-analysis.Rmd
+#-----------------------------
+dk <- readRDS(here("output","asembo-enteric-ab-ests-seroprev-vs-rates.rds")) %>%
+  mutate(country = "Kenya") %>%
+  filter(method == "Seropositivity cutoff" & pathogen != "V. cholerae")
+
+dh <- readRDS(here("output","haiti-enteric-ab-ests-seroprev-vs-rates.rds")) %>%
+  mutate(country = "Haiti") %>%
+  filter(method == "Seropositivity cutoff")
+
+#-----------------------------
+# load simulation results
+# created with 
+# SI-File8-sampling-interval-simulation.Rmd
+#-----------------------------
+ksim <- readRDS(here("output","asembo-imputation-simulation-results.rds")) %>%
+  mutate(country = "Kenya")
+
+hsim <- readRDS(here("output","haiti-imputation-simulation-results.rds")) %>%
+  mutate(country = "Haiti")
+
+dsim <- bind_rows(ksim,hsim) %>%
+  ungroup() %>%
+  mutate(antigenf = case_when(
+    antigenf == "Giardia VSP-5" ~ "Giardia VSP-3 or VSP-5",
+    antigenf == "Cryptosporidium Cp17" ~ "Cryptosporidium Cp17 or Cp23",
+    antigenf == "E. histolytica LecA" ~ "E. histolytica LecA",
+    antigenf == "Salmonella LPS group B" ~ "Salmonella LPS groups B or D",
+    antigenf == "ETEC LT B subunit" ~ "ETEC LT B subunit",
+    antigenf == "Campylobacter p18" ~ "Campylobacter p18 or p39",
+    antigenf == "Norovirus GI.4" ~ "Norovirus GI.4",
+    antigenf == "Norovirus GII.4.NO" ~ "Norovirus GII.4.NO")
+  )
+
+```
+
+# Figure 7
+
+**Figure caption:** Empirical seroconversion rates compared with estimates from 100 simulated datasets with daily resolution IgG trajectories that were sampled at a 30-day interval before estimating rates. Vertical lines in the simulation results indicate medians. **A**. In the Kenya cohort, children were aged 4-18 months and empirical IgG measurements were separated by 6 months (approximately 180 days). **B**. In the Haiti cohort, children were aged 0-11 years, and empirical IgG measurements were separated by approximately 1 year. 
+
+```{r kenya empircal and simulation}
+
+# sort pathogens by rates
+kratelabs <- c("E. histolytica LecA",
+              "Salmonella LPS groups B or D",
+              "Giardia VSP-3 or VSP-5",
+              "Cryptosporidium Cp17 or Cp23",
+              "ETEC LT B subunit",
+              "Campylobacter p18 or p39")
+dkplot <- dk %>%
+  mutate(antigenf=factor(antigenf,levels=kratelabs)) %>%
+  arrange(antigenf)
+dsim_kplot <- dsim %>%
+  ungroup() %>%
+  filter(country=="Kenya" & sinterval == "30") %>%
+  mutate(antigenf=factor(antigenf,levels=kratelabs))
+
+
+pcols <- cbPalette[c(6,7)]
+kplot_foi <- ggplot(data=dsim_kplot,aes(x=antigenf,y=seroi)) +
+  geom_jitter(width=0.2,alpha=0.5,col=cbPalette[7])+
+  stat_summary(fun.y = median, fun.ymin = median, fun.ymax = median,
+                geom = "crossbar", width = 0.5,color="black",size=0.2)+
+  geom_errorbar(data=dkplot,aes(ymin=seroi_lb,ymax=seroi_ub),width=0.2) +
+  geom_point(data=dkplot,size=2.5)+
+  labs(x="",y="seroconversion rate per year at risk (force of infection)",tag="A",title="Kenya") +
+  scale_y_continuous(breaks=seq(0,16,by=2))+
+  annotate("text",x=6.45,y=6,label="empirical")+
+  annotate("text",x=4,y=11.5,label="simulation replicates\n(30 day sampling interval)",color=cbPalette[7])+
+  coord_flip(ylim=c(0,16))+
+  theme_minimal(base_size = 16) +
+  theme(
+    legend.position = "none",
+    axis.title.x = element_text(size=12)
+        )
+
+kplot_foi
+
+ggsave(file=here("figs","Fig7a-asembo-foi-simulation.pdf"),plot=kplot_foi,device=cairo_pdf,height=4,width=8)
+ggsave(file=here("figs","Fig7a-asembo-foi-simulation.TIFF"),plot=kplot_foi,device="tiff",height=4,width=8)
+
+```
+
+```{r haiti empircal and simulation}
+
+# sort pathogens by rates
+hratelabs <- c("E. histolytica LecA",
+               "Norovirus GI.4",
+               "Giardia VSP-3 or VSP-5",
+               "Salmonella LPS groups B or D",
+               "Cryptosporidium Cp17 or Cp23",
+               "Norovirus GII.4.NO",
+               "ETEC LT B subunit")
+dhplot <- dh %>%
+  mutate(antigenf=factor(antigenf,levels=hratelabs)) %>%
+  arrange(antigenf)
+dsim_hplot <- dsim %>%
+  ungroup() %>%
+  filter(country=="Haiti" & sinterval == "30") %>%
+  mutate(antigenf=factor(antigenf,levels=hratelabs))
+
+
+pcols <- cbPalette[c(6,7)]
+hplot_foi <- ggplot(data=dsim_hplot,aes(x=antigenf,y=seroi)) +
+  geom_jitter(width=0.2,alpha=0.5,col=cbPalette[7])+
+  stat_summary(fun.y = median, fun.ymin = median, fun.ymax = median,
+                geom = "crossbar", width = 0.5,color="black",size=0.2)+
+  geom_errorbar(data=dhplot,aes(ymin=seroi_lb,ymax=seroi_ub),width=0.2) +
+  geom_point(data=dhplot,size=2.5)+
+  labs(x="",y="seroconversion rate per year at risk (force of infection)",tag="B",title="Haiti") +
+  scale_y_continuous(breaks=seq(0,16,by=2))+
+  annotate("text",x=7.45,y=1.1,label="empirical")+
+  annotate("text",x=6,y=6.2,label="simulation replicates\n(30-day sampling interval)",color=cbPalette[7])+
+  coord_flip(ylim=c(0,10.5))+
+  theme_minimal(base_size = 16) +
+  theme(
+    legend.position = "none",
+    axis.title.x = element_text(size=12)
+        )
+
+hplot_foi
+
+ggsave(file=here("figs","Fig7b-haiti-foi-simulation.pdf"),plot=hplot_foi,device=cairo_pdf,height=4,width=8)
+ggsave(file=here("figs","Fig7b-haiti-foi-simulation.TIFF"),plot=hplot_foi,device="tiff",height=4,width=8)
+
+```
+
+# Session Info
+```{r session info}
+sessionInfo()
+```
+
+
+
+
