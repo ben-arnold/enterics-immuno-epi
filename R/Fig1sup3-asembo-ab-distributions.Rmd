@@ -410,7 +410,8 @@ dl <- dl %>%
          serocut_desc=ifelse(!is.na(serocut),serocut_desc,"Unexp dist"),
          serocut=ifelse(!is.na(serocut),serocut,unexpcut)) %>%
   filter(!is.na(seropos)) %>%
-  mutate(antigenf=factor(antigenf))
+  mutate(antigenf=factor(antigenf),
+         childid = factor(childid))
 
 ```
 
