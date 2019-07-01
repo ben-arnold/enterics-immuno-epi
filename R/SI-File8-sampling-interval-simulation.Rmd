@@ -781,6 +781,15 @@ rate_cis <- bootests %>%
 
 rate_ests <- left_join(rate_ests,rate_cis,by="antigenf") %>%
   select(antigenf,ni,nit,starts_with("seroi"),nr,nrt,starts_with("seror"))
+
+knitr::kable(rate_ests,
+  digits = c(0, 0,2,2,2,2, 0,2,2,2,2),
+  caption = "Estimates of seroconversion and seroreversion rates among children in Haiti, 1990-1999.",
+  col.names = c("Antibody", "events", "child-years\nat risk", "rate", "min95", "max95", "events", "child-years\nat risk", "rate", "min95", "max95")
+) %>%
+  kable_styling(bootstrap_options = c("striped"), full_width = TRUE) %>%
+  add_header_above(c(" " = 1, "Seroconverion" = 5, "Seroreversion" = 5))
+
 ```
 
 
@@ -822,8 +831,19 @@ simres_ratep <- ggplot(data=sim_res_plot,aes(y=seroi,color=antigenf)) +
 simres_ratep
 
 # save a figure
-ggsave(filename = here("figs","haiti-interval-sim-rate-ests.pdf"), plot = simres_ratep,device = cairo_pdf, width = 3.5, height = 6)
+# ggsave(filename = here("figs","haiti-interval-sim-rate-ests.pdf"), plot = simres_ratep,device = cairo_pdf, width = 3.5, height = 6)
 
+# print medians
+sim_res_plot %>%
+  group_by(antigenf,sinterval) %>%
+  select(antigenf,sinterval,seroi,seror) %>%
+  summarize_all(median) %>%
+  knitr::kable(
+  digits = c(0,0,2,2),
+  caption = "Median seroconversion and seroreversion rates per year at risk across 100 simulated datasets downsampled at different frequencies.",
+  col.names = c("Antibody", "Sampling\ninterval (days)","Seroconversion\nrate","Seroreversion\nrate")
+) %>%
+  kable_styling(bootstrap_options = c("striped"), full_width = TRUE) 
 ```
 
 The results of the simulations show that  seroconversion rates estimated with a 360 day sampling interval were internally consistent with the empirical estimates from the cohort. The simulations show that in cases of nearly continuous IgG boosting and waning, less frequenty measured cohorts will underestimate force of infection, but the magnitude of difference was < 1 episode per year for all pathogens except for ETEC (below).
@@ -854,7 +874,19 @@ simres_diffp <- ggplot(data=sim_res_diff,aes(x=factor(sinterval),y=diff30i,color
 simres_diffp
 
 # save a figure
-ggsave(filename = here("figs","haiti-interval-sim-rate-diff.pdf"), plot = simres_diffp,device = cairo_pdf, width = 3.5, height = 6)
+# ggsave(filename = here("figs","haiti-interval-sim-rate-diff.pdf"), plot = simres_diffp,device = cairo_pdf, width = 3.5, height = 6)
+
+# print median differences
+sim_res_diff %>%
+  group_by(antigenf,sinterval) %>%
+  select(antigenf,sinterval,diff30i,diff30r) %>%
+  summarize_all(median) %>%
+  knitr::kable(
+  digits = c(0,0,2,2),
+  caption = "Median difference in seroconversion and seroreversion rates per year at risk across 100 simulated datasets downsampled at different frequencies, with a 30-day sampling interval as the reference.",
+  col.names = c("Antibody", "Sampling\ninterval (days)","Seroconversion\nrate","Seroreversion\nrate")
+) %>%
+  kable_styling(bootstrap_options = c("striped"), full_width = TRUE) 
 
 ```
 
@@ -886,8 +918,19 @@ simres_rrp <- ggplot(data=sim_res_rr,aes(x=factor(sinterval),y=ratio30i,color=an
 simres_rrp
 
 # save a figure
-ggsave(filename = here("figs","haiti-interval-sim-rate-ratio.pdf"), plot = simres_rrp,device = cairo_pdf, width = 3.2, height = 6)
+# ggsave(filename = here("figs","haiti-interval-sim-rate-ratio.pdf"), plot = simres_rrp,device = cairo_pdf, width = 3.2, height = 6)
 
+# print median ratios
+sim_res_rr %>%
+  group_by(antigenf,sinterval) %>%
+  select(antigenf,sinterval,ratio30i,ratio30r) %>%
+  summarize_all(median) %>%
+  knitr::kable(
+  digits = c(0,0,2,2),
+  caption = "Median ratio in seroconversion and seroreversion rates per year at risk across 100 simulated datasets downsampled at different frequencies, with a 30-day sampling interval as the reference.",
+  col.names = c("Antibody", "Sampling\ninterval (days)","Seroconversion\nrate","Seroreversion\nrate")
+) %>%
+  kable_styling(bootstrap_options = c("striped"), full_width = TRUE) 
 ```
 
 
@@ -1376,6 +1419,14 @@ rate_cis <- bootests %>%
 
 rate_ests <- left_join(rate_ests,rate_cis,by="antigenf") %>%
   select(pathogen,antigen,antigenf,ni,nit,starts_with("seroi"),nr,nrt,starts_with("seror"))
+
+knitr::kable(rate_ests %>% select(-pathogen,-antigen),
+  digits = c(0, 0,2,2,2,2, 0,2,2,2,2),
+  caption = "Estimates of seroconversion and seroreversion rates among children in Kenya, 2013.",
+  col.names = c("Antibody", "events", "child-years\nat risk", "rate", "min95", "max95", "events", "child-years\nat risk", "rate", "min95", "max95")
+) %>%
+  kable_styling(bootstrap_options = c("striped"), full_width = TRUE) %>%
+  add_header_above(c(" " = 1, "Seroconverion" = 5, "Seroreversion" = 5))
 ```
 
 
@@ -1418,6 +1469,18 @@ simres_ratep
 # save a figure
 # ggsave(filename = here("figs","asembo-interval-sim-rate-ests.pdf"), plot = simres_ratep,device = cairo_pdf, width = 3.4, height = 4.5)
 
+# print medians
+sim_res_plot %>%
+  group_by(antigenf,sinterval) %>%
+  select(antigenf,sinterval,seroi,seror) %>%
+  summarize_all(median) %>%
+  knitr::kable(
+  digits = c(0,0,2,2),
+  caption = "Median seroconversion and seroreversion rates per year at risk across 100 simulated datasets downsampled at different frequencies.",
+  col.names = c("Antibody", "Sampling\ninterval (days)","Seroconversion\nrate","Seroreversion\nrate")
+) %>%
+  kable_styling(bootstrap_options = c("striped"), full_width = TRUE) 
+
 ```
 
 The results of the simulations show thatseroconversion rates estimated with a 180 day sampling interval were internally consistent with the empirical estimates from the cohort. The simulations show that in cases of nearly continuous IgG boosting and waning, less frequenty measured cohorts will underestimate force of infection, but the magnitude of difference was < 1 episode per year for all pathogens except for ETEC and _Campylobacter_ (below).
@@ -1450,6 +1513,18 @@ simres_diffp
 # save a figure
 # ggsave(filename = here("figs","asembo-interval-sim-rate-diff.pdf"), plot = simres_diffp,device = cairo_pdf, width = 3.5, height = 4.5)
 
+# print median differences
+sim_res_diff %>%
+  group_by(antigenf,sinterval) %>%
+  select(antigenf,sinterval,diff30i,diff30r) %>%
+  summarize_all(median) %>%
+  knitr::kable(
+  digits = c(0,0,2,2),
+  caption = "Median difference in seroconversion and seroreversion rates per year at risk across 100 simulated datasets downsampled at different frequencies, with a 30-day sampling interval as the reference.",
+  col.names = c("Antibody", "Sampling\ninterval (days)","Seroconversion\nrate","Seroreversion\nrate")
+) %>%
+  kable_styling(bootstrap_options = c("striped"), full_width = TRUE) 
+
 ```
 
 ## Figure: ratio of seroconversion rates
@@ -1481,6 +1556,18 @@ simres_rrp
 
 # save a figure
 # ggsave(filename = here("figs","asembo-interval-sim-rate-ratio.pdf"), plot = simres_rrp,device = cairo_pdf, width = 3.2, height = 4.5)
+
+# print median ratios
+sim_res_rr %>%
+  group_by(antigenf,sinterval) %>%
+  select(antigenf,sinterval,ratio30i,ratio30r) %>%
+  summarize_all(median) %>%
+  knitr::kable(
+  digits = c(0,0,2,2),
+  caption = "Median ratio in seroconversion and seroreversion rates per year at risk across 100 simulated datasets downsampled at different frequencies, with a 30-day sampling interval as the reference.",
+  col.names = c("Antibody", "Sampling\ninterval (days)","Seroconversion\nrate","Seroreversion\nrate")
+) %>%
+  kable_styling(bootstrap_options = c("striped"), full_width = TRUE) 
 
 ```
 
