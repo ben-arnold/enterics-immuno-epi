@@ -5,7 +5,7 @@ output:
   html_document:
     highlight: haddock
     theme: default
-    code_folding: show
+    code_folding: hide
     df_print: paged
     toc: yes
     toc_depth: '3'
@@ -45,10 +45,9 @@ library(kableExtra)
   options(knitr.table.format = "html") 
 
 # set up for parallel computing
-# configure for a laptop (use only 3 cores)
 library(foreach)
 library(doParallel)
-registerDoParallel(cores=3)
+registerDoParallel(cores = detectCores() - 1)
 
 
 # bright color blind palette:  https://personal.sron.nl/~pault/ 
@@ -71,7 +70,7 @@ cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2",
 ```
 
 
-#Asembo, Kenya Intervention Effects
+# Asembo, Kenya Intervention Effects
 
 
 ## Load the data and format
@@ -259,17 +258,6 @@ Estimate overall mean seroprevalence by treatment arm and compare arms. Standard
 # on child ID
 # adjust for age with GLM
 #-----------------------------
-tmlemeans <- foreach(tri=levels(dlp$tr),.combine=rbind) %:% 
-  foreach(ab=levels(dlp$antigenf),.combine=rbind) %dopar% {
-    print(ab)
-    pd <- filter(dlp,tr==tri & antigenf==ab)
-    mu <- tmleAb(Y=pd$seropos,id=pd$childid,W=pd$age,
-                 SL.library=c("SL.glm"),
-                 family="binomial")
-    di <- data.frame(tr=tri,antigenf=ab,mean=mu$psi,se=mu$se,lb=mu$lb,ub=mu$ub)
-    return(di)
-  }
-
 tmlediffs <- foreach(ab=levels(dlp$antigenf),.combine=rbind) %dopar% {
     pd <- filter(dlp,antigenf==ab) %>% mutate(tr01=ifelse(tr=="Int",1,0))
     diffmu <- tmleAb(Y=pd$seropos,X=pd$tr01,W=pd$age,
@@ -282,15 +270,6 @@ tmlediffs <- foreach(ab=levels(dlp$antigenf),.combine=rbind) %dopar% {
 #-----------------------------
 # report estimates in tables
 #-----------------------------
-
-# seroprevalence among intervention and control
-tmlemeans %>%
-  arrange(antigenf,tr) %>%
-  knitr::kable(digits=2,caption="Seroprevalence by intervention group (Intervention, control)") %>%
-  kable_styling(bootstrap_options = "striped",full_width = TRUE)
-  
-
-# difference between arms
 knitr::kable(tmlediffs,digits=2,caption="Difference in seroprevalence (Intervention minus Control)")  %>%
   kable_styling(bootstrap_options = "striped",full_width = TRUE)
 
