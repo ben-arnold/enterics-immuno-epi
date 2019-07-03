@@ -1,11 +1,11 @@
 ---
-title: Enteropathogen seroepidemiology among children in low-resource settings
+title: Enteropathogen antibody dynamics and force of infection among children in low-resource settings
 subtitle: Table 1, summary of antibody measurements and cutoffs by cohort
 output: 
   html_document:
     highlight: haddock
     theme: default
-    code_folding: show
+    code_folding: hide
     df_print: paged
     toc: yes
     toc_depth: '3'
@@ -18,6 +18,7 @@ output:
 This notebook summarizes the antigens included in each cohort, the number of children, number of measurements, and seropositivity cutoff values estimated through ROC-based cutoffs, mixture models, or distribution among presumed unexposed (see main article Methods for details).
 
 This notebook draws on datasets created by the notebooks that estimate antibody distributions in each cohort:
+
   * Haiti: Fig1-haiti-ab-distributions.Rmd -> haiti_analysis2.rds
   * Kenya: Fig1sup3-asembo-ab-distributions.Rmd -> asembo_analysis2.rds
   * Tanzania: Fig1sup1sup2-kongwa-ab-distributions.Rmd -> kongwa_analysis2.rds
@@ -99,7 +100,7 @@ dksum <- dk %>%
             mixcut=max(mixcut,na.rm=T)  ) 
 ```
 
-# Print the table
+# Table 1
 ```{r table, warning=FALSE, results="html"}
 dtab <- bind_rows(dhsum,dasum,dksum) %>%
   mutate(roccut=ifelse(is.infinite(roccut),NA,roccut),
