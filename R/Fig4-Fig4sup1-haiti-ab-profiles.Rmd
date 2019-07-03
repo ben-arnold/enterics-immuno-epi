@@ -1,0 +1,545 @@
+---
+title: Enteropathogen antibody dynamics and force of infection among children in low-resource settings
+subtitle: Haiti antibody profiles, Figure 4, Figure 4 - supplement 1
+output: 
+  html_document:
+    highlight: haddock
+    theme: default
+    code_folding: hide
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+---
+
+# Notebook Summary
+
+This script plots individual antibody trajectories in the Haiti cohort over successive measurement visits and also by age.  Children were measured up to 9 times, but the majority were measured 5 times, so figures by measurement round include up to 6 visits. 
+
+# Script preamble
+```{r preamble}
+#-----------------------------
+# preamble
+#-----------------------------
+library(here)
+here()
+
+# load packages
+library(tidyverse)
+library(kableExtra)
+library(ROCR)
+
+
+# set up for parallel computing
+library(foreach)
+library(doParallel)
+registerDoParallel(cores = detectCores() - 1)
+
+# bright color blind palette:  https://personal.sron.nl/~pault/ 
+cblack <- "#000004FF"
+cblue <- "#3366AA"
+cteal <- "#11AA99"
+cgreen <- "#66AA55"
+cchartr <- "#CCCC55"
+cmagent <- "#992288"
+cred <- "#EE3333"
+corange <- "#EEA722"
+cyellow <- "#FFEE33"
+cgrey <- "#777777"
+
+```
+
+
+```{r load data}
+#-----------------------------
+# load the formatted data
+# created with 
+# asembo-enteric-ab-data-format.Rmd
+#-----------------------------
+dl <- readRDS(here("data","haiti_analysis2.rds"))
+
+# list the enteric antigens and formatted labels for them
+mbavars <- c("vsp3","vsp5","cp17","cp23","leca","etec","salb","sald","norogi","norogii")
+
+mbalabs <- c("Giardia VSP-3","Giardia VSP-5","Cryptosporidium Cp17","Cryptosporidium Cp23","E. histolytica LecA","Salmonella LPS group B","Salmonella LPS group D","ETEC LT B subunit","Norovirus GI.4","Norovirus GII.4.NO")
+```
+
+# Identify incident changes
+Among children, identify those that changed status between enrollment and follow-up. Those who changed from negative to positive are seroconverters (`seroi` below), and those who changed from positive to negative are seroreverters (`seror` below).
+
+
+```{r long incidence}
+
+#-----------------------------
+# identify seropositive measures
+# hierarchy of information for 
+# cutoffs:
+# 1. ROC
+# 2. mixture model based
+# 3. estimated among presumed unexposed
+#
+# store the cutoff value used
+# for figures
+#-----------------------------
+dl <- dl %>%
+  mutate(seropos=ifelse(!is.na(posroc),posroc,posmix),
+         serocut=ifelse(!is.na(posroc),roccut,mixcut),
+         serocut_desc=ifelse(!is.na(posroc),"ROC","Mixture Model")) %>%
+  mutate(seropos=ifelse(!is.na(seropos),seropos,posunex),
+         serocut_desc=ifelse(!is.na(serocut),serocut_desc,"Unexp dist"),
+         serocut=ifelse(!is.na(serocut),serocut,unexpcut)) 
+
+
+#-----------------------------
+# identify incident 
+# seroconversions and reversions
+#-----------------------------
+
+# group the data by child and
+# use lags to identify
+# time in years between measurements,
+# sero-conversions + sero-reversions 
+# between measurements
+# set the first measurement to 
+# missing for the incidence indicators
+# (using the is.na(age_diff) to identify them)
+dl2 <- dl %>%
+  group_by(antigen,id) %>% 
+  arrange(antigen,id,sampleid) %>%
+  mutate(age_min  = min(age),
+         age_diff = age - lag(age),
+         
+         logmfi_lag  = lag(logmfi),
+         logmfi_lead = lead(logmfi),
+         logmfi_dlag  = logmfi - logmfi_lag,
+         logmfi_dlead = logmfi_lead - logmfi,
+         
+         # incident seroconversions and reversions
+         # including cumulative numbers
+         seropos_lag  = lag(seropos),
+         seroi = ifelse(seropos==1 & seropos_lag==0,1,0),
+         seroi = ifelse(is.na(age_diff),NA,seroi),
+         seroin = cumsum(ifelse(is.na(seroi),0,seroi)),
+         seroin = ifelse(seroi==1,seroin,0),
+         seror = ifelse(seropos==0 & seropos_lag==1,1,0),
+         seror = ifelse(is.na(age_diff),NA,seror),
+         serorn = cumsum(ifelse(is.na(seror),0,seror)),
+         serorn = ifelse(seror==1,serorn,0)
+         ) %>%
+  select(
+         id,sampleid,
+         starts_with("age"),
+         pathogen,antigen,antigenf,
+         mfi,logmfi,logmfi_dlag,logmfi_dlead,
+         roccut,mixcut,serocut,
+         posroc,posmix,seropos,seroi,seroin,seror,serorn,
+         -logmfi_lag,-logmfi_lead,-seropos_lag)
+
+# incident seroconversions based on a 4-fold increase in MFI
+# with a second measure above the seropositivity cutoff
+# incident seroreversions based on a 4-fold decrease in MFI
+# with the first measure above the seropositivity cutoff
+dl2 <- dl2 %>%
+  mutate(seroi4fold = ifelse(logmfi_dlag>log10(4) & logmfi>serocut,1,0),
+         seroin4fold = cumsum(ifelse(is.na(seroi4fold),0,seroi4fold)),
+         seroin4fold = ifelse(seroi4fold==1,seroin4fold,0),
+         
+         seror4fold=ifelse(logmfi_dlag< -log10(4) & lag(logmfi)>serocut,1,0),
+         serorn4fold = cumsum(ifelse(is.na(seror4fold),0,seror4fold)),
+         serorn4fold = ifelse(seror4fold==1,serorn4fold,0)
+         )
+
+
+```
+
+Create labels for different seroconversion patterns
+```{r seroconversion patterns}
+dl2pp <- dl2 %>%
+  arrange(antigen,id,age) %>%
+  group_by(antigen,id) %>%
+  mutate(measnum=row_number()) %>%
+  mutate(
+    logmfi_chng = ifelse(logmfi_dlag>0,"Increasing","Decreasing"),
+    logmfi_chng = ifelse(is.na(logmfi_chng) & logmfi_dlead>0,"Increasing",logmfi_chng),
+    logmfi_chng = ifelse(is.na(logmfi_chng) & logmfi_dlead<0,"Decreasing",logmfi_chng),
+    logmfi_chng = factor(logmfi_chng,levels=c("Increasing","Decreasing")),
+    
+    sero_chng = ifelse(lead(seroi4fold)==1,">4-fold increase to above cutoff","<4-fold change"),
+    sero_chng = ifelse(lead(seror4fold)==1,">4-fold decrease from above cutoff",sero_chng),
+    sero_chng = ifelse(is.na(sero_chng),lead(sero_chng),sero_chng),
+    sero_chng = ifelse(is.na(sero_chng),lag(sero_chng),sero_chng),
+    sero_chng = factor(sero_chng,levels=c(">4-fold increase to above cutoff",">4-fold decrease from above cutoff","<4-fold change")),
+    
+    sero_comp = ifelse(lead(seroi)==1 & lead(seroi4fold==1),">4-fold increase, across cutoff","<4-fold change"),
+    sero_comp = ifelse(lead(seroi)==0 & lead(seroi4fold==1),">4-fold increase, above cutoff",sero_comp),
+    sero_comp = ifelse(lead(seror4fold)==1,">4-fold decrease",sero_comp),
+    sero_comp = factor(sero_comp,levels=c(">4-fold increase, across cutoff",">4-fold increase, above cutoff",">4-fold decrease","<4-fold change")),
+    
+    everseroi = max(seroi,na.rm=TRUE)
+    
+  ) %>%
+  mutate(antigenf=factor(antigenf,levels=mbalabs)) # re-level the factor to put Salmonella on same row
+
+# custom log labels
+log10labs <- c( 
+  expression(10^0),
+  expression(10^1),
+  expression(10^2),
+  expression(10^3),
+  expression(10^4)
+)
+
+```
+
+
+# Longitudinal child trajectories
+
+```{r figure of individual MFI trajectories by age, fig.width=7,fig.height=7}
+# Individual trajectories by age
+indivp_age <- ggplot(filter(dl2pp,!is.na(sero_chng)), aes(x=age, y=logmfi, group=factor(id),color=sero_chng) ) +
+    facet_wrap(~antigenf,nrow=6,ncol=2)+
+    geom_line(alpha=0.3) +
+    geom_hline(aes(yintercept=serocut),linetype="dashed") +
+    scale_color_manual(values=c(corange,cteal,"gray70"),
+                       guide=guide_legend(title="MFI change:", 
+                                          override.aes = list(alpha=1),
+                                          ncol=2,nrow=2
+                                          ))+
+    xlab("Age in years") +
+    ylab("Luminex Response (MFI-bg)") +
+    coord_cartesian(ylim=c(0, 4.5),xlim=c(0,11))+
+    scale_y_continuous(breaks=0:4,labels=log10labs) +
+    scale_x_continuous(breaks=0:11) +
+    theme_minimal() +
+    theme(
+      legend.position="top",
+      panel.grid.minor=element_blank(),
+      panel.grid.major.y=element_blank(),
+      axis.ticks.y=element_line(color="gray40")
+    )
+  
+indivp_age
+
+```
+
+```{r figure of individual MFI trajectories by age compare class, fig.width=7,fig.height=7}
+# Individual trajectories by age, comparison of classifications
+indivp_age <- ggplot(filter(dl2pp,!is.na(sero_comp)), aes(x=age, y=logmfi, group=factor(id),color=sero_comp) ) +
+    facet_wrap(~antigenf,nrow=6,ncol=2)+
+    geom_line(alpha=0.3) +
+    geom_hline(aes(yintercept=serocut),linetype="dashed") +
+    scale_color_manual(values=c(corange,cmagent,cteal,"gray70"),
+                       guide=guide_legend(title="MFI change:",
+                                          override.aes = list(alpha=1),
+                                          nrow=2,ncol=2
+                                          ))+
+    xlab("Age in years") +
+    ylab("Luminex Response (MFI-bg)") +
+    coord_cartesian(ylim=c(0, 4.5),xlim=c(0,11))+
+    scale_y_continuous(breaks=0:4,labels=log10labs) +
+    scale_x_continuous(breaks=0:11) +
+    theme_minimal() +
+    theme(
+      legend.position="top",
+      panel.grid.minor=element_blank(),
+      panel.grid.major.y=element_blank(),
+      axis.ticks.y=element_line(color="gray40")
+    )
+  
+indivp_age
+
+```
+
+```{r figure of individual MFI trajectories by measurement, fig.width=7,fig.height=7}
+# Individual trajectories by measurement (1 to 6)
+# since only 29 children were measured 7+ times
+table(dl2pp$measnum[dl2pp$antigen=="vsp3"])
+# summarize age distribution among measurements 1-6
+summary(dl2pp$age[dl2pp$antigen=="vsp3" & dl2pp$measnum<=6])
+indivp_meas <- ggplot(filter(dl2pp,!is.na(sero_chng) & measnum<=6), aes(x=measnum, y=logmfi, group=factor(id),color=sero_chng) ) +
+    facet_wrap(~antigenf,nrow=6,ncol=2)+
+    geom_line(alpha=0.3) +
+    geom_hline(aes(yintercept=serocut),linetype="dashed") +
+    scale_color_manual(values=c(corange,cteal,"gray70"),
+                       guide=guide_legend(title="MFI change:",
+                                          override.aes = list(alpha=1),
+                                          nrow=2,ncol=2
+                                          ))+
+    xlab("Measurement number") +
+    ylab("Luminex Response (MFI-bg)") +
+    coord_cartesian(ylim=c(0, 4.5),xlim=c(1,6))+
+    scale_y_continuous(breaks=0:4,labels=log10labs) +
+    scale_x_continuous(breaks=1:6) +
+    theme_minimal(base_size=16) +
+    theme(
+      legend.position="top",
+      panel.grid.minor=element_blank(),
+      panel.grid.major.y=element_blank(),
+      axis.ticks.y=element_line(color="gray40")
+    )
+  
+indivp_meas
+
+```
+
+# Figure 4. Individual trajectories by measurement round
+```{r figure of individual MFI trajectories by measurement compare class, fig.width=7,fig.height=12}
+# Individual trajectories by measurement (1 to 6)
+# since only 29 children were measured 7+ times
+# compare seroconversion classification
+indivp_meas2 <- ggplot(filter(dl2pp,!is.na(sero_comp) & measnum<=6), aes(x=measnum, y=logmfi, group=factor(id),color=sero_comp) ) +
+    facet_wrap(~antigenf,nrow=6,ncol=2)+
+    geom_line(alpha=0.3) +
+    geom_hline(aes(yintercept=serocut),linetype="dashed") +
+    scale_color_manual(values=c(corange,cmagent,cteal,"gray70"),
+                       guide=guide_legend(title="MFI change:",
+                                          override.aes = list(alpha=1),
+                                          nrow=2,ncol=2
+                                          ))+
+    xlab("Measurement number") +
+    ylab("Luminex Response (MFI-bg)") +
+    coord_cartesian(ylim=c(0, 4.5),xlim=c(1,6))+
+    scale_y_continuous(breaks=0:4,labels=log10labs) +
+    scale_x_continuous(breaks=1:6) +
+    theme_minimal() +
+    theme(
+      legend.position="top",
+      panel.grid.minor=element_blank(),
+      panel.grid.major.y=element_blank(),
+      axis.ticks.y=element_line(color="gray40")
+    )
+  
+indivp_meas2
+
+# save PDF and TIFF versions
+ggsave(filename=here("figs","Fig4-haiti-indiv-ab-trajectories-meas.pdf"),plot = indivp_meas2, device=cairo_pdf, width=6,height=12)
+ggsave(filename=here("figs","Fig4-haiti-indiv-ab-trajectories-meas.TIFF"),plot = indivp_meas2, device='tiff', width=6,height=12)
+
+```
+
+# Figure 4 - supplement 1
+Estimate prevalence of each class by measurement number
+```{r estimate prevalence of each class by measurement number, warning=FALSE}
+dl3 <- dl2pp %>%
+  filter(!is.na(sero_comp)) %>%
+  group_by(antigenf,measnum,sero_comp, .drop=FALSE) %>%
+  tally() %>%
+  group_by(antigenf,measnum) %>%
+  # limit to status changes from measurements 1-2 through 5-6
+  filter(measnum <=5) %>%
+  mutate(measnumf = paste(measnum,"-",measnum+1,sep=""),
+         N=sum(n),
+         q=N-n,
+         prev=n/N
+         )
+# exact binomial confidence intervals
+ci_lb <- apply(dl3[c("n","q")],1,function(x) binom.test(x,alternative="two.sided")$conf.int[1])
+ci_ub <- apply(dl3[c("n","q")],1,function(x) binom.test(x,alternative="two.sided")$conf.int[2])
+dl3 <- dl3 %>%
+  bind_cols(data.frame(ci_lb,ci_ub)) %>%
+  arrange(antigenf,sero_comp,measnumf)
+  
+```
+```{r figure proportion in each class by measurement, fig.width=7,fig.height=12, warning=FALSE}
+# compare seroconversion classification prevalences by measurement
+sero_comp_p <- ggplot(data=dl3, aes(x=measnumf, y=prev,color=sero_comp) ) +
+    facet_wrap(~antigenf,nrow=6,ncol=2)+
+    geom_errorbar(aes(ymin=ci_lb,ymax=ci_ub),
+                  width=0.1,
+                  position=position_nudge(x=c(-0.15,-0.05,0.05,0.15))
+                  )+
+    geom_point(position=position_nudge(x=c(-0.15,-0.05,0.05,0.15)))+
+    scale_color_manual(values=c(corange,cmagent,cteal,"gray50"),
+                       guide=guide_legend(title="MFI change:",
+                                          override.aes = list(alpha=1),
+                                          nrow=2,ncol=2
+                                          ))+
+    xlab("Measurements") +
+    ylab("Percentage of children (%)") +
+    coord_cartesian(ylim=c(0,1),xlim=c(1,5))+
+    scale_y_continuous(breaks=seq(0,1,by=0.2),labels=sprintf("%1.0f",seq(0,1,by=0.2)*100)) +
+    # scale_x_continuous(breaks=1:5) +
+    theme_minimal() +
+    theme(
+      legend.position="top",
+      panel.grid.minor.x=element_blank(),
+      axis.ticks.y=element_line(color="gray40")
+    )
+  
+sero_comp_p
+
+# save PDF and TIFF versions
+ggsave(filename=here("figs","Fig4sup1-haiti-ab-trajectory-meas.pdf"),plot = sero_comp_p, device=cairo_pdf, width=5,height=12)
+ggsave(filename=here("figs","Fig4sup1-haiti-ab-trajectories-meas.TIFF"),plot = sero_comp_p, device='tiff', width=5,height=12)
+
+```
+
+
+# Method agreement for identifying seroconversion
+
+Compare the agreement in the identification of seroconversions based on two approaches: crossing the seropositivity threshold, and a 4-fold increase in MFI.  Compare the approaches separately for the primary boosting event and subsequent boosting
+
+```{r indicators of seroconversion}
+#----------------------------------
+# Create a factor that summarizes 
+# seroconversion status based 
+# on seropositivity cutoff, with 4 categories:
+# seroreversion, no change, 1st seroconversion, 
+# 2nd or 3rd seroconversion
+#----------------------------------
+dl3 <- dl2 %>%
+  mutate(seroinf=cut(seroin,breaks=c(-1,0,1,5),
+                     labels=c("No change", 
+                              "Primary seroconversion", 
+                              "Secondary seroconversion")),
+         serostat = seroinf
+  )
+
+dl3$serostat = factor(dl3$serostat,levels=c("Seroreversion",levels(dl3$seroinf))) 
+dl3$serostat[dl3$seror==1] <- "Seroreversion"
+
+
+#----------------------------------
+# Create a factor that summarizes 
+# seroconversion status based on a 4-fold increase in MFI
+# with 4 categories:
+# seroreversion, no change, 1st seroconversion, 
+# 2nd to 4th seroconversion
+#----------------------------------
+dl3 <- dl3 %>%
+  mutate(seroinf4fold=cut(seroin4fold,breaks=c(-1,0,1,5),
+                     labels=c("No change", 
+                              "Primary boosting", 
+                              "Secondary boosting")),
+         serostat4fold = seroinf4fold
+  )
+
+dl3$serostat4fold = factor(dl3$serostat4fold,levels=c("Seroreversion",levels(dl3$seroinf4fold))) 
+dl3$serostat4fold[dl3$seror4fold==1] <- "Seroreversion"
+```
+
+Compare classification of incident seroconversions
+```{r seroconversion agreement}
+dclass <- foreach(ab=levels(dl3$antigenf),.combine=rbind) %do% {
+  dcompi <- dl3 %>% filter(antigenf==ab)
+  tabi <- as.vector(table(dcompi$seroi,dcompi$seroi4fold))
+  names(tabi) <- c("sp04f0","sp14f0","sp04f1","sp14f1")
+  kappai <- psych::cohen.kappa(table(dcompi$seroi,dcompi$seroi4fold))$kappa
+  tabi <- data.frame(t(tabi))
+  tabi <- tabi %>%
+    mutate(Nobs=sp04f0+sp14f0+sp04f1+sp14f1,
+           agreement=(sp04f0+sp14f1)/Nobs,
+           kappa=kappai,
+           antigenf=ab) %>%
+    select(antigenf,Nobs,everything())
+  tabi
+
+}
+
+
+knitr::kable(dclass,digits=3,caption="Classification agreement of seroconversion by based on seropositivity cutoffs and a 4-fold increase in MFI",
+             col.names = c("Antigen","N", "Seropos 0\n4-fold incr. 0","Seropos 1\n4-fold incr. 0","Seropos 0\n4-fold incr. 1","Seropos 1\n4-fold incr. 1","Agreement","Kappa")) %>%
+  kable_styling(bootstrap_options = "striped",full_width = TRUE)
+
+
+```
+
+# Distribution of change in MFI
+
+## Distribution of changes in MFI by seroconversion status
+```{r change in MFI by episode 4-fold def, fig.width=7,fig.height=7}
+
+dl3plot <- dl3
+                          
+# calculate Ns in each seroconversion category to print in the figure
+epiNs <- dl3plot %>%
+  group_by(pathogen,antigenf,serostat4fold) %>%
+  summarize(n=n()) %>%
+  filter(!is.na(serostat4fold)) %>%
+  mutate(nlab=paste("(n=",n,")",sep=""))
+
+
+# custom color blind color palette is in the preamble chunck
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+# pcols <- c(corange,cred,cmagent,cblue,cteal,cgreen)
+
+set.seed(123)
+diffmfi_byepisode <- ggplot(data=filter(dl3plot,!is.na(serostat4fold)),aes(x=serostat4fold,y=logmfi_dlag,fill=pathogen,color=pathogen)) +
+  facet_wrap(~antigenf,nrow=6,ncol=4)+ 
+  geom_jitter(position = position_jitter(width = 0.2), alpha = 0.2,pch=19,size=0.5) +
+  geom_boxplot(notch=FALSE,outlier.color=NA,width=0.5,alpha=0.5,fill=NA,color="grey20")+
+  geom_hline(aes(yintercept = log10(4)),lty="dashed") +
+  geom_hline(aes(yintercept = -log10(4)),lty="dashed") +
+
+  geom_hline(aes(yintercept = 0)) +
+  # add Ns
+  geom_text(data=epiNs,aes(x=serostat4fold,y=-3.25,label=nlab),col="gray40",size=2) +
+  scale_y_continuous(expand=c(0,0),limits=c(-3.5,4.5),breaks=-3:4) +
+  scale_fill_manual(values=pcols)+
+  scale_color_manual(values=pcols)+
+  labs(title="",x="Seroconversion status based on 4-fold change in MFI",y="Change in log10 Luminex Response (MFI-bg) between measurements") +
+  theme_minimal(base_size=12)+
+  theme(
+    panel.grid.minor.x = element_blank(),
+    axis.text.x=element_text(angle=45,hjust=1),
+    legend.position="none"
+  )
+
+diffmfi_byepisode
+
+
+
+```
+
+## Distribution of changes in MFI by age category
+```{r change in MFI by agecat, fig.width=7,fig.height=7}
+
+# Difference in MFI values - boxplot
+dl3plot2 <- dl2 %>%
+  mutate(agecat=cut(age,breaks=c(0,0.99,1.99,2.99,3.99,4.99,12),labels=c("0","1","2","3","4","5+")))
+
+# calculate Ns in each age category to print in the figure
+ageNs <- dl3plot2 %>%
+  group_by(pathogen,antigenf,agecat) %>%
+  summarize(n=n()) %>%
+  filter(!is.na(agecat)) %>%
+  mutate(nlab=paste("(n=",n,")",sep=""))
+
+# custom color blind color palette is in the preamble chunck
+pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
+# pcols <- c(corange,cred,cmagent,cblue,cteal,cgreen)
+
+diffmfi_byage <- ggplot(data=dl3plot2,aes(x=agecat,y=logmfi_dlead,fill=pathogen,color=pathogen)) +
+  facet_wrap(~antigenf,nrow=6,ncol=4)+ # ,scales='free_y'
+  geom_jitter(position = position_jitter(width = 0.2), alpha = 0.2,pch=19) +
+  geom_boxplot(notch=FALSE,outlier.color=NA,width=0.5,alpha=0.5,fill=NA,color="grey20")+
+  geom_hline(aes(yintercept = 0)) +
+  geom_text(data=ageNs,aes(x=agecat,y=-3.75,label=nlab),col="gray40",size=2) +
+
+  scale_y_continuous(expand=c(0,0),limits=c(-4,4.5),breaks=-3:4) +
+  scale_fill_manual(values=pcols)+
+  scale_color_manual(values=pcols)+
+  labs(title="",x="Age at beginning of period (years completed)",y="Change in log10 Luminex Response (MFI-bg) between measurements") +
+  theme_minimal(base_size=12)+
+  theme(
+    panel.grid.minor.x = element_blank(),
+    legend.position="none"
+  )
+
+diffmfi_byage
+
+
+```
+
+
+
+# Session Info
+```{r session info}
+sessionInfo()
+```
+
+
+
+
