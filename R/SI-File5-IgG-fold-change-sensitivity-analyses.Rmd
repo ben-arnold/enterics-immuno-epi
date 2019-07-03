@@ -1,6 +1,6 @@
 ---
 title: Enteropathogen antibody dynamics and force of infection among children in low-resource settings
-subtitle: Supplementary Information File 5. Sensitivity analysis of fold-change in IgG used to identify incident boosting, incident waning, and presumed unexposed measurements.
+subtitle: "Supplementary Information File 5: Sensitivity analysis of fold-change in IgG used to identify incident boosting, incident waning, and presumed unexposed measurements."
 output: 
   html_document:
     highlight: haddock
@@ -134,7 +134,7 @@ dsens <- dl %>%
 # loop over pathogens and
 # fold-changes in IgG
 # 
-# Note: there are 7x91x1000=637,000
+# Note: there are 7x41x1000=287,000
 # bootstrap replicates in this
 # so even though the estimator
 # is simple it still takes a few mins
@@ -143,7 +143,7 @@ dsens <- dl %>%
 #-----------------------------
 set.seed(12)
 dsens_res <- foreach(ab=unique(dsens$pathogen),.combine=rbind) %:%
-  foreach(Xfold=seq(1,10,by=0.1),.combine=rbind) %dopar% {
+  foreach(Xfold=seq(2,10,by=0.2),.combine=rbind) %dopar% {
     
     #-----------------------------
     # Identify incident boosting/waning 
@@ -364,9 +364,9 @@ dsensp <- ggplot(data=dsens_plot,aes(x=foldchange,color=outcome,fill=outcome))+
   
   scale_color_manual(values=pcols)+
   scale_fill_manual(values=pcols)+
-  scale_x_continuous(breaks=1:10)+
+  scale_x_continuous(breaks=2:10)+
   labs(x="fold change in IgG used to define change in serostatus",y="rate per child-year")+
-  coord_cartesian(ylim=c(0,2),x=c(1,10))+
+  coord_cartesian(ylim=c(0,2),x=c(2,10))+
   theme_minimal() +
   theme(
     legend.position="none",
@@ -427,7 +427,7 @@ dsens <- dl %>%
 #-----------------------------
 set.seed(12)
 dsens_res <- foreach(ab=levels(dsens$pathogen),.combine=rbind) %:%
-  foreach(deltafold=seq(1,10,by=0.1),.combine=rbind) %dopar% {
+  foreach(deltafold=seq(2,10,by=0.2),.combine=rbind) %dopar% {
     
     #-----------------------------
     # identify incident 
@@ -567,9 +567,9 @@ dsensp <- ggplot(data=dsens_plot,aes(x=foldchange,color=outcome,fill=outcome))+
   geom_line(aes(y=rate))+
   scale_color_manual(values=pcols)+
   scale_fill_manual(values=pcols)+
-  scale_x_continuous(breaks=1:10)+
+  scale_x_continuous(breaks=2:10)+
   labs(x="fold change in IgG used to define change in serostatus",y="rate per child-year")+
-  coord_cartesian(ylim=c(0,4),x=c(1,10))+
+  coord_cartesian(ylim=c(0,4),x=c(2,10))+
   theme_minimal() +
   theme(
     legend.position = "none",
