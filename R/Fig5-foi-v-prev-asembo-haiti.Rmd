@@ -1,12 +1,14 @@
 ---
-title: Enteropathogen seroepidemiology among children in low-resource settings
+title: Enteropathogen antibody dynamics and force of infection among children in low-resource settings
 subtitle: Comparison of seroprevalence with seroconversion rates (force of infection) in Haiti and Kenya, Figure 5, including Fig 5 supplement 1
-output:
+output: 
   html_document:
     highlight: haddock
     theme: default
+    code_folding: hide
+    df_print: paged
     toc: yes
-    toc_depth: 3
+    toc_depth: '3'
     toc_float:
       collapsed: yes
       smooth_scroll: yes
@@ -99,8 +101,6 @@ d <- bind_rows(dk,dh) %>%
 
 ```
 
-
-
 # Composite figure, original scale
 ```{r rates v seroprevalence2}
 
@@ -127,11 +127,10 @@ pserop2
 
 ```
 
-# Separate figures with separate axes
+# Figure 5
 
-** This is Figure 5 in the manuscript **
 
-```{r separate panels, fig.width=4,fig.height=5}
+```{r separate panels, ,fig.width=6,fig.height=9}
 
 # Kenya original scale
 # order antigens by seroprev + foi 
@@ -217,10 +216,10 @@ ggsave(file=here("figs","Fig5-asembo-haiti-foi-vs-seroprev.TIFF"),plot=ivsp_comp
   
 ```
 
-# Haiti estimates by age bands
+# Figure 5 - supplement 1
 
-** This is Figure 5 - supplement 1 in the manuscript **
-```{r separate panels}
+Haiti estimates by age bands
+```{r age stratified results for haiti,fig.width=9,fig.height=4}
 
 # Haiti, stratified by age bands
 # order antigens by seroprev + foi 
@@ -260,6 +259,8 @@ pha <- ggplot(data=dha,aes(x=seroprev,y=seroi,color=antigeno,fill=antigeno)) +
      legend.position="right",
      strip.text=element_text(size=12,hjust=0)
   )
+
+pha
 
 # save PDF and TIFF versions
 ggsave(file=here("figs","Fig5sup1-haiti-foi-vs-seroprev-byage.pdf"),plot=pha,device=cairo_pdf,height=3,width=11)
