@@ -1,0 +1,308 @@
+---
+title: Enteropathogen antibody dynamics and force of infection among children in low-resource settings
+subtitle: Kenya antibody profiles, Figure 4 - supplements 1 and 3
+output: 
+  html_document:
+    highlight: haddock
+    theme: default
+    code_folding: hide
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+---
+
+# Notebook Summary
+
+This script plots individual antibody trajectories in the Asembo, Kenya cohort from enrollment to follow-up. 205 children were measured at both timepoints.
+
+# Script preamble
+```{r preamble}
+#-----------------------------
+# preamble
+#-----------------------------
+library(here)
+here()
+
+# load packages
+library(tidyverse)
+
+# bright color blind palette:  https://personal.sron.nl/~pault/ 
+cblack <- "#000004FF"
+cblue <- "#3366AA"
+cteal <- "#11AA99"
+cgreen <- "#66AA55"
+cchartr <- "#CCCC55"
+cmagent <- "#992288"
+cred <- "#EE3333"
+corange <- "#EEA722"
+cyellow <- "#FFEE33"
+cgrey <- "#777777"
+
+```
+
+
+```{r load data}
+#-----------------------------
+# load the formatted data
+# created with 
+# asembo-enteric-ab-data-format.Rmd -->
+# asembo-enteric-ab-distributions.Rmd
+#-----------------------------
+dl <- readRDS(here("data","asembo_analysis2.rds"))
+```
+
+# Identify incident changes
+Identify children whose status changed  between enrollment and follow-up. Those who changed from negative to positive are seroconverters (`seroi` below), and those who changed from positive to negative are seroreverters (`seror` below).
+
+
+```{r long incidence}
+
+#-----------------------------
+# identify incident 
+# seroconversions and reversions
+# based on crossing the
+# seropositivity cutoff
+# and
+# based on a 4-fold change in MFI
+# to above the cutoff (seroconversion)
+# or starting above cutoff (seroreversion)
+#-----------------------------
+dlp <- dl %>%
+  group_by(antigen,antigenf,childid) %>%
+  mutate(seroposA=ifelse(time=="A",seropos,NA),
+         seroposA=max(seroposA,na.rm=TRUE),
+         seroposB=ifelse(time=="B",seropos,NA),
+         seroposB=max(seroposB,na.rm=TRUE),
+         seroi=ifelse(seroposB==1 & seroposA==0,1,0),
+         seror=ifelse(seroposB==0 & seroposA==1,1,0),
+         
+         mfiA=ifelse(time=="A",logmfi,NA),
+         mfiA=max(mfiA,na.rm=TRUE),
+         mfiB=ifelse(time=="B",logmfi,NA),
+         mfiB=max(mfiB,na.rm=TRUE),
+         seroi4fold=ifelse(logmfidiff>log10(4) & mfiB>serocut,1,0),
+         seror4fold=ifelse(logmfidiff< - log10(4) & mfiA>serocut,1,0)
+  ) 
+
+
+
+```
+
+# Antibody MFI trajectories
+Longitudinal antibody trajectories of individual children for all antigens measured, colored by the change in antibody levels (increases and decreases)
+```{r change in antibody level figure, fig.height=12, fig.width=6}
+#-----------------------------
+# Plot individual antibody
+# trajectories, colored
+# by increases and decreases
+#-----------------------------
+
+# create an change category factor for plot aesthetics
+dlp <- dlp %>%
+  mutate(mficat=factor(ifelse(logmfidiff>0,"Increase","Decrease"),levels=c("Increase","Decrease")))
+
+# convert time to numeric (for plotting)
+dlp <- dlp %>%
+  mutate(svy=ifelse(time=="A",0,1))
+
+log10labs <- c( 
+  expression(10^0),
+  expression(10^1),
+  expression(10^2),
+  expression(10^3),
+  expression(10^4)
+)
+
+ppq <- ggplot(data=filter(dlp,!is.na(mficat)),aes(x=svy,y=logmfi,group=factor(childid),color=mficat)) +
+  # geom_point(alpha=0.2) +
+  geom_line(alpha=0.2) +
+  # geom_hline(aes(yintercept=mixcut),linetype="dashed") +
+  
+  scale_x_continuous(limits=c(-0.25,1.25),breaks=c(0,1),labels=c("Enrollment","Follow-up"))+
+  scale_y_continuous(breaks=0:4,labels=log10labs) +
+  scale_color_manual(values=c(corange,cteal,"gray80"),
+                     guide=guide_legend(title="MFI change:",override.aes = list(alpha=1))
+                     ) +
+  facet_wrap(~antigenf,nrow=6,ncol=2) +
+  labs(x="Measurement",y="Luminex response (MFI-bg)") +
+  theme_minimal() +
+  theme(
+    panel.grid.minor.x = element_blank(),
+    panel.grid.minor.y = element_blank(),
+    panel.grid.major.y = element_blank(),
+    axis.ticks.y=element_line(color="gray40"),
+    legend.position = "top"
+    )
+
+ppq
+
+```
+
+Create the same figure of individual antibody trajectories between measurements, but limit it to antigens with seroincidence measures, and color the trajectories by seroconversion/reversion status. 
+
+```{r change in antibody seroincidence figure, fig.height=9, fig.width=6}
+#-----------------------------
+# pull the incidence info
+# and just merge it back
+# to the full longidudinal data
+#-----------------------------
+dl2 <- dlp
+
+# create an incidence category factor for plot aesthetics
+# for seroconversion based on seropositivity only
+dl2$icat <- factor(NA,levels=c("Seroconversion","Seroreversion","No change"))
+dl2$icat[dl2$seroi==1] <- "Seroconversion"
+dl2$icat[dl2$seror==1] <- "Seroreversion"
+dl2$icat[dl2$seroi==0 & dl2$seror==0] <- "No change"
+
+
+# create an incidence category factor for plot aesthetics
+# for seroconversion based on 4-fold changes in MFI
+dl2$i4cat <- factor(NA,levels=c("Seroconversion","Seroreversion","No change"))
+dl2$i4cat[dl2$seroi4fold==1] <- "Seroconversion"
+dl2$i4cat[dl2$seror4fold==1] <- "Seroreversion"
+dl2$i4cat[dl2$seroi4fold==0 & dl2$seror==0] <- "No change"
+
+# create an incidence category factor for plot aesthetics
+# for seroconversion comparing both methods
+dl2$icat_comp <- factor(NA,levels=c(">4-fold increase, across cutoff",">4-fold decrease",">4-fold increase, above cutoff","<4-fold change"))
+dl2$icat_comp[dl2$seroi4fold==1 & dl2$seroi==1] <- ">4-fold increase, across cutoff"
+dl2$icat_comp[dl2$seror4fold==1] <- ">4-fold decrease"
+dl2$icat_comp[dl2$seroi4fold==1 & dl2$seroi==0] <- ">4-fold increase, above cutoff"
+dl2$icat_comp[is.na(dl2$icat_comp)] <- "<4-fold change"
+dl2 <- dl2 %>%
+  mutate(icat_comp = factor(icat_comp,levels=c(">4-fold increase, across cutoff",
+                                               ">4-fold increase, above cutoff",
+                                               ">4-fold decrease",
+                                               "<4-fold change"))
+         )
+
+
+pp <- ggplot(data=filter(dl2,!is.na(icat)),aes(x=svy,y=logmfi,group=factor(childid),color=icat_comp)) +
+  # geom_point(alpha=0.2) +
+  geom_hline(aes(yintercept=serocut),linetype="dashed",size=0.3) +
+  geom_line(alpha=0.2) +
+  
+  scale_x_continuous(limits=c(-0.25,1.25),breaks=c(0,1),labels=c("Enrollment","Follow-up"))+
+  scale_y_continuous(breaks=0:4,labels=log10labs) +
+  scale_color_manual(values=c(corange,cmagent,cteal,"gray80"),
+                     guide=guide_legend(title="MFI change:", override.aes = list(alpha=1), ncol=2,nrow=2),
+                     ) +
+  facet_wrap(~antigenf,nrow=6,ncol=2) +
+  labs(x="Measurement",y="Luminex response (MFI-bg)") +
+  theme_minimal() +
+  theme(
+    panel.grid.minor.x = element_blank(),
+    panel.grid.minor.y = element_blank(),
+    panel.grid.major.y = element_blank(),
+    axis.ticks.y=element_line(color="gray40"),
+    legend.position = "top" 
+    )
+
+pp
+
+```
+
+# Figure 4 - supplement 1
+```{r change in antibody seroincidence figure subset, fig.width=7,fig.height=12}
+#-----------------------------
+# final figure, excluding cholera
+# due to cross-reactivity with ETEC
+#-----------------------------
+relev <- levels(dl2$antigenf)[c(1:6,11,7,9,10)]
+dl3 <- dl2 %>%
+  filter(!is.na(icat) & antigen!="cholera") %>%
+  ungroup() %>%
+  mutate(antigenf=factor(antigenf,levels=relev))
+
+
+pp2 <- ggplot(data=dl3,aes(x=svy,y=logmfi,group=factor(childid),color=icat_comp)) +
+  # geom_point(alpha=0.2) +
+  geom_hline(aes(yintercept=serocut),linetype="dashed",size=0.3) +
+  geom_line(alpha=0.2) +
+  
+  scale_x_continuous(limits=c(-0.25,1.25),breaks=c(0,1),labels=c("Enrollment","Follow-up"))+
+  scale_y_continuous(breaks=0:4,labels=log10labs) +
+  scale_color_manual(values=c(corange,cteal,cmagent,"gray80"),
+                     guide=guide_legend(title="MFI change:", override.aes = list(alpha=1), ncol=2,nrow=2),
+                     ) +
+  facet_wrap(~antigenf,nrow=6,ncol=2) +
+  labs(x="Measurement",y="Luminex response (MFI-bg)") +
+  theme_minimal() +
+  theme(
+    panel.grid.minor.x = element_blank(),
+    panel.grid.minor.y = element_blank(),
+    panel.grid.major.y = element_blank(),
+    axis.ticks.y=element_line(color="gray40"),
+    legend.position = "top" 
+    )
+
+pp2
+
+# save PDF and TIFF versions
+ggsave(here("figs","Fig4sup1-asembo-ab-trajectories.pdf"),plot=pp2,device=cairo_pdf,width=5,height=10)
+ggsave(here("figs","Fig4sup1-asembo-ab-trajectories.TIFF"),plot=pp2,device="tiff",width=5,height=10)
+
+```
+
+# Figure 4 - supplement 3
+Estimate prevalence of each category
+```{r estimate prevalence of each class , warning=FALSE}
+dl4 <- dl3 %>%
+  group_by(antigenf,icat_comp, .drop=FALSE) %>%
+  tally() %>%
+  group_by(antigenf) %>%
+  mutate(N=sum(n),
+         q=N-n,
+         prev=n/N
+         )
+# exact binomial confidence intervals on prevalence estimates
+ci_lb <- apply(dl4[c("n","q")],1,function(x) binom.test(x,alternative="two.sided")$conf.int[1])
+ci_ub <- apply(dl4[c("n","q")],1,function(x) binom.test(x,alternative="two.sided")$conf.int[2])
+dl4 <- dl4 %>%
+  bind_cols(data.frame(ci_lb,ci_ub)) %>%
+  arrange(antigenf,icat_comp)
+  
+```
+```{r figure proportion in each class by measurement, fig.width=7,fig.height=12, warning=FALSE}
+# compare seroconversion classification prevalences by measurement
+sero_comp_p <- ggplot(data=dl4, aes(x=icat_comp, y=prev,color=icat_comp) ) +
+    facet_wrap(~antigenf,nrow=6,ncol=2)+
+    geom_errorbar(aes(ymin=ci_lb,ymax=ci_ub),width=0.1)+
+    geom_point()+
+    scale_color_manual(values=c(corange,cmagent,cteal,"gray50"),
+                       guide=guide_legend(title="MFI change:",
+                                          override.aes = list(alpha=1),
+                                          nrow=2,ncol=2
+                                          ))+
+    xlab("From Enrollment to Follow-up") +
+    ylab("Percentage of children (%)") +
+    coord_cartesian(ylim=c(0,1),xlim=c(1,4))+
+    scale_y_continuous(breaks=seq(0,1,by=0.2),labels=sprintf("%1.0f",seq(0,1,by=0.2)*100)) +
+    # scale_x_continuous(breaks=1:5) +
+    theme_minimal() +
+    theme(
+      legend.position="top",
+      panel.grid.minor.x=element_blank(),
+      axis.text.x = element_blank()
+    )
+  
+sero_comp_p
+
+# save PDF and TIFF versions
+ggsave(filename=here("figs","Fig4sup3-asembo-ab-trajectory-meas.pdf"),plot = sero_comp_p, device=cairo_pdf, width=5,height=10)
+ggsave(filename=here("figs","Fig4sup3-asembo-ab-trajectories-meas.TIFF"),plot = sero_comp_p, device='tiff', width=5,height=10)
+
+```
+
+# Session Info
+```{r session info}
+sessionInfo()
+```
+
+
+
+
