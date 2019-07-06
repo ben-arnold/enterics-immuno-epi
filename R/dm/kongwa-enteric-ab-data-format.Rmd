@@ -106,8 +106,8 @@ dl <- dl %>%
 # dataset for all future 
 # analyses
 #-----------------------------
-saveRDS(dl,file=here("data","kongwa_analysis.rds"))
-write_csv(dl,path=here("data","kongwa_analysis.csv"))
+saveRDS(dl,file=here::here("data","kongwa_analysis.rds"))
+write_csv(dl,path=here::here("data","kongwa_analysis.csv"))
 
 ```
 # Session Info

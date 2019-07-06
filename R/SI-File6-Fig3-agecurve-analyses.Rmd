@@ -1,15 +1,17 @@
 ---
 title: "Enteropathogen antibody dynamics and force of infection among children in low-resource settings"
-subtitle: "Supplementary Information File 5: Estimation of age-dependent means and seroprevalence using multiple approaches, Figure 3"
+subtitle: Supplementary Information File 6. Estimation of age-dependent means and seroprevalence using multiple approaches, Figure 3 including supplements 1, 2
 output: 
   html_document:
-    theme: default
     highlight: haddock
-    toc: true
-    toc_depth: 3
+    theme: default
+    code_folding: hide
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
     toc_float:
-      collapsed: true
-      smooth_scroll: true
+      collapsed: yes
+      smooth_scroll: yes
 ---
 
 # Notebook Summary
@@ -23,7 +25,7 @@ The notebook is fairly repetative by country.
 # preamble
 #-----------------------------
 library(here)
-here()
+here::here()
 
 
 library(tidyverse)
@@ -140,7 +142,7 @@ exactprev <- function(x) {
 # haiti-enteric-ab-data-format.Rmd -->
 # Fig1-haiti-ab-distributions.Rmd
 #-----------------------------
-dl <- readRDS(here("data","haiti_analysis2.rds"))
+dl <- readRDS(here::here("data","haiti_analysis2.rds"))
 
 
 ```
@@ -512,13 +514,13 @@ pcurve <- ggplot(data=gamfits,aes(x=age,color=pathogeng,fill=pathogeng)) +
   # spline fit
   geom_line(aes(y=fit),color="black") +
   # labels
-  geom_text(data=plabs,aes(x=0,y=4.55,label=antigenf,hjust=0,vjust=0),color="gray20")+
+  geom_text(data=plabs,aes(x=0,y=4.55,label=antigenf,hjust=0,vjust=0),color="gray20",size=3.4)+
   # plot aesthetics
   facet_grid(pathogeng~antigenn) +
   scale_x_continuous(limits=c(0,10),breaks=seq(0,10,by=2))+
   scale_y_continuous(breaks=0:4,labels=log10labs)+
   coord_cartesian(ylim=c(0,4.65))+
-  labs(x="Age in years",y="Luminex Response (MFI-bg)") +
+  labs(x="Age in years",y="Luminex Response (MFI-bg)",tag="A") +
   scale_fill_manual(values=pcols) +
   scale_color_manual(values=pcols) +
   theme_minimal(base_size=16) +
@@ -528,7 +530,7 @@ pcurve <- ggplot(data=gamfits,aes(x=age,color=pathogeng,fill=pathogeng)) +
 ```
 
 Seroprevalence curves
-```{r age-curve seroprevalence figure, fig.height=9, fig.width=6}
+```{r age-curve seroprevalence figure}
 
 # labels for the panels in the plot 
 pplabs <- pgamfits %>%
@@ -550,13 +552,13 @@ ppcurve2 <- ggplot(data=dplot,aes(x=age,color=antigenf,fill=antigenf)) +
   # spline fit
   geom_line(aes(y=fit),color="black") +
   # labels
-  geom_text(data=pplabs,aes(x=0,y=1.03,label=antigenf,hjust=0,vjust=0),color="gray20")+
+  geom_text(data=pplabs,aes(x=0,y=1.03,label=antigenf,hjust=0,vjust=0),color="gray20",size=3.4)+
   # plot aesthetics
   facet_wrap(~antigenf,nrow=7,ncol=1) +
   scale_x_continuous(limits=c(0,10),breaks=seq(0,10,by=2))+
   scale_y_continuous(breaks=seq(0,1,by=0.2),labels=sprintf("%1.0f",seq(0,1,by=0.2)*100))+
   coord_cartesian(ylim=c(0,1.04))+
-  labs(x="Age in years",y="Seroprevalence (%)") +
+  labs(x="Age in years",y="Seroprevalence (%)",tag="B") +
   scale_fill_manual(values=pcols) +
   scale_color_manual(values=pcols) +
   theme_minimal(base_size=16) +
@@ -569,20 +571,19 @@ Composite figure
 
 ** This is Figure 3 in the manuscript **
 
-```{r haiti age-curve composite figure, fig.height=9, fig.width=6}
+```{r haiti age-curve composite figure,fig.height=12, fig.width=9}
 
 # labels for the panels in the plot 
 pcurve_composite_haiti <- grid.arrange(pcurve,ppcurve2,ncol=2,nrow=1,widths=c(2,1.1))
 
 # save PDF and TIFF versions
-ggsave(here("figs","Fig3-haiti-ab-agecurves.pdf"),plot=pcurve_composite_haiti,device=cairo_pdf,width=9,height=14)
-ggsave(here("figs","Fig3-haiti-ab-agecurves.TIFF"),plot=pcurve_composite_haiti,device="tiff",width=9,height=14)
+ggsave(here::here("figs","Fig3-haiti-ab-agecurves.pdf"),plot=pcurve_composite_haiti,device=cairo_pdf,width=9,height=14)
+ggsave(here::here("figs","Fig3-haiti-ab-agecurves.TIFF"),plot=pcurve_composite_haiti,device="tiff",width=9,height=14)
 
 ```
 
 
 ### Numerical seroprevalence estimates to report in the manuscript. 
-
 
 ```{r seroprev numerical estimates}
 # grab predicted means from cubic splines very close to each year of age
@@ -602,13 +603,13 @@ pests
 ## Save fitted estimates for later use, Haiti
 ```{r save estimates}
 # spline fits of geometric means
-saveRDS(gamfits,file=here("output","haiti-enteric-ab-gamfits-means.rds"))
+saveRDS(gamfits,file=here::here("output","haiti-enteric-ab-gamfits-means.rds"))
 # ensemble fits of geometric means
-saveRDS(slfits,file=here("output","haiti-enteric-ab-slfits-means.rds"))
+saveRDS(slfits,file=here::here("output","haiti-enteric-ab-slfits-means.rds"))
 # spline fits of age-dependent seroprevalence
-saveRDS(pgamfits,file=here("output","haiti-enteric-ab-gamfits-seroprev.rds"))
+saveRDS(pgamfits,file=here::here("output","haiti-enteric-ab-gamfits-seroprev.rds"))
 # spline fits of age-dependent seroprevalence
-saveRDS(pslfits,file=here("output","haiti-enteric-ab-slfits-seroprev.rds"))
+saveRDS(pslfits,file=here::here("output","haiti-enteric-ab-slfits-seroprev.rds"))
 ```
 
 # Kenya
@@ -624,7 +625,7 @@ saveRDS(pslfits,file=here("output","haiti-enteric-ab-slfits-seroprev.rds"))
 # asembo-enteric-ab-data-format.Rmd -->
 # Fig1sup3-asembo-enteric-ab-distributions.Rmd
 #-----------------------------
-dl <- readRDS(here("data","asembo_analysis2.rds"))
+dl <- readRDS(here::here("data","asembo_analysis2.rds"))
 
 ```
 
@@ -942,7 +943,7 @@ Create a more parsimonius plot, that only includes the spline fits but also incl
 
 Exclude Cholera due to cross-reactivity with ETEC and no suggestion that there was cholera transmission in the population at the time of the study.
 
-```{r age-curve mean figure kenya, fig.height=12, fig.width=6}
+```{r age-curve mean figure kenya}
 
 log10labs <- c( 
   expression(10^0),
@@ -990,7 +991,7 @@ pcurve <- ggplot(data=filter(dplot,age<=17),aes(x=age,group=pathogen,color=patho
   # spline fit
   geom_line(aes(y=fit),color="black") +
   # labels
-  geom_text(data=plabs,aes(x=4,y=4.55,label=antigenf,hjust=0,vjust=0),color="gray20")+
+  geom_text(data=plabs,aes(x=4,y=4.55,label=antigenf,hjust=0,vjust=0),color="gray20",size=3.4)+
   # plot aesthetics
   facet_grid(pathogen~antigenn) +
   scale_x_continuous(breaks=seq(4,18,by=2))+
@@ -998,7 +999,7 @@ pcurve <- ggplot(data=filter(dplot,age<=17),aes(x=age,group=pathogen,color=patho
   scale_fill_manual(values=pcols) +
   scale_color_manual(values=pcols) +
   coord_cartesian(ylim=c(0,4.65))+
-  labs(x="Age in months",y="Luminex Response (MFI-bg)") +
+  labs(x="Age in months",y="Luminex Response (MFI-bg)",tag="A") +
   theme_minimal(base_size=16) +
   theme(legend.position = "none",
         strip.text=element_blank())
@@ -1006,7 +1007,7 @@ pcurve <- ggplot(data=filter(dplot,age<=17),aes(x=age,group=pathogen,color=patho
 ```
 
 Seroprevalence curves
-```{r age-curve seroprevalence figure kenya, fig.height=9, fig.width=6}
+```{r age-curve seroprevalence figure kenya}
 
 # bright color-blind palette defined in an earlier code chunk
 # pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
@@ -1032,7 +1033,7 @@ ppcurve2 <- ggplot(data=dplot,aes(x=age,color=antigenf,fill=antigenf)) +
   # spline fit
   geom_line(aes(y=fit),color="black") +
   # labels
-  geom_text(data=pplabs,aes(x=4,y=1.03,label=antigenf,hjust=0,vjust=0),color="gray20")+
+  geom_text(data=pplabs,aes(x=4,y=1.03,label=antigenf,hjust=0,vjust=0),color="gray20",size=3.4)+
   # plot aesthetics
   facet_grid(antigenf~.) +
   scale_fill_manual(values=pcols) +
@@ -1040,7 +1041,7 @@ ppcurve2 <- ggplot(data=dplot,aes(x=age,color=antigenf,fill=antigenf)) +
   scale_x_continuous(breaks=seq(4,18,by=2))+
   scale_y_continuous(breaks=seq(0,1,by=0.2),labels=sprintf("%1.0f",seq(0,1,by=0.2)*100))+
   coord_cartesian(ylim=c(0,1.04))+
-  labs(x="Age in months",y="Seroprevalence (%)") +
+  labs(x="Age in months",y="Seroprevalence (%)",tag="B") +
   theme_minimal(base_size=16) +
   theme(legend.position = "none",
         strip.text=element_blank())
@@ -1051,27 +1052,27 @@ Composite figure
 
 ** This is Figure 3 - supplement 1 in the manuscript **
 
-```{r kenya age-curve composite figure, fig.height=9, fig.width=6}
+```{r kenya age-curve composite figure, fig.height=12, fig.width=9}
 
 # labels for the panels in the plot 
 pcurve_composite_kenya <- grid.arrange(pcurve,ppcurve2,ncol=2,nrow=1,widths=c(2,1.1))
 
 # save PDF and TIFF versions
-ggsave(here("figs","Fig3sup1-asembo-ab-agecurves.pdf"),plot=pcurve_composite_kenya,device=cairo_pdf,width=9,height=14)
-ggsave(here("figs","Fig3sup1-asembo-ab-agecurves.TIFF"),plot=pcurve_composite_kenya,device="tiff",width=9,height=14)
+ggsave(here::here("figs","Fig3sup1-asembo-ab-agecurves.pdf"),plot=pcurve_composite_kenya,device=cairo_pdf,width=9,height=14)
+ggsave(here::here("figs","Fig3sup1-asembo-ab-agecurves.TIFF"),plot=pcurve_composite_kenya,device="tiff",width=9,height=14)
 
 ```
 
 ## Save fitted estimates for later use, Kenya
 ```{r save estimates kenya}
 # spline fits of geometric means
-saveRDS(gamfits,file=here("output","asembo-enteric-ab-gamfits-means.rds"))
+saveRDS(gamfits,file=here::here("output","asembo-enteric-ab-gamfits-means.rds"))
 # ensemble fits of geometric means
-saveRDS(slfits,file=here("output","asembo-enteric-ab-slfits-means.rds"))
+saveRDS(slfits,file=here::here("output","asembo-enteric-ab-slfits-means.rds"))
 # spline fits of age-dependent seroprevalence
-saveRDS(pgamfits,file=here("output","asembo-enteric-ab-gamfits-seroprev.rds"))
+saveRDS(pgamfits,file=here::here("output","asembo-enteric-ab-gamfits-seroprev.rds"))
 # spline fits of age-dependent seroprevalence
-saveRDS(pslfits,file=here("output","asembo-enteric-ab-slfits-seroprev.rds"))
+saveRDS(pslfits,file=here::here("output","asembo-enteric-ab-slfits-seroprev.rds"))
 ```
 
 # Tanzania
@@ -1086,7 +1087,7 @@ saveRDS(pslfits,file=here("output","asembo-enteric-ab-slfits-seroprev.rds"))
 # kongwa-enteric-ab-data-format.Rmd -->
 # Fig1sup1sup2-kongwa-ab-distributions.Rmd
 #-----------------------------
-dl <- readRDS(here("data","kongwa_analysis2.rds"))
+dl <- readRDS(here::here("data","kongwa_analysis2.rds"))
 
 # list the enteric antigens and formatted labels for them
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","etec","cholera","p18","p39")
@@ -1393,7 +1394,7 @@ ppcurve
 
 Create a more parsimonius plot, that only includes the spline fits but also includes the actual points. Exclude _V. cholera_ beta toxin response because of difficulty in interpretation because of cross-reactivity with ETEC heat labile toxin beta subunit.
 
-```{r age-curve mean figure tanzania, fig.height=12, fig.width=6}
+```{r age-curve mean figure tanzania}
 
 log10labs <- c( 
   expression(10^0),
@@ -1439,13 +1440,13 @@ pcurve <- ggplot(data=dplot,aes(x=age+0.5,color=pathogen,fill=pathogen)) +
   # spline fit
   geom_line(aes(y=fit),color="black") +
   # labels
-  geom_text(data=plabs,aes(x=0,y=4.55,label=antigenf,hjust=0,vjust=0),color="gray20")+
+  geom_text(data=plabs,aes(x=0,y=4.55,label=antigenf,hjust=0,vjust=0),color="gray20",size=3.4)+
   # plot aesthetics
   facet_grid(pathogen~antigenn) +
   scale_x_continuous(limits=c(0,10),breaks=seq(0,10,by=2))+
   scale_y_continuous(breaks=0:4,labels=log10labs)+
   coord_cartesian(ylim=c(0,4.65))+
-  labs(x="Age in years",y="Luminex Response (MFI-bg)") +
+  labs(x="Age in years",y="Luminex Response (MFI-bg)",tag="A") +
   scale_fill_manual(values=pcols) +
   scale_color_manual(values=pcols) +
   theme_minimal(base_size=16) +
@@ -1456,7 +1457,7 @@ pcurve <- ggplot(data=dplot,aes(x=age+0.5,color=pathogen,fill=pathogen)) +
 ```
 
 Seroprevalence curves
-```{r age-curve seroprevalence figure tanzania, fig.height=9, fig.width=6}
+```{r age-curve seroprevalence figure tanzania}
 
 # include extra factor levels for plot faceting
 dplot2 <- pgamfits %>%
@@ -1488,13 +1489,13 @@ ppcurve2 <- ggplot(data=dplot2,aes(x=age+0.5,color=antigenf,fill=antigenf)) +
   # spline fit
   geom_line(aes(y=fit),color="black") +
   # labels
-  geom_text(data=pplabs,aes(x=0,y=1.03,label=antigenf,hjust=0,vjust=0),color="gray20")+
+  geom_text(data=pplabs,aes(x=0,y=1.03,label=antigenf,hjust=0,vjust=0),color="gray20",size=3.4)+
   # plot aesthetics
   facet_wrap(antigenf~.,drop=FALSE,ncol=1,nrow=6) +
   scale_x_continuous(limits=c(0,10),breaks=seq(0,10,by=2))+
   scale_y_continuous(breaks=seq(0,1,by=0.2),labels=sprintf("%1.0f",seq(0,1,by=0.2)*100))+
   coord_cartesian(ylim=c(0,1.04))+
-  labs(x="Age in years",y="Seroprevalence (%)") +
+  labs(x="Age in years",y="Seroprevalence (%)",tag="B") +
   scale_fill_manual(values=pcols) +
   scale_color_manual(values=pcols) +
   theme_minimal(base_size=16) +
@@ -1507,14 +1508,14 @@ ppcurve2 <- ggplot(data=dplot2,aes(x=age+0.5,color=antigenf,fill=antigenf)) +
 Composite figure
 
 ** This is Figure 3 - supplement 2 in the manuscript **
-```{r tanzania age-curve composite figure, fig.height=9, fig.width=6}
+```{r tanzania age-curve composite figure, fig.height=12, fig.width=9}
 
 # labels for the panels in the plot 
 pcurve_composite_tanzania <- grid.arrange(pcurve,ppcurve2,ncol=2,nrow=1,widths=c(2,1.1))
 
 # save PDF and TIFF versions
-ggsave(here("figs","Fig3sup2-kongwa-ab-agecurves.pdf"),plot=pcurve_composite_tanzania,device=cairo_pdf,width=9,height=14)
-ggsave(here("figs","Fig3sup2-kongwa-ab-agecurves.TIFF"),plot=pcurve_composite_tanzania,device="tiff",width=9,height=14)
+ggsave(here::here("figs","Fig3sup2-kongwa-ab-agecurves.pdf"),plot=pcurve_composite_tanzania,device=cairo_pdf,width=9,height=14)
+ggsave(here::here("figs","Fig3sup2-kongwa-ab-agecurves.TIFF"),plot=pcurve_composite_tanzania,device="tiff",width=9,height=14)
 
 ```
 
@@ -1538,13 +1539,13 @@ pests
 ## Save fitted estimates for later use, Tanzania
 ```{r save estimates tanzania}
 # spline fits of geometric means
-saveRDS(gamfits,file=here("output","kongwa-enteric-ab-gamfits-means.rds"))
+saveRDS(gamfits,file=here::here("output","kongwa-enteric-ab-gamfits-means.rds"))
 # ensemble fits of geometric means
-saveRDS(slfits,file=here("output","kongwa-enteric-ab-slfits-means.rds"))
+saveRDS(slfits,file=here::here("output","kongwa-enteric-ab-slfits-means.rds"))
 # spline fits of age-dependent seroprevalence
-saveRDS(pgamfits,file=here("output","kongwa-enteric-ab-gamfits-seroprev.rds"))
+saveRDS(pgamfits,file=here::here("output","kongwa-enteric-ab-gamfits-seroprev.rds"))
 # spline fits of age-dependent seroprevalence
-saveRDS(pslfits,file=here("output","kongwa-enteric-ab-slfits-seroprev.rds"))
+saveRDS(pslfits,file=here::here("output","kongwa-enteric-ab-slfits-seroprev.rds"))
 ```
 
 

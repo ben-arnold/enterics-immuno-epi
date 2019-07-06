@@ -25,7 +25,7 @@ This script estimates the incidence rate of seroconversion and seroreversion in 
 # preamble
 #-----------------------------
 library(here)
-here()
+here::here()
 
 # load packages
 library(tidyverse)
@@ -63,7 +63,7 @@ cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2",
 # created with 
 # haiti-enteric-ab-data-format.Rmd
 #-----------------------------
-dl <- readRDS(here("data","haiti_analysis2.rds"))
+dl <- readRDS(here::here("data","haiti_analysis2.rds"))
 
 ```
 
@@ -715,10 +715,10 @@ scr_serop_byage_p
 
 # Save incidence estimates
 ```{r save estimates}
-saveRDS(rate_ests,file=here("output","haiti-enteric-ab-ests-incidencerates.rds"))
-saveRDS(rate_ests_4fold,file=here("output","haiti-enteric-ab-ests-incidencerates-4fold.rds"))
-saveRDS(d_serop,file=here("output","haiti-enteric-ab-ests-seroprev-vs-rates.rds"))
-saveRDS(scr_byage2,file=here("output","haiti-enteric-ab-ests-seroprev-vs-rates-byage.rds"))
+saveRDS(rate_ests,file=here::here("output","haiti-enteric-ab-ests-incidencerates.rds"))
+saveRDS(rate_ests_4fold,file=here::here("output","haiti-enteric-ab-ests-incidencerates-4fold.rds"))
+saveRDS(d_serop,file=here::here("output","haiti-enteric-ab-ests-seroprev-vs-rates.rds"))
+saveRDS(scr_byage2,file=here::here("output","haiti-enteric-ab-ests-seroprev-vs-rates-byage.rds"))
 
 ```
 

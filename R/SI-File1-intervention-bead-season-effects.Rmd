@@ -34,7 +34,7 @@ The third section of this notebook examines the influence of rainy versus dry se
 # preamble
 #-----------------------------
 library(here)
-here()
+here::here()
 
 # load packages
 library(tidyverse)
@@ -82,7 +82,7 @@ cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2",
 # asembo-enteric-ab-data-format.Rmd -->
 # asembo-enteric-ab-distributions.Rmd
 #-----------------------------
-dl <- readRDS(here("data","asembo_analysis2.rds"))
+dl <- readRDS(here::here("data","asembo_analysis2.rds"))
 
 # list the enteric antigens and make formatted labels for them
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","p18","p39","etec","cholera")
@@ -316,7 +316,7 @@ _Salmonella_ and _Campylobacter_ antibodies were not measured after the first ye
 # for enteric pathogens
 # with seropositivity indicators
 #-----------------------------
-dl <- readRDS(here("data","kongwa_analysis2.rds"))
+dl <- readRDS(here::here("data","kongwa_analysis2.rds"))
 
 dl <- dl %>%
   filter(!antigen %in% c("salb","sald","p18","p39","pgp3")) %>%
@@ -508,7 +508,7 @@ mucurve
 # created with 
 # asembo-enteric-ab-data-format.Rmd
 #-----------------------------
-dl <- readRDS(here("data","kongwa_analysis.rds"))
+dl <- readRDS(here::here("data","kongwa_analysis.rds"))
 
 # list the enteric antigens and formatted labels for them
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","etec","cholera","p18","p39","pgp3")
@@ -867,7 +867,7 @@ Arnold, B. F., van der Laan, M. J., Hubbard, A. E., Steel, C., Kubofcik, J., Ham
 # haiti-enteric-ab-data-format.Rmd -->
 # Fig1-haiti-enteric-ab-distributions.Rmd
 #-----------------------------
-dl <- readRDS(here("data","haiti_analysis2.rds"))
+dl <- readRDS(here::here("data","haiti_analysis2.rds"))
 
 # list the enteric antigens and make formatted labels for them
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","p18","p39","etec","cholera")

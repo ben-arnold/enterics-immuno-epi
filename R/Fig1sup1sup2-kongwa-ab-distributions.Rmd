@@ -1,11 +1,11 @@
 ---
-title: Enteropathogen seroepidemiology among children in low-resource settings
-subtitle: Tanzan antibody distributions and seropositivity cutoffs, Figure 1 - supplements 1 and 2
+title: Enteropathogen antibody dynamics and force of infection among children in low-resource settings
+subtitle: Tanzania antibody distributions and seropositivity cutoffs, Figure 1 - supplements 1 and 2
 output:
   html_document:
     highlight: haddock
     theme: default
-    code_folding: show
+    code_folding: hide
     df_print: paged
     toc: yes
     toc_depth: '3'
@@ -27,7 +27,7 @@ It fits Gaussian mixture models to the distributions, and where possible, estima
 # preamble
 #-----------------------------
 library(here)
-here()
+here::here()
 
 # load packages
 library(tidyverse)
@@ -71,7 +71,7 @@ vircols <- viridis(n=7,alpha=1,begin=0.2,end=0.97)
 # created with 
 # asembo-enteric-ab-data-format.Rmd
 #-----------------------------
-dl <- readRDS(here("data","kongwa_analysis.rds"))
+dl <- readRDS(here::here("data","kongwa_analysis.rds"))
 
 # list the enteric antigens and formatted labels for them
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","etec","cholera","p18","p39","pgp3")
@@ -301,8 +301,8 @@ p2 <- ggplot(data=dlplot,aes(x=logmfi,fill=pathogen,color=pathogen)) +
 p2
 
 # save PDF and TIFF versions
-ggsave(here("figs","Fig1sup1-kongwa-ab-distributions-byage.pdf"),plot=p2,device=cairo_pdf,width=18,height=6)
-ggsave(here("figs","Fig1sup1-kongwa-ab-distributions-byage.TIFF"),plot=p2,device="tiff",width=18,height=6)
+ggsave(here::here("figs","Fig1sup1-kongwa-ab-distributions-byage.pdf"),plot=p2,device=cairo_pdf,width=18,height=6)
+ggsave(here::here("figs","Fig1sup1-kongwa-ab-distributions-byage.TIFF"),plot=p2,device="tiff",width=18,height=6)
 
 ```
 ## Figure 1 - supp 2: age-stratified antibody distributions of Giardia and pgp3
@@ -360,8 +360,8 @@ p3 <- ggplot(data=dlplot,aes(x=logmfi,fill=pathogen,color=pathogen)) +
 p3
 
 # save PDF and TIFF
-ggsave(here("figs","Fig1sup2-kongwa-ab-distributions-byage-vsp3-pgp3.pdf"),plot=p3,device="pdf",width=5,height=6)
-ggsave(here("figs","Fig1sup2-kongwa-ab-distributions-byage-vsp3-pgp3.TIFF"),plot=p3,device="tiff",width=5,height=6)
+ggsave(here::here("figs","Fig1sup2-kongwa-ab-distributions-byage-vsp3-pgp3.pdf"),plot=p3,device="pdf",width=5,height=6)
+ggsave(here::here("figs","Fig1sup2-kongwa-ab-distributions-byage-vsp3-pgp3.TIFF"),plot=p3,device="tiff",width=5,height=6)
 
 ```
 
@@ -380,7 +380,7 @@ dl <- dl %>%
 # that includes cutoff values
 # and seropositive indicators
 #-----------------------------
-saveRDS(dl,file=here("data","kongwa_analysis2.rds"))
+saveRDS(dl,file=here::here("data","kongwa_analysis2.rds"))
 
 ```
 

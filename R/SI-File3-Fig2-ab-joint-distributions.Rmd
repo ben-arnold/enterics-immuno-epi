@@ -3,13 +3,15 @@ title: Enteropathogen antibody dynamics and force of infection among children in
 subtitle: Supplementary Information File 3. Joint distributions of antibody response.
 output: 
   html_document:
-    theme: default
     highlight: haddock
-    toc: true
-    toc_depth: 3
+    theme: default
+    code_folding: hide
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
     toc_float:
-      collapsed: true
-      smooth_scroll: true
+      collapsed: yes
+      smooth_scroll: yes
 ---
 
 # Notebook summary
@@ -23,7 +25,7 @@ This notebook summarizes the joint distribution of antibody responses in each co
 #-----------------------------
 # set to local workspace
 library(here)
-here()
+here::here()
 
 # load packages
 library(tidyverse)
@@ -33,10 +35,9 @@ library(ellipse)
 library(RColorBrewer)
 
 # set up for parallel computing
-# configure for a laptop (use only 3 cores)
 library(foreach)
 library(doParallel)
-registerDoParallel(cores=3)
+registerDoParallel(cores = detectCores() - 1)
 
 # bright color blind palette:  https://personal.sron.nl/~pault/ 
 cblack <- "#000004FF"
@@ -69,9 +70,9 @@ log10labs <- c(
 #--------------------------------
 # load the various datasets
 #--------------------------------
-dh <- readRDS(here("data","haiti_analysis.rds"))
-dk <- readRDS(here("data","asembo_analysis.rds"))
-dt <- readRDS(here("data","kongwa_analysis.rds"))
+dh <- readRDS(here::here("data","haiti_analysis.rds"))
+dk <- readRDS(here::here("data","asembo_analysis.rds"))
+dt <- readRDS(here::here("data","kongwa_analysis.rds"))
 
 #--------------------------------
 # subset to common variables
@@ -81,8 +82,8 @@ dh <- dh %>%
   mutate(country="Haiti") %>%
   select(country,id,sid=sampleid,antigen,antigenf,logmfi)
 dk <- dk %>% 
-  mutate(country="Kenya",sid = ifelse(time=="A","1","2")) %>%
-  select(country,id=childid,sid,antigen,antigenf,logmfi)
+  mutate(country="Kenya",sid = ifelse(time=="A","1","2"),id=as.integer(childid)) %>%
+  select(country,id,sid,antigen,antigenf,logmfi)
   
 dt <- dt %>% 
   mutate(country="Tanzania",sid="1") %>%
@@ -202,8 +203,8 @@ complot <- ggplot(data=dw,aes(x=x,y=y)) +
 complot
 
 # save PDF and TIFF versions
-ggsave(here("figs","Fig2-ab-scatter-composite.pdf"),plot=complot,device=cairo_pdf,width=13,height=15)
-ggsave(here("figs","Fig2-ab-scatter-composite.TIFF"),plot=complot,device="tiff",width=13,height=15)
+ggsave(here::here("figs","Fig2-ab-scatter-composite.pdf"),plot=complot,device=cairo_pdf,width=13,height=15)
+ggsave(here::here("figs","Fig2-ab-scatter-composite.TIFF"),plot=complot,device="tiff",width=13,height=15)
 ```
 
 # Individual country pairs plots
@@ -264,7 +265,7 @@ scatterloess<-function(x,y,cex=0.4,...){
 
 
 ## Haiti
-```{r haiti pairs plot,fig.width=7,fig.height=7}
+```{r haiti pairs plot,fig.width=9,fig.height=9}
 
 # list the enteric antigens in Haiti and formatted labels for them
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","etec","norogi","norogii")
@@ -283,7 +284,7 @@ pairs(hmat[mbavars],labels=mbalabs,cex=0.1,las=1,
 ```
 
 ## Kenya
-```{r kenya pairs plot,fig.width=7,fig.height=7}
+```{r kenya pairs plot,fig.width=9,fig.height=9}
 # list the enteric antigens in Asembo Kenya and formatted labels for them
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","etec","cholera","p18","p39")
 
@@ -304,7 +305,7 @@ pairs(kmat[mbavars],labels=mbalabs,cex=0.1,las=1,
 ## Tanzania
 
 There are a few blank panels in this figure. The reason is that some antigens were included only in year 1, and the cholera beta toxin was only included in years 2-4.  Table 1 and the Methods of the article include additional details.
-```{r tanzania pairs plot,fig.width=7,fig.height=7}
+```{r tanzania pairs plot,fig.width=9,fig.height=9}
 
 # list the enteric antigens in Kongwa, Tanzania and formatted labels for them
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","etec","cholera","p18","p39")

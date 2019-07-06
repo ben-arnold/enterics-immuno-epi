@@ -24,7 +24,7 @@ In the Kenya and Haiti cohorts, plot empirical seroconversion rates alongside si
 # preamble
 #-----------------------------
 library(here)
-here()
+here::here()
 
 # load packages
 library(tidyverse)
@@ -45,11 +45,11 @@ cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2",
 # Fig6-asembo-incidence-analysis.Rmd
 # Table2-haiti-incidence-analysis.Rmd
 #-----------------------------
-dk <- readRDS(here("output","asembo-enteric-ab-ests-seroprev-vs-rates.rds")) %>%
+dk <- readRDS(here::here("output","asembo-enteric-ab-ests-seroprev-vs-rates.rds")) %>%
   mutate(country = "Kenya") %>%
   filter(method == "Seropositivity cutoff" & pathogen != "V. cholerae")
 
-dh <- readRDS(here("output","haiti-enteric-ab-ests-seroprev-vs-rates.rds")) %>%
+dh <- readRDS(here::here("output","haiti-enteric-ab-ests-seroprev-vs-rates.rds")) %>%
   mutate(country = "Haiti") %>%
   filter(method == "Seropositivity cutoff")
 
@@ -58,10 +58,10 @@ dh <- readRDS(here("output","haiti-enteric-ab-ests-seroprev-vs-rates.rds")) %>%
 # created with 
 # SI-File8-sampling-interval-simulation.Rmd
 #-----------------------------
-ksim <- readRDS(here("output","asembo-imputation-simulation-results.rds")) %>%
+ksim <- readRDS(here::here("output","asembo-imputation-simulation-results.rds")) %>%
   mutate(country = "Kenya")
 
-hsim <- readRDS(here("output","haiti-imputation-simulation-results.rds")) %>%
+hsim <- readRDS(here::here("output","haiti-imputation-simulation-results.rds")) %>%
   mutate(country = "Haiti")
 
 dsim <- bind_rows(ksim,hsim) %>%
@@ -121,8 +121,8 @@ kplot_foi <- ggplot(data=dsim_kplot,aes(x=antigenf,y=seroi)) +
 
 kplot_foi
 
-ggsave(file=here("figs","Fig7a-asembo-foi-simulation.pdf"),plot=kplot_foi,device=cairo_pdf,height=4,width=8)
-ggsave(file=here("figs","Fig7a-asembo-foi-simulation.TIFF"),plot=kplot_foi,device="tiff",height=4,width=8)
+ggsave(file=here::here("figs","Fig7a-asembo-foi-simulation.pdf"),plot=kplot_foi,device=cairo_pdf,height=4,width=8)
+ggsave(file=here::here("figs","Fig7a-asembo-foi-simulation.TIFF"),plot=kplot_foi,device="tiff",height=4,width=8)
 
 ```
 
@@ -165,8 +165,8 @@ hplot_foi <- ggplot(data=dsim_hplot,aes(x=antigenf,y=seroi)) +
 
 hplot_foi
 
-ggsave(file=here("figs","Fig7b-haiti-foi-simulation.pdf"),plot=hplot_foi,device=cairo_pdf,height=4,width=8)
-ggsave(file=here("figs","Fig7b-haiti-foi-simulation.TIFF"),plot=hplot_foi,device="tiff",height=4,width=8)
+ggsave(file=here::here("figs","Fig7b-haiti-foi-simulation.pdf"),plot=hplot_foi,device=cairo_pdf,height=4,width=8)
+ggsave(file=here::here("figs","Fig7b-haiti-foi-simulation.TIFF"),plot=hplot_foi,device="tiff",height=4,width=8)
 
 ```
 

@@ -24,7 +24,7 @@ Create a composite figure that summarizes the relationship between seroconversio
 # preamble
 #-----------------------------
 library(here)
-here()
+here::here()
 
 # load packages
 library(tidyverse)
@@ -67,9 +67,9 @@ cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2",
 # Fig6-asembo-incidence-analysis.Rmd
 # Table2-haiti-incidence-analysis.Rmd
 #-----------------------------
-dk <- readRDS(here("output","asembo-enteric-ab-ests-seroprev-vs-rates.rds"))
-dh <- readRDS(here("output","haiti-enteric-ab-ests-seroprev-vs-rates.rds"))
-dha <- readRDS(here("output","haiti-enteric-ab-ests-seroprev-vs-rates-byage.rds"))
+dk <- readRDS(here::here("output","asembo-enteric-ab-ests-seroprev-vs-rates.rds"))
+dh <- readRDS(here::here("output","haiti-enteric-ab-ests-seroprev-vs-rates.rds"))
+dha <- readRDS(here::here("output","haiti-enteric-ab-ests-seroprev-vs-rates-byage.rds"))
 
 
 #-----------------------------
@@ -210,8 +210,8 @@ ivsp_composite <- grid.arrange(pk,ph,ncol=1,nrow=2)
 
 
 # save PDF and TIFF versions
-ggsave(file=here("figs","Fig5-asembo-haiti-foi-vs-seroprev.pdf"),plot=ivsp_composite,device=cairo_pdf,height=8,width=6)
-ggsave(file=here("figs","Fig5-asembo-haiti-foi-vs-seroprev.TIFF"),plot=ivsp_composite,device="tiff",height=8,width=6)
+ggsave(file=here::here("figs","Fig5-asembo-haiti-foi-vs-seroprev.pdf"),plot=ivsp_composite,device=cairo_pdf,height=8,width=6)
+ggsave(file=here::here("figs","Fig5-asembo-haiti-foi-vs-seroprev.TIFF"),plot=ivsp_composite,device="tiff",height=8,width=6)
 
   
 ```
@@ -263,8 +263,8 @@ pha <- ggplot(data=dha,aes(x=seroprev,y=seroi,color=antigeno,fill=antigeno)) +
 pha
 
 # save PDF and TIFF versions
-ggsave(file=here("figs","Fig5sup1-haiti-foi-vs-seroprev-byage.pdf"),plot=pha,device=cairo_pdf,height=3,width=11)
-ggsave(file=here("figs","Fig5sup1-haiti-foi-vs-seroprev-byage.TIFF"),plot=pha,device="tiff",height=3,width=11)
+ggsave(file=here::here("figs","Fig5sup1-haiti-foi-vs-seroprev-byage.pdf"),plot=pha,device=cairo_pdf,height=3,width=11)
+ggsave(file=here::here("figs","Fig5sup1-haiti-foi-vs-seroprev-byage.TIFF"),plot=pha,device="tiff",height=3,width=11)
   
 ```
 

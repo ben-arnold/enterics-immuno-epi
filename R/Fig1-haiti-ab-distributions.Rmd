@@ -1,11 +1,11 @@
 ---
-title: Enteropathogen seroepidemiology among children in low-resource settings
+title: Enteropathogen antibody dynamics and force of infection among children in low-resource settings
 subtitle: Haiti antibody distributions and seropositivity cutoffs, Figure 1
 output:
   html_document:
     highlight: haddock
     theme: default
-    code_folding: show
+    code_folding: hide
     df_print: paged
     toc: yes
     toc_depth: '3'
@@ -28,7 +28,7 @@ It fits Gaussian mixture models to the distributions, and where possible, estima
 # preamble
 #-----------------------------
 library(here)
-here()
+here::here()
 
 # load packages
 library(tidyverse)
@@ -78,7 +78,7 @@ vircols <- viridis(n=7,alpha=1,begin=0.2,end=0.97)
 # created with 
 # haiti-enteric-ab-data-format.Rmd
 #-----------------------------
-dl <- readRDS(here("data","haiti_analysis.rds"))
+dl <- readRDS(here::here("data","haiti_analysis.rds"))
 
 # list the enteric antigens and formatted labels for them
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","etec","norogi","norogii")
@@ -385,8 +385,8 @@ p2 <- ggplot(data=dl,aes(x=logmfi,fill=pathogen,color=pathogen)) +
 p2
 
 # save PDF and TIFF versions
-ggsave(here("figs","Fig1-haiti-ab-distributions-byage.pdf"),plot=p2,device=cairo_pdf,width=16,height=6)
-ggsave(here("figs","Fig1-haiti-ab-distributions-byage.TIFF"),plot=p2,device="tiff",width=16,height=6)
+ggsave(here::here("figs","Fig1-haiti-ab-distributions-byage.pdf"),plot=p2,device=cairo_pdf,width=16,height=6)
+ggsave(here::here("figs","Fig1-haiti-ab-distributions-byage.TIFF"),plot=p2,device="tiff",width=16,height=6)
 
 ```
 
@@ -408,7 +408,7 @@ dl <- dl %>%
 # that includes cutoff values
 # and seropositive indicators
 #-----------------------------
-saveRDS(dl,file=here("data","haiti_analysis2.rds"))
+saveRDS(dl,file=here::here("data","haiti_analysis2.rds"))
 
 ```
 

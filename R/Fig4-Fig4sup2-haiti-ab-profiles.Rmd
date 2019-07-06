@@ -24,7 +24,7 @@ This script plots individual antibody trajectories in the Haiti cohort over succ
 # preamble
 #-----------------------------
 library(here)
-here()
+here::here()
 
 # load packages
 library(tidyverse)
@@ -58,7 +58,7 @@ cgrey <- "#777777"
 # created with 
 # asembo-enteric-ab-data-format.Rmd
 #-----------------------------
-dl <- readRDS(here("data","haiti_analysis2.rds"))
+dl <- readRDS(here::here("data","haiti_analysis2.rds"))
 
 # list the enteric antigens and formatted labels for them
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","etec","salb","sald","norogi","norogii")
@@ -314,8 +314,8 @@ indivp_meas2 <- ggplot(filter(dl2pp,!is.na(sero_comp) & measnum<=6), aes(x=measn
 indivp_meas2
 
 # save PDF and TIFF versions
-ggsave(filename=here("figs","Fig4-haiti-indiv-ab-trajectories-meas.pdf"),plot = indivp_meas2, device=cairo_pdf, width=6,height=12)
-ggsave(filename=here("figs","Fig4-haiti-indiv-ab-trajectories-meas.TIFF"),plot = indivp_meas2, device='tiff', width=6,height=12)
+ggsave(filename=here::here("figs","Fig4-haiti-indiv-ab-trajectories-meas.pdf"),plot = indivp_meas2, device=cairo_pdf, width=6,height=12)
+ggsave(filename=here::here("figs","Fig4-haiti-indiv-ab-trajectories-meas.TIFF"),plot = indivp_meas2, device='tiff', width=6,height=12)
 
 ```
 
@@ -339,7 +339,7 @@ ci_lb <- apply(dl3[c("n","q")],1,function(x) binom.test(x,alternative="two.sided
 ci_ub <- apply(dl3[c("n","q")],1,function(x) binom.test(x,alternative="two.sided")$conf.int[2])
 dl3 <- dl3 %>%
   bind_cols(data.frame(ci_lb,ci_ub)) %>%
-  arrange(antigenf,sero_comp,measnumf)
+  arrange(antigenf,measnumf,sero_comp)
   
 ```
 ```{r figure proportion in each class by measurement, fig.width=7,fig.height=12, warning=FALSE}
@@ -371,8 +371,8 @@ sero_comp_p <- ggplot(data=dl3, aes(x=measnumf, y=prev,color=sero_comp) ) +
 sero_comp_p
 
 # save PDF and TIFF versions
-ggsave(filename=here("figs","Fig4sup2-haiti-ab-trajectory-meas.pdf"),plot = sero_comp_p, device=cairo_pdf, width=5,height=12)
-ggsave(filename=here("figs","Fig4sup2-haiti-ab-trajectories-meas.TIFF"),plot = sero_comp_p, device='tiff', width=5,height=12)
+ggsave(filename=here::here("figs","Fig4sup2-haiti-ab-trajectory-meas.pdf"),plot = sero_comp_p, device=cairo_pdf, width=5,height=12)
+ggsave(filename=here::here("figs","Fig4sup2-haiti-ab-trajectories-meas.TIFF"),plot = sero_comp_p, device='tiff', width=5,height=12)
 
 ```
 

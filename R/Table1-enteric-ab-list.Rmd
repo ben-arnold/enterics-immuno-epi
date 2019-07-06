@@ -1,6 +1,6 @@
 ---
 title: Enteropathogen antibody dynamics and force of infection among children in low-resource settings
-subtitle: Table 1, summary of antibody measurements and cutoffs by cohort
+subtitle: Table 1. Summary of antibody measurements and cutoffs by cohort
 output: 
   html_document:
     highlight: haddock
@@ -30,7 +30,7 @@ This notebook draws on datasets created by the notebooks that estimate antibody 
 # preamble
 #-----------------------------
 library(here)
-here()
+here::here()
 library(tidyverse)
 library(kableExtra)
 
@@ -43,9 +43,9 @@ library(kableExtra)
 #-----------------------------
 # load the formatted data
 #-----------------------------
-dh <- readRDS(here("data","haiti_analysis2.rds"))
-da <- readRDS(here("data","asembo_analysis2.rds"))
-dk <- readRDS(here("data","kongwa_analysis2.rds"))
+dh <- readRDS(here::here("data","haiti_analysis2.rds"))
+da <- readRDS(here::here("data","asembo_analysis2.rds"))
+dk <- readRDS(here::here("data","kongwa_analysis2.rds"))
 
 # re-order antigens in Kenya for consistency with other cohorts
 da <- da %>%

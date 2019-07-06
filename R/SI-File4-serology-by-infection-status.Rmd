@@ -1,6 +1,6 @@
 ---
 title: Enteropathogen antibody dynamics and force of infection among children in low-resource settings
-subtitle: Supplementary Information File 4- Antibody response among Kenyan children with- and without infections detected in stool
+subtitle: Supplementary Information File 4. Antibody response among Kenyan children with- and without infections detected in stool
 output:
   html_document:
     highlight: haddock
@@ -32,7 +32,7 @@ The analyses also show that nearly all children with infections identified in st
 # preamble
 #-----------------------------
 library(here)
-here()
+here::here()
 
 # load packages
 library(tidyverse)
@@ -63,7 +63,7 @@ Among 133 children with stool tested during weekly diarrheal surveillance (n=216
 # created with 
 # asembo-enteric-ab-data-format.Rmd
 #-----------------------------
-ds <- readRDS(here::here("data","asembo_stool.rds"))
+ds <- readRDS(here::here::here("data","asembo_stool.rds"))
 
 # set measurement time to "B" to merge to the serology data
 # by matching the stool measurements to follow-up IgG
@@ -79,7 +79,7 @@ ds <- ds %>%
 # asembo-enteric-ab-data-format.Rmd -->
 # Fig1sup3-asembo-ab-distributions.Rmd
 #-----------------------------
-dl <- readRDS(here::here("data","asembo_analysis2.rds")) %>%
+dl <- readRDS(here::here::here("data","asembo_analysis2.rds")) %>%
   ungroup() 
 
 #-----------------------------
@@ -372,8 +372,8 @@ pcrypto_long <- ggplot(data=filter(dcr4,seroconv!="no seroconversion"),aes(x=vis
 pcrypto_long
 
 # save PDF and TIFF versions
-ggsave(here::here("figs","asembo-mfi-inf-crypto.pdf"),plot=pcrypto_long,device=cairo_pdf,width=5,height=4)
-ggsave(here::here("figs","asembo-mfi-inf-crypto.TIFF"),plot=pcrypto_long,device="tiff",width=5,height=4)
+ggsave(here::here::here("figs","asembo-mfi-inf-crypto.pdf"),plot=pcrypto_long,device=cairo_pdf,width=5,height=4)
+ggsave(here::here::here("figs","asembo-mfi-inf-crypto.TIFF"),plot=pcrypto_long,device="tiff",width=5,height=4)
 
 ```
 
@@ -430,8 +430,8 @@ pcrypto_time <- ggplot(data=filter(dcr5,logmfi>=serocut),aes(x=infwk,y=logmfi)) 
 pcrypto_time
 
 # save PDF and TIFF versions
-ggsave(here::here("figs","asembo-mfi-v-inf-wks-crypto.pdf"),plot=pcrypto_time,device=cairo_pdf,width=7,height=4)
-ggsave(here::here("figs","asembo-mfi-v-inf-wks-crypto.TIFF"),plot=pcrypto_time,device="tiff",width=7,height=4)
+ggsave(here::here::here("figs","asembo-mfi-v-inf-wks-crypto.pdf"),plot=pcrypto_time,device=cairo_pdf,width=7,height=4)
+ggsave(here::here::here("figs","asembo-mfi-v-inf-wks-crypto.TIFF"),plot=pcrypto_time,device="tiff",width=7,height=4)
 ```
 
 Most IgG responses remained high irrespective of time since infection over a range of 5 to 25 weeks. As with the longitudinal trajectories, this figure shows the three children (IDs: 10, 102, 42) who had confirmed infections but did not have IgG levels above seropositivity cutoffs for either Cp17 or Cp23 at their follow-up measurement 9-23 weeks later. Time since infection does not seem to explain why these three children had low IgG levels. 
@@ -708,8 +708,8 @@ pgiar_long <- ggplot(data=filter(dgi,seroconv!="no seroconversion"),aes(x=visit,
 pgiar_long
 
 # save PDF and TIFF versions
-ggsave(here::here("figs","asembo-mfi-inf-giardia.pdf"),plot=pgiar_long,device=cairo_pdf,width=5,height=4)
-ggsave(here::here("figs","asembo-mfi-inf-giardia.TIFF"),plot=pgiar_long,device="tiff",width=5,height=4)
+ggsave(here::here::here("figs","asembo-mfi-inf-giardia.pdf"),plot=pgiar_long,device=cairo_pdf,width=5,height=4)
+ggsave(here::here::here("figs","asembo-mfi-inf-giardia.TIFF"),plot=pgiar_long,device="tiff",width=5,height=4)
 ```
 
 Longitudinal IgG trajectories show that there were two children (IDs: 101, 37) who had confirmed _Giardia_ infection in a diarrhea stool between enrollment and follow-up, but did not seroconvert to either the VSP-3 or VSP-5 antigens based on the ROC cutoff (though IgG levels did exceed the mixture model-based cutoff). Child ID=14 was one of two children infected at their first measurement, at enrollment.  Seven children with confirmed infections between enrollment and follow-up were seropositive at enrollment to both antigens based on the ROC cutoff, suggesting a prior infection.
@@ -772,8 +772,8 @@ pgiar_time <- ggplot(data=filter(dgi2,!childid %in% c("101","14","37")),aes(x=in
 pgiar_time
 
 # save PDF and TIFF versions
-ggsave(here::here("figs","asembo-mfi-v-inf-wks-giardia.pdf"),plot=pgiar_time,device=cairo_pdf,width=7,height=4)
-ggsave(here::here("figs","asembo-mfi-v-inf-wks-giardia.TIFF"),plot=pgiar_time,device="tiff",width=7,height=4)
+ggsave(here::here::here("figs","asembo-mfi-v-inf-wks-giardia.pdf"),plot=pgiar_time,device=cairo_pdf,width=7,height=4)
+ggsave(here::here::here("figs","asembo-mfi-v-inf-wks-giardia.TIFF"),plot=pgiar_time,device="tiff",width=7,height=4)
 ```
 
 Most IgG responses remained high irrespective of time since infection over a range of 0 to 28 weeks. As with the longitudinal trajectories, this figure shows the two children (IDs: 101, 37) who had confirmed infections but did not have IgG levels above ROC seropositivity cutoffs for either VSP-3 or VSP-5 at their follow-up measurement 16-23 weeks later. Time since infection does not seem to explain why these three children had low IgG levels, as they are clear outliers from the distribution of the other children.

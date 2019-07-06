@@ -1,5 +1,5 @@
 ---
-title: Enteropathogen seroepidemiology among children in low-resource settings
+title: Enteropathogen antibody dynamics and force of infection among children in low-resource settings
 subtitle: Rates of seroconversion and seroreversion in Asembo, Kenya, Figure 6
 output:
   html_document:
@@ -30,7 +30,7 @@ The primary analysis uses a definition of seroconversion whereby IgG levels cros
 # preamble
 #-----------------------------
 library(here)
-here()
+here::here()
 
 # load packages
 library(tidyverse)
@@ -70,7 +70,7 @@ cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2",
 # asembo-enteric-ab-data-format.Rmd -->
 # Fig1sup3-asembo-ab-distributions.Rmd
 #-----------------------------
-dl <- readRDS(here("data","asembo_analysis2.rds"))
+dl <- readRDS(here::here("data","asembo_analysis2.rds"))
 
 ```
 
@@ -528,7 +528,7 @@ The incidence proportion summarizes the cumulative risk over the period, but mas
 
 # Incidence rate figure
 
-These estimates contribute to Figure 6 in the article, but they are first combined with cross-sectional estimators of the force of infection in the notebook `SI-File6-Fig6-asembo-cross-sectional-FOI-estimation.Rmd`
+These estimates contribute to Figure 6 in the article, but they are first combined with cross-sectional estimators of the force of infection in the notebook `SI-File7-Fig6-asembo-cross-sectional-FOI-estimation.Rmd`
 ```{r seroincidence rate figure}
 
 # sort pathogens by rates
@@ -625,10 +625,10 @@ pserop
 
 # Save incidence estimates
 ```{r save estimates}
-saveRDS(rate_ests_long,file=here("output","asembo-enteric-ab-ests-incidencerates.rds"))
-saveRDS(est_seroi,file=here("output","asembo-enteric-ab-ests-seroconversion.rds"))
-saveRDS(est_seror,file=here("output","asembo-enteric-ab-ests-seroreversion.rds"))
-saveRDS(d_serop,file=here("output","asembo-enteric-ab-ests-seroprev-vs-rates.rds"))
+saveRDS(rate_ests_long,file=here::here("output","asembo-enteric-ab-ests-incidencerates.rds"))
+saveRDS(est_seroi,file=here::here("output","asembo-enteric-ab-ests-seroconversion.rds"))
+saveRDS(est_seror,file=here::here("output","asembo-enteric-ab-ests-seroreversion.rds"))
+saveRDS(d_serop,file=here::here("output","asembo-enteric-ab-ests-seroprev-vs-rates.rds"))
 
 ```
 

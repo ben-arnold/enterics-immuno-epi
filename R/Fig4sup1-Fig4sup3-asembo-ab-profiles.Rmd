@@ -24,7 +24,7 @@ This script plots individual antibody trajectories in the Asembo, Kenya cohort f
 # preamble
 #-----------------------------
 library(here)
-here()
+here::here()
 
 # load packages
 library(tidyverse)
@@ -51,7 +51,7 @@ cgrey <- "#777777"
 # asembo-enteric-ab-data-format.Rmd -->
 # asembo-enteric-ab-distributions.Rmd
 #-----------------------------
-dl <- readRDS(here("data","asembo_analysis2.rds"))
+dl <- readRDS(here::here("data","asembo_analysis2.rds"))
 ```
 
 # Identify incident changes
@@ -243,8 +243,8 @@ pp2 <- ggplot(data=dl3,aes(x=svy,y=logmfi,group=factor(childid),color=icat_comp)
 pp2
 
 # save PDF and TIFF versions
-ggsave(here("figs","Fig4sup1-asembo-ab-trajectories.pdf"),plot=pp2,device=cairo_pdf,width=5,height=10)
-ggsave(here("figs","Fig4sup1-asembo-ab-trajectories.TIFF"),plot=pp2,device="tiff",width=5,height=10)
+ggsave(here::here("figs","Fig4sup1-asembo-ab-trajectories.pdf"),plot=pp2,device=cairo_pdf,width=5,height=10)
+ggsave(here::here("figs","Fig4sup1-asembo-ab-trajectories.TIFF"),plot=pp2,device="tiff",width=5,height=10)
 
 ```
 
@@ -293,8 +293,8 @@ sero_comp_p <- ggplot(data=dl4, aes(x=icat_comp, y=prev,color=icat_comp) ) +
 sero_comp_p
 
 # save PDF and TIFF versions
-ggsave(filename=here("figs","Fig4sup3-asembo-ab-trajectory-meas.pdf"),plot = sero_comp_p, device=cairo_pdf, width=5,height=10)
-ggsave(filename=here("figs","Fig4sup3-asembo-ab-trajectories-meas.TIFF"),plot = sero_comp_p, device='tiff', width=5,height=10)
+ggsave(filename=here::here("figs","Fig4sup3-asembo-ab-trajectory-meas.pdf"),plot = sero_comp_p, device=cairo_pdf, width=5,height=10)
+ggsave(filename=here::here("figs","Fig4sup3-asembo-ab-trajectories-meas.TIFF"),plot = sero_comp_p, device='tiff', width=5,height=10)
 
 ```
 

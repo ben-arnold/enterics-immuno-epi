@@ -1,6 +1,6 @@
 ---
 title: Enteropathogen antibody dynamics and force of infection among children in low-resource settings
-subtitle: "Supplementary Information File 5: Sensitivity analysis of fold-change in IgG used to identify incident boosting, incident waning, and presumed unexposed measurements."
+subtitle: Supplementary Information File 5. Sensitivity analysis of fold-change in IgG used to identify incident boosting, incident waning, and presumed unexposed measurements.
 output: 
   html_document:
     highlight: haddock
@@ -30,7 +30,7 @@ Each sensitivity analysis includes a brief written summary and figures to summar
 # preamble
 #-----------------------------
 library(here)
-here()
+here::here()
 
 library(tidyverse)
 library(psych)
@@ -86,7 +86,7 @@ The sensitivity analyses support the use of a 4-fold change in IgG criterion to 
 # haiti-enteric-ab-data-format.Rmd ->
 # Fig1-haiti-ab-distributions.Rmd
 #-----------------------------
-dl <- readRDS(here("data","haiti_analysis2.rds"))
+dl <- readRDS(here::here("data","haiti_analysis2.rds"))
 
 #-----------------------------
 # identify seropositive measures
@@ -349,7 +349,7 @@ pcols <- cbPalette[c(2,6)]
 # load Haiti seroconversion and seroreversion rate estimates 
 # from the primary analysis for a comparison
 # created by Table2-haiti-incidence-analysis.Rmd
-rate_ests <- readRDS(file=here("output","haiti-enteric-ab-ests-incidencerates.rds"))
+rate_ests <- readRDS(file=here::here("output","haiti-enteric-ab-ests-incidencerates.rds"))
 scr_plot <- rate_ests %>% mutate(outcome="incident boosting")
 srr_plot <- rate_ests %>% mutate(outcome="incident waning")
 
@@ -391,7 +391,7 @@ The results show that incident boosting rate (force of infection) estimates were
 # asembo-enteric-ab-data-format.Rmd -->
 # Fig1sup3-asembo-ab-distributions.Rmd
 #-----------------------------
-dl <- readRDS(here("data","asembo_analysis2.rds"))
+dl <- readRDS(here::here("data","asembo_analysis2.rds"))
 
 ```
 
@@ -548,7 +548,7 @@ pcols <- cbPalette[c(2,6)]
 # load Haiti seroconversion and seroreversion rate estimates 
 # from the primary analysis for a comparison
 # created by Fig6-asembo-incidence-analysis.Rmd
-rate_ests <- readRDS(file=here("output","asembo-enteric-ab-ests-incidencerates.rds"))
+rate_ests <- readRDS(file=here::here("output","asembo-enteric-ab-ests-incidencerates.rds"))
 scr_plot <- rate_ests %>% 
   filter(outcome=="seroconversion rate (force of infection)") %>% 
   mutate(outcome="incident boosting") %>% 
@@ -628,7 +628,7 @@ Taken together, this sensitivity analysis supports the use of an increase of +2 
 # haiti-enteric-ab-data-format.Rmd ->
 # haiti-enteric-ab-distributions.Rmd
 #-----------------------------
-dl <- readRDS(here("data","haiti_analysis2.rds"))
+dl <- readRDS(here::here("data","haiti_analysis2.rds"))
 
 # list the enteric antigens and formatted labels for them
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","etec","norogi","norogii")
@@ -885,7 +885,7 @@ plot_optchange(results=gridmix,classlab="Mixture model-based classification")
 # asembo-enteric-ab-data-format.Rmd ->
 # asembo-enteric-ab-distributions.Rmd
 #-----------------------------
-dl <- readRDS(here("data","asembo_analysis2.rds"))
+dl <- readRDS(here::here("data","asembo_analysis2.rds"))
 
 # list the enteric antigens and make formatted labels for them
 mbavars <- c("vsp3","vsp5","cp17","cp23","leca","salb","sald","etec","cholera","p18","p39")

@@ -1,6 +1,6 @@
 ---
 title: Enteropathogen antibody dynamics and force of infection among children in low-resource settings
-subtitle: Sampling interval simulation and sensitivity analyses in Haiti and Kenya
+subtitle: "Supplementary Information File 8: Sampling interval simulation and sensitivity analyses in Haiti and Kenya"
 output: 
   html_document:
     highlight: haddock
@@ -30,7 +30,7 @@ The entire simulation routine is repeated for the Haiti and Kenya cohorts. Withi
 # preamble
 #-----------------------------
 library(here)
-here()
+here::here()
 
 # load packages
 library(tidyverse)
@@ -58,7 +58,7 @@ cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2",
 # haiti-enteric-ab-data-format.Rmd ->
 # Fig1-haiti-ab-distributions.Rmd
 #-----------------------------
-dl <- readRDS(here("data", "haiti_analysis2.rds"))
+dl <- readRDS(here::here("data", "haiti_analysis2.rds"))
 ```
 
 Identify seropositive measurements
@@ -525,8 +525,8 @@ psim_ds <- ggplot(data = filter(d_all, sinterval != "daily"), aes(x = agedays/36
 psim_ds
 
 # save the figures
-# ggsave(here("figs", "haiti-interval-sim-example1.pdf"), plot = psim, device = cairo_pdf, width = 7, height = 5)
-# ggsave(here("figs", "haiti-interval-sim-example2.pdf"), plot = psim_ds, device = cairo_pdf, width = 7, height = 5)
+# ggsave(here::here("figs", "haiti-interval-sim-example1.pdf"), plot = psim, device = cairo_pdf, width = 7, height = 5)
+# ggsave(here::here("figs", "haiti-interval-sim-example2.pdf"), plot = psim_ds, device = cairo_pdf, width = 7, height = 5)
 ```
 
 
@@ -535,7 +535,7 @@ psim_ds
 Use the boosting imputation algorithm described above to simulate 100 datasets with daily resolution for each child's IgG levels for each antibody. Downsample the time series to IgG measures every 30 days.
 
 
-```{r haiti imputation simulation, eval=FALSE}
+```{r haiti imputation simulation, eval=TRUE}
 #-------------------------------
 # simulate 100 datasets,
 # stored in a big data.frame
@@ -564,7 +564,7 @@ end_time - start_time
 # save simulation data since
 # it takes some time to generate
 #-------------------------------
-saveRDS(simdata, file = here("output", "haiti-imputation-simdata.rds"))
+saveRDS(simdata, file = here::here("output", "haiti-imputation-simdata.rds"))
 ```
 
 ## Seroconversion rate estimates
@@ -578,7 +578,7 @@ Estimates of the seroconversion rates. The rates assume the incident seroconvers
 # combine information across
 # antibodies for seroconversion
 #-----------------------------
-simdata <- readRDS(file = here("output", "haiti-imputation-simdata.rds"))
+simdata <- readRDS(file = here::here("output", "haiti-imputation-simdata.rds"))
 ```
 
 ```{r summarize haiti simulations}
@@ -654,13 +654,11 @@ sim_res2 <- sim_res %>%
   ungroup() %>%
   mutate(antigenf=factor(antigenf,levels=levels(dsim$antigenf))) %>%
   select(antigenf,sinterval,simnum,everything()) %>%
-  # estimate the relative rate compared with a 30 day sampling interval
+  # estimate the rate difference compared with a 30 day sampling interval
   group_by(antigenf,simnum) %>%
   mutate(
     seroi30 = max(ifelse(sinterval==30,seroi,-99)),
     seror30 = max(ifelse(sinterval==30,seror,-99)),
-    ratio30i = seroi/seroi30,
-    ratio30r = seror/seror30,
     diff30i = seroi-seroi30,
     diff30r = seror-seror30
   ) %>%
@@ -669,7 +667,7 @@ sim_res2 <- sim_res %>%
 #-----------------------------
 # save the simulation results
 #-----------------------------
-saveRDS(sim_res2,file=here("output","haiti-imputation-simulation-results.rds"))
+saveRDS(sim_res2,file=here::here("output","haiti-imputation-simulation-results.rds"))
 
 ```  
 
@@ -831,7 +829,7 @@ simres_ratep <- ggplot(data=sim_res_plot,aes(y=seroi,color=antigenf)) +
 simres_ratep
 
 # save a figure
-# ggsave(filename = here("figs","haiti-interval-sim-rate-ests.pdf"), plot = simres_ratep,device = cairo_pdf, width = 3.5, height = 6)
+# ggsave(filename = here::here("figs","haiti-interval-sim-rate-ests.pdf"), plot = simres_ratep,device = cairo_pdf, width = 3.5, height = 6)
 
 # print medians
 sim_res_plot %>%
@@ -874,7 +872,7 @@ simres_diffp <- ggplot(data=sim_res_diff,aes(x=factor(sinterval),y=diff30i,color
 simres_diffp
 
 # save a figure
-# ggsave(filename = here("figs","haiti-interval-sim-rate-diff.pdf"), plot = simres_diffp,device = cairo_pdf, width = 3.5, height = 6)
+# ggsave(filename = here::here("figs","haiti-interval-sim-rate-diff.pdf"), plot = simres_diffp,device = cairo_pdf, width = 3.5, height = 6)
 
 # print median differences
 sim_res_diff %>%
@@ -890,50 +888,6 @@ sim_res_diff %>%
 
 ```
 
-## Figure: ratio of seroconversion rates
-
-**Figure caption:** Simulation-based estimates of the fold-decrease in seroconversion rates (force of infection) in the Haitian cohort with longer sampling intervals. Estimates were generated through simulation of longitudinal IgG boosting and waning kinetics with daily resolution using boosting and decay parameters estimated from Haitian children ages 0-11 years old, which were then down-sampled at different frequencies. Points represent each of the 100 estimates from the simulated datasets and horizontal lines indicate median differences from the reference sampling interval of 30 days. Across pathogens, median differences in rates measured with a 360 day sampling interval were 50-70% lower than when estimated with a 30-day sampling interval.
-
-
-```{r simulation figure rate ratio,fig.width=5,fig.height=8}
-pcols <- cbPalette[c(2,3,4,6,8,8,7)]
-sim_res_rr <- sim_res_plot 
-
-simres_rrp <- ggplot(data=sim_res_rr,aes(x=factor(sinterval),y=ratio30i,color=antigenf)) +
-  facet_wrap(~antigenf,ncol=2)+
-  geom_jitter(width=0.15,alpha=0.3,pch=19,size=0.25)+
-  stat_summary(fun.y = median, fun.ymin = median, fun.ymax = median,
-                 geom = "crossbar", width = 0.5,color="black",size=0.2)+
-  annotate("text",x=1,y=0.9,label="ref.",size=2,color="gray20")+
-  scale_y_continuous(breaks=seq(1,0.2,by=-0.2),trans="log")+
-  scale_color_manual(values=pcols)+
-  coord_cartesian(ylim=c(0.2,1))+
-  labs(y="ratio of seroconversion rates, 100 simulations",x="sampling interval, days") +
-  theme_minimal()+
-  theme(
-    legend.position="none",
-    strip.text=element_text(size=8)
-  )
-
-simres_rrp
-
-# save a figure
-# ggsave(filename = here("figs","haiti-interval-sim-rate-ratio.pdf"), plot = simres_rrp,device = cairo_pdf, width = 3.2, height = 6)
-
-# print median ratios
-sim_res_rr %>%
-  group_by(antigenf,sinterval) %>%
-  select(antigenf,sinterval,ratio30i,ratio30r) %>%
-  summarize_all(median) %>%
-  knitr::kable(
-  digits = c(0,0,2,2),
-  caption = "Median ratio in seroconversion and seroreversion rates per year at risk across 100 simulated datasets downsampled at different frequencies, with a 30-day sampling interval as the reference.",
-  col.names = c("Antibody", "Sampling\ninterval (days)","Seroconversion\nrate","Seroreversion\nrate")
-) %>%
-  kable_styling(bootstrap_options = c("striped"), full_width = TRUE) 
-```
-
-
 # Kenya
 
 ## Load the Kenya data
@@ -945,7 +899,7 @@ sim_res_rr %>%
 # asembo-enteric-ab-data-format.Rmd ->
 # Fig1sup3-asembo-ab-distributions.Rmd
 #-----------------------------
-dl <- readRDS(here("data", "asembo_analysis2.rds"))
+dl <- readRDS(here::here("data", "asembo_analysis2.rds"))
 ```
 
 ## Estimates of IgG decay and half life
@@ -1197,7 +1151,7 @@ psim_ds
 
 Use the boosting imputation algorithm described above to simulate 100 datasets with daily resolution for each child's IgG levels for each antibody. Downsample the time series to IgG measures every 10 days.
 
-```{r kenya imputation simulation, eval=FALSE}
+```{r kenya imputation simulation, eval=TRUE}
 #-------------------------------
 # simulate 100 datasets,
 # stored in a big data.frame
@@ -1226,7 +1180,7 @@ end_time - start_time
 # save simulation data since
 # it takes some time to generate
 #-------------------------------
-saveRDS(simdata, file = here("output", "asembo-imputation-simdata.rds"))
+saveRDS(simdata, file = here::here("output", "asembo-imputation-simdata.rds"))
 ```
 
 ## Seroconversion rate estimates
@@ -1242,7 +1196,7 @@ In the Asembo simulations, we simulated measurement frequencies of 30, 90, and 1
 # combine information across
 # antibodies for seroconversion
 #-----------------------------
-simdata <- readRDS(file = here("output", "asembo-imputation-simdata.rds"))
+simdata <- readRDS(file = here::here("output", "asembo-imputation-simdata.rds"))
 ```
 
 ```{r kenya summarize simulations}
@@ -1317,13 +1271,11 @@ sim_res2 <- sim_res %>%
   ungroup() %>%
   mutate(antigenf=factor(antigenf,levels=levels(dsim$antigenf))) %>%
   select(antigenf,sinterval,simnum,everything()) %>%
-  # estimate the relative rate compared with a 30 day sampling interval
+  # estimate the rate difference compared with a 30 day sampling interval
   group_by(antigenf,simnum) %>%
   mutate(
     seroi30 = max(ifelse(sinterval==30,seroi,-99)),
     seror30 = max(ifelse(sinterval==30,seror,-99)),
-    ratio30i = seroi/seroi30,
-    ratio30r = seror/seror30,
     diff30i = seroi-seroi30,
     diff30r = seror-seror30
   ) %>%
@@ -1332,7 +1284,7 @@ sim_res2 <- sim_res %>%
 #-----------------------------
 # save the simulation results
 #-----------------------------
-saveRDS(sim_res2,file=here("output","asembo-imputation-simulation-results.rds"))
+saveRDS(sim_res2,file=here::here("output","asembo-imputation-simulation-results.rds"))
 
 ```  
 
@@ -1467,7 +1419,7 @@ simres_ratep <- ggplot(data=sim_res_plot,aes(y=seroi,color=antigenf)) +
 simres_ratep
 
 # save a figure
-# ggsave(filename = here("figs","asembo-interval-sim-rate-ests.pdf"), plot = simres_ratep,device = cairo_pdf, width = 3.4, height = 4.5)
+# ggsave(filename = here::here("figs","asembo-interval-sim-rate-ests.pdf"), plot = simres_ratep,device = cairo_pdf, width = 3.4, height = 4.5)
 
 # print medians
 sim_res_plot %>%
@@ -1511,7 +1463,7 @@ simres_diffp <- ggplot(data=sim_res_diff,aes(x=factor(sinterval),y=diff30i,color
 simres_diffp
 
 # save a figure
-# ggsave(filename = here("figs","asembo-interval-sim-rate-diff.pdf"), plot = simres_diffp,device = cairo_pdf, width = 3.5, height = 4.5)
+# ggsave(filename = here::here("figs","asembo-interval-sim-rate-diff.pdf"), plot = simres_diffp,device = cairo_pdf, width = 3.5, height = 4.5)
 
 # print median differences
 sim_res_diff %>%
@@ -1526,51 +1478,6 @@ sim_res_diff %>%
   kable_styling(bootstrap_options = c("striped"), full_width = TRUE) 
 
 ```
-
-## Figure: ratio of seroconversion rates
-
-**Figure caption:** Simulation-based estimates of the fold-decrease in seroconversion rates (force of infection) in the Asembo cohort with longer sampling intervals. Estimates were generated through simulation of longitudinal IgG boosting and waning kinetics with daily resolution using boosting and decay parameters estimated from Kenyan children ages 4-17 months old, which were then down-sampled at different frequencies. Points represent each of the 100 estimates from the simulated datasets and horizontal lines indicate median differences from the reference sampling interval of 30 days. Across pathogens, median rates measured with a 180 day sampling interval were 20-80% lower than when estimated with a 30-day sampling interval. Note that the large relative decline in rates for _E. histolytica_ and _Salmonella_ were in part due to very low seroconversion rates overall for those pathogens in this cohort, and do not represent large differences in rates (previous figures). 
-
-```{r kenya simulation figure rate ratio ,fig.width=5,fig.height=8}
-
-pcols <- cbPalette[c(2:4,6:8)]
-sim_res_rr <- sim_res_plot 
-
-simres_rrp <- ggplot(data=sim_res_rr,aes(x=factor(sinterval),y=ratio30i,color=antigenf)) +
-  facet_wrap(~antigenf,ncol=2)+
-  geom_jitter(width=0.15,alpha=0.3,pch=19,size=0.25)+
-  stat_summary(fun.y = median, fun.ymin = median, fun.ymax = median,
-                 geom = "crossbar", width = 0.5,color="black",size=0.2)+
-  annotate("text",x=1,y=0.9,label="ref.",size=2,color="gray20")+
-  scale_y_continuous(breaks=seq(1,0.2,by=-0.2),trans="log")+
-  scale_color_manual(values=pcols)+
-  coord_cartesian(ylim=c(0.18,1))+
-  labs(y="ratio of seroconversion rates, 100 simulations",x="sampling interval, days") +
-  theme_minimal()+
-  theme(
-    legend.position="none",
-    strip.text=element_text(size=8)
-  )
-
-simres_rrp
-
-# save a figure
-# ggsave(filename = here("figs","asembo-interval-sim-rate-ratio.pdf"), plot = simres_rrp,device = cairo_pdf, width = 3.2, height = 4.5)
-
-# print median ratios
-sim_res_rr %>%
-  group_by(antigenf,sinterval) %>%
-  select(antigenf,sinterval,ratio30i,ratio30r) %>%
-  summarize_all(median) %>%
-  knitr::kable(
-  digits = c(0,0,2,2),
-  caption = "Median ratio in seroconversion and seroreversion rates per year at risk across 100 simulated datasets downsampled at different frequencies, with a 30-day sampling interval as the reference.",
-  col.names = c("Antibody", "Sampling\ninterval (days)","Seroconversion\nrate","Seroreversion\nrate")
-) %>%
-  kable_styling(bootstrap_options = c("striped"), full_width = TRUE) 
-
-```
-
 
 # Session Info
 ```{r session info}

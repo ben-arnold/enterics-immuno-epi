@@ -1,11 +1,11 @@
 ---
 title: Enteropathogen antibody dynamics and force of infection among children in low-resource settings
-subtitle: Supplementary Information File 6. Estimation of force of infection assuming cross-sectional ("current status") data in Kenya. Figure 6.
+subtitle: Supplementary Information File 7. Estimation of force of infection assuming cross-sectional ("current status") data in Kenya. Figure 6.
 output:
   html_document:
     highlight: haddock
     theme: default
-    code_folding: show
+    code_folding: hide
     df_print: paged
     toc: yes
     toc_depth: '3'
@@ -27,7 +27,7 @@ This analysis focuses on the Asembo, Kenya cohort and estimates force of infecti
 # preamble
 #-----------------------------
 library(here)
-here()
+here::here()
 # load packages
 library(tidyverse)
 library(viridis)
@@ -73,7 +73,7 @@ vircols <- viridis(n=4,alpha=1,begin=0.2,end=0.97)
 # Fig1sup3-asembo-ab-distributions.Rmd -->
 # asembo-enteric-ab-agecurves.Rmd
 #-----------------------------
-d <- readRDS(here("output","asembo-enteric-ab-gamfits-seroprev.rds"))
+d <- readRDS(here::here("output","asembo-enteric-ab-gamfits-seroprev.rds"))
 
 #--------------------------------
 # exclude cholera beta toxin because
@@ -211,7 +211,7 @@ rcp <- function(h,r,t) h/(r+h)*(1-exp(-(r+h)*t))
 # technically not present in a 
 # cross-sectional survey.
 #--------------------------------
-dsr <- readRDS(here("data","asembo_analysis2.rds"))
+dsr <- readRDS(here::here("data","asembo_analysis2.rds"))
 dsr <- dsr %>%
   group_by(antigen,antigenf,childid) %>%
   mutate(measA=ifelse(time=="A",1,0),
@@ -509,7 +509,7 @@ dd <- d %>%
 m <- gam(seropos~s(age,bs="cr"),data=dd,family="binomial")
 
 # Model predictions of FOI, with age grid newd
-set.seed(123)
+set.seed(1)
 newd <- data.frame(age=seq(4,17,by=0.01))
 foi_ests <- foiCI(m=m,newdata=newd)
 foipd <- data.frame(age=foi_ests$data,foi=foi_ests$foi,foi_lb=foi_ests$foi.ciS[,1],foi_ub=foi_ests$foi.ciS[,2])
@@ -531,7 +531,7 @@ Simulate 1000 draws from the posterior distribution to ensure there is correct c
 #----------------------------
 eps <- 1e-07
 Vb <- vcov(m, unconditional = TRUE)
-set.seed(24)
+set.seed(1234)
 sims <- MASS::mvrnorm(1000, mu = coef(m), Sigma = Vb)
 X0 <- predict(m, newd, type = "lpmatrix")
 newd <- newd + eps
@@ -552,7 +552,7 @@ fois <- derivs*(exp(gprevs)/(1+exp(gprevs)))
 Plot a random sample of bootstrap replications from the posterior distribution, and overlay the mean plus simultaneous CI for visual inspection
 
 ```{r foi coverage plot}
-set.seed(23)
+set.seed(123)
 matplot(foipd$age,fois[, sample(1000, 50)], type = "l", lty = "solid",col="grey80")
 lines(foipd$age,foipd$foi,type="l",lwd=2)
 lines(foipd$age,foipd$foi_lb,lty=2)
@@ -926,7 +926,7 @@ Create a figure to summarize the comparison
 
 **This is Figure 6 in the manuscript**
 
-```{r incidence long xc comp figure,fig.width=10,fig.height=5}
+```{r incidence long xc comp figure,fig.width=10,fig.height=5, warning=FALSE}
 # sort pathogens by rates
 ratelabs <- c("E. histolytica LecA",
               "Salmonella LPS groups B or D",
@@ -939,13 +939,8 @@ rate_comp2 <- rate_comp %>%
          method=factor(method,levels=rev(levels(method)))) %>%
   arrange(antigenf,outcome,method)
 
-# pcols <- c(cblack,corange,cteal,cmagent)
-# pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
-# pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
-vircols <- viridis(n=4,alpha=1,begin=0.2,end=0.97)
-pcols <- rev(vircols)
 
-
+pcols <- c(cbPalette[c(2,3,7)],"black")
 ratecomp_plot <- ggplot(data=rate_comp2,
                         aes(x=antigenf,y=rate,color=method,fill=method)) +
   geom_errorbar(aes(ymin=rate_lb,ymax=rate_ub),
@@ -982,20 +977,15 @@ ratecomp_plot <- ggplot(data=rate_comp2,
 ratecomp_plot
 
 # save PDF and TIFF versions
-ggsave(here("figs","Fig6-asembo-ab-foi-comparison.pdf"),plot=ratecomp_plot,device=cairo_pdf,width=10,height=4.5)
-ggsave(here("figs","Fig6-asembo-ab-foi-comparison.TIFF"),plot=ratecomp_plot,device="tiff",width=10,height=4.5)
+ggsave(here::here("figs","Fig6-asembo-ab-foi-comparison.pdf"),plot=ratecomp_plot,device=cairo_pdf,width=10,height=4.5)
+ggsave(here::here("figs","Fig6-asembo-ab-foi-comparison.TIFF"),plot=ratecomp_plot,device="tiff",width=10,height=4.5)
 
 ```
 Put the estimates on separate scales for lower and higher transmission pathogens to enable clearer comparisons
 
-```{r incidence long xc comp figure 2 panel}
+```{r incidence long xc comp figure 2 panel,fig.width=10,fig.height=5, warning=FALSE}
 
-# pcols <- c(cblack,corange,cteal,cmagent)
-# pcols <- c(cred,corange,cgreen,cteal,cblue,cmagent)
-# pcols <- c(corange,cred,cmagent,cchartr,cblue,cteal,cgreen,cgrey)
-vircols <- viridis(n=4,alpha=1,begin=0.2,end=0.97)
-pcols <- rev(vircols)
-
+pcols <- c(cbPalette[c(2,3,7)],"black")
 rate_comp3 <- rate_comp2 %>%
   filter(outcome=="seroconversion (force of infection)") %>%
   mutate(pathgroup=ifelse(antigenf %in% c("ETEC LT B subunit","Campylobacter p18 or p39"),"Higher transmission","Lower transmission"),
@@ -1031,7 +1021,7 @@ ratecomp_plot2
 
 For most pathogens, the semiparametric estimate of force of infection using splines was close to the parameter estimated prospectively. In all cases, uncertainty in spline-based estimates of the force of infection derived from seroprevalence was much higher than the prospective  estimates, as reflected by wider 95% credible intervals.   As Jewell and Emerson (2013) demonstrate under a parametric exponential survival model, the asymptotic relative efficiency of a cross-sectional, current-status analysis compared to a longitudinal analysis is 96.1% if the cumulative proportion of failures is 0.5, but only 65.5% if the proportion of failures is 0.9. These results are broadly consistent with that analysis, with the loss in efficiency much higher among ETEC and _Campylobacter_ with seroprevalence that approached 100% by ages 10-12 months in this cohort.
 
-For most pathogens, force of infection estimates from cross-sectional analysis were biased downward compared to the longitudinal analysis -- a result that would be expected in the case of seroreversion, which was common in this cohort for all but ETEC and _Campylobacter_.  The parametric cross-sectional analyses assumed a constant rate without seroreversion (exponential survival model, SIR model) or with seroreversion (reversible catalytic model, SIS model), and were genearlly further from the longitudinal estimates than the semiparametric spline; exceptions include _E. histolytica_ and _Salmonella_. Age-specific force of infection estimates under the spline model suggest that force of infection was generally not constant over age, so this suggests the parametric models could be slightly more biased. Nevertheless, all estimation methods were rank-preserving across pathogens, and many estimates were reasonably close with one-another. Overall, these results show that longitudinal designs should be preferred to estimate enteropathogen force of infection from serological antibody levels, but that modeling approaches based on age-structured seroprevalence reasonably capture relative differences between pathogens in this study.
+For most pathogens, force of infection estimates from cross-sectional analysis were biased downward compared to the longitudinal analysis -- a result that would be expected in the case of seroreversion, which was common in this cohort for all but ETEC and _Campylobacter_. All estimation methods were rank-preserving across pathogens, and many estimates were reasonably close with one-another. Overall, these results show that longitudinal designs should be preferred to estimate enteropathogen force of infection from serological antibody levels, but that modeling approaches based on age-structured seroprevalence reasonably capture relative differences between pathogens in this study.
 
 Jewell, N. P. & Emerson, R. Current Status Data: An Illustration with Data on Avalanche Victims, in _Handbook of Survival Analysis_ (eds. Klein, J. P., van Houwelingen, H. C., Ibrahim, J. G. & Scheike, T. H.) 391–412 (Chapman and Hall, 2013).
 

@@ -2949,7 +2949,7 @@ div.tocify {
 
 
 <h1 class="title toc-ignore">Enteropathogen antibody dynamics and force of infection among children in low-resource settings</h1>
-<h3 class="subtitle">Table 1, summary of antibody measurements and cutoffs by cohort</h3>
+<h3 class="subtitle">Table 1. Summary of antibody measurements and cutoffs by cohort</h3>
 
 </div>
 
@@ -2969,115 +2969,101 @@ div.tocify {
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="co">#-----------------------------</span></a>
 <a class="sourceLine" id="cb1-2" data-line-number="2"><span class="co"># preamble</span></a>
 <a class="sourceLine" id="cb1-3" data-line-number="3"><span class="co">#-----------------------------</span></a>
-<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="kw">library</span>(here)</a></code></pre></div>
-<pre><code>## here() starts at /Users/benarnold/enterics-seroepi</code></pre>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">here</span>()</a></code></pre></div>
+<a class="sourceLine" id="cb1-4" data-line-number="4"><span class="kw">library</span>(here)</a>
+<a class="sourceLine" id="cb1-5" data-line-number="5">here<span class="op">::</span><span class="kw">here</span>()</a></code></pre></div>
 <pre><code>## [1] &quot;/Users/benarnold/enterics-seroepi&quot;</code></pre>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="kw">library</span>(tidyverse)</a></code></pre></div>
-<pre><code>## ── Attaching packages ────────────────────── tidyverse 1.2.1 ──</code></pre>
-<pre><code>## ✔ ggplot2 3.1.1       ✔ purrr   0.3.2  
-## ✔ tibble  2.1.1       ✔ dplyr   0.8.0.1
-## ✔ tidyr   0.8.3       ✔ stringr 1.4.0  
-## ✔ readr   1.1.1       ✔ forcats 0.3.0</code></pre>
-<pre><code>## ── Conflicts ───────────────────────── tidyverse_conflicts() ──
-## ✖ dplyr::filter() masks stats::filter()
-## ✖ dplyr::lag()    masks stats::lag()</code></pre>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="kw">library</span>(kableExtra)</a></code></pre></div>
-<pre><code>## 
-## Attaching package: 'kableExtra'</code></pre>
-<pre><code>## The following object is masked from 'package:dplyr':
-## 
-##     group_rows</code></pre>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">library</span>(tidyverse)</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2"><span class="kw">library</span>(kableExtra)</a></code></pre></div>
 </div>
 <div id="load-the-data" class="section level1">
 <h1>Load the data</h1>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="co">#-----------------------------</span></a>
-<a class="sourceLine" id="cb12-2" data-line-number="2"><span class="co"># load the formatted data</span></a>
-<a class="sourceLine" id="cb12-3" data-line-number="3"><span class="co">#-----------------------------</span></a>
-<a class="sourceLine" id="cb12-4" data-line-number="4">dh &lt;-<span class="st"> </span><span class="kw">readRDS</span>(<span class="kw">here</span>(<span class="st">&quot;data&quot;</span>,<span class="st">&quot;haiti_analysis2.rds&quot;</span>))</a>
-<a class="sourceLine" id="cb12-5" data-line-number="5">da &lt;-<span class="st"> </span><span class="kw">readRDS</span>(<span class="kw">here</span>(<span class="st">&quot;data&quot;</span>,<span class="st">&quot;asembo_analysis2.rds&quot;</span>))</a>
-<a class="sourceLine" id="cb12-6" data-line-number="6">dk &lt;-<span class="st"> </span><span class="kw">readRDS</span>(<span class="kw">here</span>(<span class="st">&quot;data&quot;</span>,<span class="st">&quot;kongwa_analysis2.rds&quot;</span>))</a>
-<a class="sourceLine" id="cb12-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb12-8" data-line-number="8"><span class="co"># re-order antigens in Kenya for consistency with other cohorts</span></a>
-<a class="sourceLine" id="cb12-9" data-line-number="9">da &lt;-<span class="st"> </span>da <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb12-10" data-line-number="10"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">antigenf=</span><span class="kw">factor</span>(antigenf,<span class="dt">levels=</span><span class="kw">c</span>(<span class="st">&quot;Giardia VSP-3&quot;</span>,<span class="st">&quot;Giardia VSP-5&quot;</span>,<span class="st">&quot;Cryptosporidium Cp17&quot;</span>,<span class="st">&quot;Cryptosporidium Cp23&quot;</span>,<span class="st">&quot;E. histolytica LecA&quot;</span>,<span class="st">&quot;Salmonella LPS group B&quot;</span>,<span class="st">&quot;Salmonella LPS group D&quot;</span>,<span class="st">&quot;ETEC LT B subunit&quot;</span>,<span class="st">&quot;Cholera toxin B subunit&quot;</span>,<span class="st">&quot;Campylobacter p18&quot;</span>,<span class="st">&quot;Campylobacter p39&quot;</span>)))</a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="co">#-----------------------------</span></a>
+<a class="sourceLine" id="cb4-2" data-line-number="2"><span class="co"># load the formatted data</span></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3"><span class="co">#-----------------------------</span></a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">dh &lt;-<span class="st"> </span><span class="kw">readRDS</span>(here<span class="op">::</span><span class="kw">here</span>(<span class="st">&quot;data&quot;</span>,<span class="st">&quot;haiti_analysis2.rds&quot;</span>))</a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">da &lt;-<span class="st"> </span><span class="kw">readRDS</span>(here<span class="op">::</span><span class="kw">here</span>(<span class="st">&quot;data&quot;</span>,<span class="st">&quot;asembo_analysis2.rds&quot;</span>))</a>
+<a class="sourceLine" id="cb4-6" data-line-number="6">dk &lt;-<span class="st"> </span><span class="kw">readRDS</span>(here<span class="op">::</span><span class="kw">here</span>(<span class="st">&quot;data&quot;</span>,<span class="st">&quot;kongwa_analysis2.rds&quot;</span>))</a>
+<a class="sourceLine" id="cb4-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb4-8" data-line-number="8"><span class="co"># re-order antigens in Kenya for consistency with other cohorts</span></a>
+<a class="sourceLine" id="cb4-9" data-line-number="9">da &lt;-<span class="st"> </span>da <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb4-10" data-line-number="10"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">antigenf=</span><span class="kw">factor</span>(antigenf,<span class="dt">levels=</span><span class="kw">c</span>(<span class="st">&quot;Giardia VSP-3&quot;</span>,<span class="st">&quot;Giardia VSP-5&quot;</span>,<span class="st">&quot;Cryptosporidium Cp17&quot;</span>,<span class="st">&quot;Cryptosporidium Cp23&quot;</span>,<span class="st">&quot;E. histolytica LecA&quot;</span>,<span class="st">&quot;Salmonella LPS group B&quot;</span>,<span class="st">&quot;Salmonella LPS group D&quot;</span>,<span class="st">&quot;ETEC LT B subunit&quot;</span>,<span class="st">&quot;Cholera toxin B subunit&quot;</span>,<span class="st">&quot;Campylobacter p18&quot;</span>,<span class="st">&quot;Campylobacter p39&quot;</span>)))</a></code></pre></div>
 </div>
 <div id="summary-counts-and-statistics-for-each-study" class="section level1">
 <h1>Summary counts and statistics for each study</h1>
 <div id="haiti" class="section level2">
 <h2>Haiti</h2>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="co">#-----------------------------</span></a>
-<a class="sourceLine" id="cb13-2" data-line-number="2"><span class="co"># Haiti summary</span></a>
-<a class="sourceLine" id="cb13-3" data-line-number="3"><span class="co">#-----------------------------</span></a>
-<a class="sourceLine" id="cb13-4" data-line-number="4">dhsum &lt;-<span class="st"> </span>dh <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb13-5" data-line-number="5"><span class="st">  </span><span class="kw">group_by</span>(antigenf) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb13-6" data-line-number="6"><span class="st">  </span><span class="kw">summarize</span>(<span class="dt">Nchild=</span><span class="kw">length</span>(<span class="kw">unique</span>(id)),</a>
-<a class="sourceLine" id="cb13-7" data-line-number="7">            <span class="dt">Nobs=</span><span class="kw">length</span>(<span class="op">!</span><span class="kw">is.na</span>(mfi)),</a>
-<a class="sourceLine" id="cb13-8" data-line-number="8">            <span class="dt">roccut=</span><span class="kw">max</span>(roccut,<span class="dt">na.rm=</span>T),</a>
-<a class="sourceLine" id="cb13-9" data-line-number="9">            <span class="dt">mixcut=</span><span class="kw">max</span>(mixcut,<span class="dt">na.rm=</span>T),</a>
-<a class="sourceLine" id="cb13-10" data-line-number="10">            <span class="dt">unexpcut=</span><span class="kw">max</span>(unexpcut,<span class="dt">na.rm=</span>T)</a>
-<a class="sourceLine" id="cb13-11" data-line-number="11">  )</a></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="co">#-----------------------------</span></a>
+<a class="sourceLine" id="cb5-2" data-line-number="2"><span class="co"># Haiti summary</span></a>
+<a class="sourceLine" id="cb5-3" data-line-number="3"><span class="co">#-----------------------------</span></a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">dhsum &lt;-<span class="st"> </span>dh <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb5-5" data-line-number="5"><span class="st">  </span><span class="kw">group_by</span>(antigenf) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb5-6" data-line-number="6"><span class="st">  </span><span class="kw">summarize</span>(<span class="dt">Nchild=</span><span class="kw">length</span>(<span class="kw">unique</span>(id)),</a>
+<a class="sourceLine" id="cb5-7" data-line-number="7">            <span class="dt">Nobs=</span><span class="kw">length</span>(<span class="op">!</span><span class="kw">is.na</span>(mfi)),</a>
+<a class="sourceLine" id="cb5-8" data-line-number="8">            <span class="dt">roccut=</span><span class="kw">max</span>(roccut,<span class="dt">na.rm=</span>T),</a>
+<a class="sourceLine" id="cb5-9" data-line-number="9">            <span class="dt">mixcut=</span><span class="kw">max</span>(mixcut,<span class="dt">na.rm=</span>T),</a>
+<a class="sourceLine" id="cb5-10" data-line-number="10">            <span class="dt">unexpcut=</span><span class="kw">max</span>(unexpcut,<span class="dt">na.rm=</span>T)</a>
+<a class="sourceLine" id="cb5-11" data-line-number="11">  )</a></code></pre></div>
 </div>
 <div id="kenya" class="section level2">
 <h2>Kenya</h2>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="co">#-----------------------------</span></a>
-<a class="sourceLine" id="cb14-2" data-line-number="2"><span class="co"># Kenya summary</span></a>
-<a class="sourceLine" id="cb14-3" data-line-number="3"><span class="co">#-----------------------------</span></a>
-<a class="sourceLine" id="cb14-4" data-line-number="4">dasum &lt;-<span class="st"> </span>da <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb14-5" data-line-number="5"><span class="st">  </span><span class="kw">group_by</span>(antigenf) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb14-6" data-line-number="6"><span class="st">  </span><span class="kw">summarize</span>(<span class="dt">Nchild=</span><span class="kw">length</span>(<span class="kw">unique</span>(childid)),</a>
-<a class="sourceLine" id="cb14-7" data-line-number="7">            <span class="dt">Nobs=</span><span class="kw">length</span>(<span class="op">!</span><span class="kw">is.na</span>(mfi)),</a>
-<a class="sourceLine" id="cb14-8" data-line-number="8">            <span class="dt">roccut=</span><span class="kw">max</span>(roccut,<span class="dt">na.rm=</span>T),</a>
-<a class="sourceLine" id="cb14-9" data-line-number="9">            <span class="dt">mixcut=</span><span class="kw">max</span>(mixcut,<span class="dt">na.rm=</span>T),</a>
-<a class="sourceLine" id="cb14-10" data-line-number="10">            <span class="dt">unexpcut=</span><span class="kw">max</span>(unexpcut,<span class="dt">na.rm=</span>T)</a>
-<a class="sourceLine" id="cb14-11" data-line-number="11">  )</a></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="co">#-----------------------------</span></a>
+<a class="sourceLine" id="cb6-2" data-line-number="2"><span class="co"># Kenya summary</span></a>
+<a class="sourceLine" id="cb6-3" data-line-number="3"><span class="co">#-----------------------------</span></a>
+<a class="sourceLine" id="cb6-4" data-line-number="4">dasum &lt;-<span class="st"> </span>da <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb6-5" data-line-number="5"><span class="st">  </span><span class="kw">group_by</span>(antigenf) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb6-6" data-line-number="6"><span class="st">  </span><span class="kw">summarize</span>(<span class="dt">Nchild=</span><span class="kw">length</span>(<span class="kw">unique</span>(childid)),</a>
+<a class="sourceLine" id="cb6-7" data-line-number="7">            <span class="dt">Nobs=</span><span class="kw">length</span>(<span class="op">!</span><span class="kw">is.na</span>(mfi)),</a>
+<a class="sourceLine" id="cb6-8" data-line-number="8">            <span class="dt">roccut=</span><span class="kw">max</span>(roccut,<span class="dt">na.rm=</span>T),</a>
+<a class="sourceLine" id="cb6-9" data-line-number="9">            <span class="dt">mixcut=</span><span class="kw">max</span>(mixcut,<span class="dt">na.rm=</span>T),</a>
+<a class="sourceLine" id="cb6-10" data-line-number="10">            <span class="dt">unexpcut=</span><span class="kw">max</span>(unexpcut,<span class="dt">na.rm=</span>T)</a>
+<a class="sourceLine" id="cb6-11" data-line-number="11">  )</a></code></pre></div>
 </div>
 <div id="tanzania" class="section level2">
 <h2>Tanzania</h2>
-<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="co">#-----------------------------</span></a>
-<a class="sourceLine" id="cb15-2" data-line-number="2"><span class="co"># Tanzania summary</span></a>
-<a class="sourceLine" id="cb15-3" data-line-number="3"><span class="co"># report ROC cutoffs from</span></a>
-<a class="sourceLine" id="cb15-4" data-line-number="4"><span class="co"># years 2-4</span></a>
-<a class="sourceLine" id="cb15-5" data-line-number="5"><span class="co">#-----------------------------</span></a>
-<a class="sourceLine" id="cb15-6" data-line-number="6">dksum &lt;-<span class="st"> </span>dk <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb15-7" data-line-number="7"><span class="st">  </span><span class="kw">group_by</span>(antigenf) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb15-8" data-line-number="8"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">roc2=</span><span class="kw">ifelse</span>(year<span class="op">&gt;</span><span class="dv">2012</span>,roccut,<span class="ot">NA</span>)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb15-9" data-line-number="9"><span class="st">  </span><span class="kw">summarize</span>(<span class="dt">Nchild=</span><span class="kw">length</span>(<span class="kw">unique</span>(id[<span class="kw">is.na</span>(mfi)<span class="op">==</span>F])),</a>
-<a class="sourceLine" id="cb15-10" data-line-number="10">            <span class="dt">Nobs=</span><span class="kw">sum</span>(<span class="kw">is.na</span>(mfi)<span class="op">==</span>F),</a>
-<a class="sourceLine" id="cb15-11" data-line-number="11">            <span class="dt">roccut=</span><span class="kw">max</span>(roc2,<span class="dt">na.rm=</span>T),</a>
-<a class="sourceLine" id="cb15-12" data-line-number="12">            <span class="dt">mixcut=</span><span class="kw">max</span>(mixcut,<span class="dt">na.rm=</span>T)  ) </a></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="co">#-----------------------------</span></a>
+<a class="sourceLine" id="cb7-2" data-line-number="2"><span class="co"># Tanzania summary</span></a>
+<a class="sourceLine" id="cb7-3" data-line-number="3"><span class="co"># report ROC cutoffs from</span></a>
+<a class="sourceLine" id="cb7-4" data-line-number="4"><span class="co"># years 2-4</span></a>
+<a class="sourceLine" id="cb7-5" data-line-number="5"><span class="co">#-----------------------------</span></a>
+<a class="sourceLine" id="cb7-6" data-line-number="6">dksum &lt;-<span class="st"> </span>dk <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb7-7" data-line-number="7"><span class="st">  </span><span class="kw">group_by</span>(antigenf) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb7-8" data-line-number="8"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">roc2=</span><span class="kw">ifelse</span>(year<span class="op">&gt;</span><span class="dv">2012</span>,roccut,<span class="ot">NA</span>)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb7-9" data-line-number="9"><span class="st">  </span><span class="kw">summarize</span>(<span class="dt">Nchild=</span><span class="kw">length</span>(<span class="kw">unique</span>(id[<span class="kw">is.na</span>(mfi)<span class="op">==</span>F])),</a>
+<a class="sourceLine" id="cb7-10" data-line-number="10">            <span class="dt">Nobs=</span><span class="kw">sum</span>(<span class="kw">is.na</span>(mfi)<span class="op">==</span>F),</a>
+<a class="sourceLine" id="cb7-11" data-line-number="11">            <span class="dt">roccut=</span><span class="kw">max</span>(roc2,<span class="dt">na.rm=</span>T),</a>
+<a class="sourceLine" id="cb7-12" data-line-number="12">            <span class="dt">mixcut=</span><span class="kw">max</span>(mixcut,<span class="dt">na.rm=</span>T)  ) </a></code></pre></div>
 </div>
 </div>
 <div id="table-1" class="section level1">
 <h1>Table 1</h1>
-<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb16-1" data-line-number="1">dtab &lt;-<span class="st"> </span><span class="kw">bind_rows</span>(dhsum,dasum,dksum) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb16-2" data-line-number="2"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">roccut=</span><span class="kw">ifelse</span>(<span class="kw">is.infinite</span>(roccut),<span class="ot">NA</span>,roccut),</a>
-<a class="sourceLine" id="cb16-3" data-line-number="3">         <span class="dt">mixcut=</span><span class="kw">ifelse</span>(<span class="kw">is.infinite</span>(mixcut),<span class="ot">NA</span>,mixcut),</a>
-<a class="sourceLine" id="cb16-4" data-line-number="4">         <span class="dt">unexpcut=</span><span class="kw">ifelse</span>(<span class="kw">is.infinite</span>(unexpcut),<span class="ot">NA</span>,unexpcut)</a>
-<a class="sourceLine" id="cb16-5" data-line-number="5">         )</a>
-<a class="sourceLine" id="cb16-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb16-7" data-line-number="7"><span class="co"># exclude trachoma, since article is focused on enteropathogens</span></a>
-<a class="sourceLine" id="cb16-8" data-line-number="8">dtab &lt;-<span class="st"> </span>dtab <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb16-9" data-line-number="9"><span class="st">  </span><span class="kw">filter</span>(antigenf<span class="op">!=</span><span class="st">&quot;C. trachomatis pgp3&quot;</span>)</a>
-<a class="sourceLine" id="cb16-10" data-line-number="10"></a>
-<a class="sourceLine" id="cb16-11" data-line-number="11"><span class="co"># add custom footnotes (careful, this is fragile!)</span></a>
-<a class="sourceLine" id="cb16-12" data-line-number="12">dtab<span class="op">$</span>antigenf[<span class="kw">c</span>(<span class="dv">27</span>,<span class="dv">28</span>,<span class="dv">31</span>,<span class="dv">32</span>)] &lt;-<span class="st"> </span><span class="kw">paste0</span>(dtab<span class="op">$</span>antigenf[<span class="kw">c</span>(<span class="dv">27</span>,<span class="dv">28</span>,<span class="dv">31</span>,<span class="dv">32</span>)],<span class="kw">footnote_marker_symbol</span>(<span class="dv">2</span>))</a>
-<a class="sourceLine" id="cb16-13" data-line-number="13">dtab<span class="op">$</span>antigenf[<span class="kw">c</span>(<span class="dv">30</span>)] &lt;-<span class="st"> </span><span class="kw">paste0</span>(dtab<span class="op">$</span>antigenf[<span class="kw">c</span>(<span class="dv">30</span>)],<span class="kw">footnote_marker_symbol</span>(<span class="dv">3</span>))</a>
-<a class="sourceLine" id="cb16-14" data-line-number="14"></a>
-<a class="sourceLine" id="cb16-15" data-line-number="15"><span class="kw">options</span>(<span class="dt">knitr.kable.NA =</span> <span class="st">&quot;&quot;</span>)</a>
-<a class="sourceLine" id="cb16-16" data-line-number="16">knitr<span class="op">::</span><span class="kw">kable</span>(dtab,<span class="dt">digits=</span><span class="dv">2</span>,<span class="dt">escape=</span><span class="ot">FALSE</span>,</a>
-<a class="sourceLine" id="cb16-17" data-line-number="17">             <span class="dt">caption=</span><span class="st">&quot;Table 1. Number of children and samples tested, and estimated seropositivity cutoffs by country and antigen included in the seroepidemiologic analyses.&quot;</span>,</a>
-<a class="sourceLine" id="cb16-18" data-line-number="18">             <span class="dt">col.names=</span><span class="kw">c</span>(<span class="st">&quot;&quot;</span>,<span class="st">&quot;N&lt;br&gt;children&quot;</span>,<span class="st">&quot;N&lt;br&gt;samples&quot;</span>,<span class="st">&quot;External&lt;br&gt;Reference&quot;</span>,<span class="st">&quot;Mixture&lt;br&gt;Model&quot;</span>,<span class="st">&quot;Presumed&lt;br&gt;Unexposed&quot;</span>)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb16-19" data-line-number="19"><span class="st">  </span><span class="kw">kable_styling</span>(<span class="dt">bootstrap_options =</span> <span class="kw">c</span>(<span class="st">&quot;striped&quot;</span>,<span class="st">&quot;condensed&quot;</span>),<span class="dt">full_width =</span> <span class="ot">TRUE</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb16-20" data-line-number="20"><span class="st">  </span><span class="kw">add_header_above</span>(<span class="kw">c</span>(<span class="st">&quot; &quot;</span> =<span class="st"> </span><span class="dv">3</span>, <span class="st">&quot;Seropositivity cutoff, log10 IgG (MFI-bg) *&quot;</span> =<span class="st"> </span><span class="dv">3</span>)) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb16-21" data-line-number="21"><span class="st">  </span><span class="kw">group_rows</span>(<span class="st">&quot;Leogane, Haiti&quot;</span>, <span class="dv">1</span>,<span class="dv">10</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb16-22" data-line-number="22"><span class="st">  </span><span class="kw">group_rows</span>(<span class="st">&quot;Asembo, Kenya&quot;</span>, <span class="dv">11</span>,<span class="dv">21</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb16-23" data-line-number="23"><span class="st">  </span><span class="kw">group_rows</span>(<span class="st">&quot;Kongwa, Tanzania&quot;</span>, <span class="dv">22</span>,<span class="dv">32</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb16-24" data-line-number="24"><span class="st">  </span><span class="kw">footnote</span>(</a>
-<a class="sourceLine" id="cb16-25" data-line-number="25">    <span class="dt">symbol=</span><span class="kw">c</span>(<span class="st">&quot;Seropositivity cutoffs determined using external reference samples (typically ROC curves except for Giardia and E. hystolitica in Haiti), finite Gaussian mixture models, or distribution among the presumed unexposed (see Methods for details). External reference cutoffs reported from years (2013-2015) in Tanzania, estimated among 4,087 samples. Cutoff values are missing if they could not be estimated in each method; cutoff values based on the presumed unexposed required longitudinal measurements within individual children and therefore could not be estimated for any antigen in the repeated cross-sectional design in Tanzania.&quot;</span>,</a>
-<a class="sourceLine" id="cb16-26" data-line-number="26">             <span class="st">&quot;Measured only in year 1  of the study (2012)&quot;</span>,</a>
-<a class="sourceLine" id="cb16-27" data-line-number="27">             <span class="st">&quot;Measured only in years 2-4 of the study (2013-2015)&quot;</span>)</a>
-<a class="sourceLine" id="cb16-28" data-line-number="28">  )</a></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" data-line-number="1">dtab &lt;-<span class="st"> </span><span class="kw">bind_rows</span>(dhsum,dasum,dksum) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb8-2" data-line-number="2"><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">roccut=</span><span class="kw">ifelse</span>(<span class="kw">is.infinite</span>(roccut),<span class="ot">NA</span>,roccut),</a>
+<a class="sourceLine" id="cb8-3" data-line-number="3">         <span class="dt">mixcut=</span><span class="kw">ifelse</span>(<span class="kw">is.infinite</span>(mixcut),<span class="ot">NA</span>,mixcut),</a>
+<a class="sourceLine" id="cb8-4" data-line-number="4">         <span class="dt">unexpcut=</span><span class="kw">ifelse</span>(<span class="kw">is.infinite</span>(unexpcut),<span class="ot">NA</span>,unexpcut)</a>
+<a class="sourceLine" id="cb8-5" data-line-number="5">         )</a>
+<a class="sourceLine" id="cb8-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb8-7" data-line-number="7"><span class="co"># exclude trachoma, since article is focused on enteropathogens</span></a>
+<a class="sourceLine" id="cb8-8" data-line-number="8">dtab &lt;-<span class="st"> </span>dtab <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb8-9" data-line-number="9"><span class="st">  </span><span class="kw">filter</span>(antigenf<span class="op">!=</span><span class="st">&quot;C. trachomatis pgp3&quot;</span>)</a>
+<a class="sourceLine" id="cb8-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb8-11" data-line-number="11"><span class="co"># add custom footnotes (careful, this is fragile!)</span></a>
+<a class="sourceLine" id="cb8-12" data-line-number="12">dtab<span class="op">$</span>antigenf[<span class="kw">c</span>(<span class="dv">27</span>,<span class="dv">28</span>,<span class="dv">31</span>,<span class="dv">32</span>)] &lt;-<span class="st"> </span><span class="kw">paste0</span>(dtab<span class="op">$</span>antigenf[<span class="kw">c</span>(<span class="dv">27</span>,<span class="dv">28</span>,<span class="dv">31</span>,<span class="dv">32</span>)],<span class="kw">footnote_marker_symbol</span>(<span class="dv">2</span>))</a>
+<a class="sourceLine" id="cb8-13" data-line-number="13">dtab<span class="op">$</span>antigenf[<span class="kw">c</span>(<span class="dv">30</span>)] &lt;-<span class="st"> </span><span class="kw">paste0</span>(dtab<span class="op">$</span>antigenf[<span class="kw">c</span>(<span class="dv">30</span>)],<span class="kw">footnote_marker_symbol</span>(<span class="dv">3</span>))</a>
+<a class="sourceLine" id="cb8-14" data-line-number="14"></a>
+<a class="sourceLine" id="cb8-15" data-line-number="15"><span class="kw">options</span>(<span class="dt">knitr.kable.NA =</span> <span class="st">&quot;&quot;</span>)</a>
+<a class="sourceLine" id="cb8-16" data-line-number="16">knitr<span class="op">::</span><span class="kw">kable</span>(dtab,<span class="dt">digits=</span><span class="dv">2</span>,<span class="dt">escape=</span><span class="ot">FALSE</span>,</a>
+<a class="sourceLine" id="cb8-17" data-line-number="17">             <span class="dt">caption=</span><span class="st">&quot;Table 1. Number of children and samples tested, and estimated seropositivity cutoffs by country and antigen included in the seroepidemiologic analyses.&quot;</span>,</a>
+<a class="sourceLine" id="cb8-18" data-line-number="18">             <span class="dt">col.names=</span><span class="kw">c</span>(<span class="st">&quot;&quot;</span>,<span class="st">&quot;N&lt;br&gt;children&quot;</span>,<span class="st">&quot;N&lt;br&gt;samples&quot;</span>,<span class="st">&quot;External&lt;br&gt;Reference&quot;</span>,<span class="st">&quot;Mixture&lt;br&gt;Model&quot;</span>,<span class="st">&quot;Presumed&lt;br&gt;Unexposed&quot;</span>)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb8-19" data-line-number="19"><span class="st">  </span><span class="kw">kable_styling</span>(<span class="dt">bootstrap_options =</span> <span class="kw">c</span>(<span class="st">&quot;striped&quot;</span>,<span class="st">&quot;condensed&quot;</span>),<span class="dt">full_width =</span> <span class="ot">TRUE</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb8-20" data-line-number="20"><span class="st">  </span><span class="kw">add_header_above</span>(<span class="kw">c</span>(<span class="st">&quot; &quot;</span> =<span class="st"> </span><span class="dv">3</span>, <span class="st">&quot;Seropositivity cutoff, log10 IgG (MFI-bg) *&quot;</span> =<span class="st"> </span><span class="dv">3</span>)) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb8-21" data-line-number="21"><span class="st">  </span><span class="kw">group_rows</span>(<span class="st">&quot;Leogane, Haiti&quot;</span>, <span class="dv">1</span>,<span class="dv">10</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb8-22" data-line-number="22"><span class="st">  </span><span class="kw">group_rows</span>(<span class="st">&quot;Asembo, Kenya&quot;</span>, <span class="dv">11</span>,<span class="dv">21</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb8-23" data-line-number="23"><span class="st">  </span><span class="kw">group_rows</span>(<span class="st">&quot;Kongwa, Tanzania&quot;</span>, <span class="dv">22</span>,<span class="dv">32</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb8-24" data-line-number="24"><span class="st">  </span><span class="kw">footnote</span>(</a>
+<a class="sourceLine" id="cb8-25" data-line-number="25">    <span class="dt">symbol=</span><span class="kw">c</span>(<span class="st">&quot;Seropositivity cutoffs determined using external reference samples (typically ROC curves except for Giardia and E. hystolitica in Haiti), finite Gaussian mixture models, or distribution among the presumed unexposed (see Methods for details). External reference cutoffs reported from years (2013-2015) in Tanzania, estimated among 4,087 samples. Cutoff values are missing if they could not be estimated in each method; cutoff values based on the presumed unexposed required longitudinal measurements within individual children and therefore could not be estimated for any antigen in the repeated cross-sectional design in Tanzania.&quot;</span>,</a>
+<a class="sourceLine" id="cb8-26" data-line-number="26">             <span class="st">&quot;Measured only in year 1  of the study (2012)&quot;</span>,</a>
+<a class="sourceLine" id="cb8-27" data-line-number="27">             <span class="st">&quot;Measured only in years 2-4 of the study (2013-2015)&quot;</span>)</a>
+<a class="sourceLine" id="cb8-28" data-line-number="28">  )</a></code></pre></div>
 <table class="table table-striped table-condensed" style="margin-left: auto; margin-right: auto;">
 <caption>
 Table 1. Number of children and samples tested, and estimated seropositivity cutoffs by country and antigen included in the seroepidemiologic analyses.
@@ -3746,45 +3732,51 @@ Campylobacter p39<sup>†</sup>
 </div>
 <div id="session-info" class="section level1">
 <h1>Session Info</h1>
-<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="kw">sessionInfo</span>()</a></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="kw">sessionInfo</span>()</a></code></pre></div>
 <pre><code>## R version 3.5.3 (2019-03-11)
 ## Platform: x86_64-apple-darwin15.6.0 (64-bit)
 ## Running under: macOS High Sierra 10.13.6
 ## 
 ## Matrix products: default
-## BLAS: /Library/Frameworks/R.framework/Versions/3.5/Resources/lib/libRblas.0.dylib
+## BLAS: /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib
 ## LAPACK: /Library/Frameworks/R.framework/Versions/3.5/Resources/lib/libRlapack.dylib
 ## 
 ## locale:
 ## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
 ## 
 ## attached base packages:
-## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## [1] parallel  stats     graphics  grDevices utils     datasets  methods  
+## [8] base     
 ## 
 ## other attached packages:
-##  [1] kableExtra_0.8.0.0001 forcats_0.3.0         stringr_1.4.0        
-##  [4] dplyr_0.8.0.1         purrr_0.3.2           readr_1.1.1          
-##  [7] tidyr_0.8.3           tibble_2.1.1          ggplot2_3.1.1        
-## [10] tidyverse_1.2.1       here_0.1             
+##  [1] knitr_1.22            mixtools_1.1.0        viridis_0.5.1        
+##  [4] viridisLite_0.3.0     foreign_0.8-71        lubridate_1.7.4      
+##  [7] doParallel_1.0.11     iterators_1.0.9       foreach_1.4.4        
+## [10] kableExtra_0.8.0.0001 forcats_0.3.0         stringr_1.4.0        
+## [13] dplyr_0.8.0.1         purrr_0.3.2           readr_1.1.1          
+## [16] tidyr_0.8.3           tibble_2.1.1          ggplot2_3.1.1        
+## [19] tidyverse_1.2.1       here_0.1             
 ## 
 ## loaded via a namespace (and not attached):
-##  [1] tidyselect_0.2.5  xfun_0.6          reshape2_1.4.3   
-##  [4] haven_2.1.0       lattice_0.20-38   colorspace_1.3-2 
-##  [7] viridisLite_0.3.0 htmltools_0.3.6   yaml_2.2.0       
-## [10] rlang_0.3.4       pillar_1.4.0      foreign_0.8-71   
-## [13] glue_1.3.1        withr_2.1.2       modelr_0.1.2     
-## [16] readxl_1.1.0      plyr_1.8.4        munsell_0.5.0    
-## [19] gtable_0.3.0      cellranger_1.1.0  rvest_0.3.2      
-## [22] psych_1.8.4       evaluate_0.13     knitr_1.22       
-## [25] parallel_3.5.3    broom_0.4.4       Rcpp_1.0.1       
-## [28] backports_1.1.4   scales_1.0.0      jsonlite_1.6     
-## [31] mnormt_1.5-5      hms_0.4.2         digest_0.6.18    
-## [34] stringi_1.4.3     grid_3.5.3        rprojroot_1.3-2  
-## [37] cli_1.1.0         tools_3.5.3       magrittr_1.5     
-## [40] lazyeval_0.2.2    crayon_1.3.4      pkgconfig_2.0.2  
-## [43] xml2_1.2.0        lubridate_1.7.4   assertthat_0.2.1 
-## [46] rmarkdown_1.12    httr_1.4.0        rstudioapi_0.9.0 
-## [49] R6_2.4.0          nlme_3.1-137      compiler_3.5.3</code></pre>
+##  [1] Rcpp_1.0.1        lattice_0.20-38   assertthat_0.2.1 
+##  [4] rprojroot_1.3-2   digest_0.6.18     packrat_0.4.9-3  
+##  [7] psych_1.8.4       R6_2.4.0          cellranger_1.1.0 
+## [10] plyr_1.8.4        backports_1.1.4   evaluate_0.13    
+## [13] httr_1.4.0        highr_0.8         pillar_1.4.0     
+## [16] rlang_0.3.4       lazyeval_0.2.2    readxl_1.1.0     
+## [19] rstudioapi_0.9.0  Matrix_1.2-15     rmarkdown_1.12   
+## [22] splines_3.5.3     labeling_0.3      munsell_0.5.0    
+## [25] broom_0.4.4       compiler_3.5.3    modelr_0.1.2     
+## [28] xfun_0.6          pkgconfig_2.0.2   segmented_0.5-3.0
+## [31] mnormt_1.5-5      htmltools_0.3.6   tidyselect_0.2.5 
+## [34] gridExtra_2.3     codetools_0.2-16  crayon_1.3.4     
+## [37] withr_2.1.2       MASS_7.3-51.1     grid_3.5.3       
+## [40] nlme_3.1-137      jsonlite_1.6      gtable_0.3.0     
+## [43] magrittr_1.5      scales_1.0.0      cli_1.1.0        
+## [46] stringi_1.4.3     reshape2_1.4.3    xml2_1.2.0       
+## [49] tools_3.5.3       glue_1.3.1        hms_0.4.2        
+## [52] survival_2.43-3   yaml_2.2.0        colorspace_1.3-2 
+## [55] rvest_0.3.2       haven_2.1.0</code></pre>
 </div>
 
 
