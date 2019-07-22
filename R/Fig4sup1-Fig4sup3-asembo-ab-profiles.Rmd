@@ -226,7 +226,7 @@ pp2 <- ggplot(data=dl3,aes(x=svy,y=logmfi,group=factor(childid),color=icat_comp)
   
   scale_x_continuous(limits=c(-0.25,1.25),breaks=c(0,1),labels=c("Enrollment","Follow-up"))+
   scale_y_continuous(breaks=0:4,labels=log10labs) +
-  scale_color_manual(values=c(corange,cteal,cmagent,"gray80"),
+  scale_color_manual(values=c(corange,cmagent,cteal,"gray80"),
                      guide=guide_legend(title="MFI change:", override.aes = list(alpha=1), ncol=2,nrow=2),
                      ) +
   facet_wrap(~antigenf,nrow=6,ncol=2) +
