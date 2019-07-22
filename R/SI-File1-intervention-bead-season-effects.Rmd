@@ -850,7 +850,7 @@ The results show that in general the MFI-bg levels were slightly lower in year 1
 
 # Leogane, Haiti seasonal effects
 
-Of the three studies included in this analysis, Haiti was the only cohort that spanned wet and rainy seasons. Following seasonsal definitions for Haiti described by Moss et al. 2004, we examined the effect of season on IgG levels and seroprevalence. 
+Of the three studies included in this analysis, Haiti was the only cohort that spanned wet and rainy seasons. Following seasonsal definitions for Haiti described by Moss et al. 2014, we examined the effect of season on IgG levels and seroprevalence. Moss et al. (2014) previously examined _Giardia_, _Cryptosporidium_, and _E. histolytica_ IgG responses by season, and found evidence for higher mean levels of VSP and LecA antibody responses among measurements collected during the wet season. Below, we expanded the analysis to include all pathogens included in this study, and examined both IgG levels and seroprevalence.
 
 In Haiti, there are two rainy seasons: from April - June and August - October. We classified measurements collected in these months as wet season measurements, and all others as dry season measurements. We then compared distributions of IgG, mean IgG levels, and seroprevalence between the two seasons. We also compared age-dependent mean IgG levels stratified by season to examine whether the curves suggested evidence for a shift, as has been demonstrated for malaria in a very high transmission setting (Arnold et al. 2017).  We found some evidence for slightly higher IgG levels and seroprevalence, but differences were small and there was no evidence for dramatic shifts in the age-dependent mean curves.
 
