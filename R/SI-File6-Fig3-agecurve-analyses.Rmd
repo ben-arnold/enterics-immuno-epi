@@ -222,7 +222,7 @@ tmlemeans <- foreach(ab=levels(dl$antigenf),.combine=rbind) %:%
 
 ### Age-dependent mean antibody curves, all estimates
 
-Plot all of the estimates together. The spline fits are colored and the highly adaptive ensemble fits are grey. Empirical means with 95% CIs (averaged by year) are black. The approximate simultaneous confidence bands for the spline fit are shaded. The plots are trimed at age 10 years to reduce edge effects because there are only 19 measurements older than 10 years.
+Plot all of the estimates together. The spline fits are colored and the highly adaptive ensemble fits are grey. Empirical means with 95% CIs (averaged by year) are black. The approximate simultaneous confidence bands for the spline fit are shaded. The plots are trimmed at age 10 years to reduce edge effects because there are only 19 measurements older than 10 years.
 
 ```{r age-curve mean figure all, fig.height=12, fig.width=6}
 
@@ -428,7 +428,7 @@ prevests <- foreach(ab=levels(dlp$antigenf),.combine=rbind) %:%
 
 ### Age-dependent seroprevalence curves, all estimates
 
-Plot all of the estimates together. The spline fits are colored and the highly adaptive ensemble fits are grey. Empirical means with 95% CIs (averaged by year) are black. The approximate simultaneous confidence bands for the spline fit are shaded. The plots are trimed at age 10 years to reduce edge effects because there are only 19 measurements older than 10 years.
+Plot all of the estimates together. The spline fits are colored and the highly adaptive ensemble fits are grey. Empirical means with 95% CIs (averaged by year) are black. The approximate simultaneous confidence bands for the spline fit are shaded. The plots are trimmed at age 10 years to reduce edge effects because there are only 19 measurements older than 10 years.
 
 ```{r age-curve seroprevalence figure all, fig.height=9, fig.width=6}
 # set ETEC confidence band to NA after it flatlines at 100%
