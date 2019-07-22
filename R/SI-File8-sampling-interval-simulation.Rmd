@@ -16,7 +16,7 @@ output:
 
 # Notebook Summary
 
-IgG measurements in the Haitian cohort were separated by approximately 1 year, and in the Kenyan cohort by 6 months.  We hypothesized that since many enteric pathogens are thought to elicit transiently high IgG responses with rapid waning, tthis could lead us to miss seroconversion events in the interim periods. The empirical estimates in the primary analysis would thus under-estimate the true serological force of infection.  
+IgG measurements in the Haitian cohort were separated by approximately 1 year, and in the Kenyan cohort by 6 months.  We hypothesized that since many enteric pathogens are thought to elicit transiently high IgG responses with rapid waning, this could lead us to miss seroconversion events in the interim periods. The empirical estimates in the primary analysis would thus under-estimate the true serological force of infection.  
 
 This notebook uses simulation to estimate an approximate upper bound of seroconversion rates that would be possible in the Haiti and Kenya cohorts under conditions of near-continuous boosting and waning. We developed an imputation algorithm using boosting and waning parameters estimated empirically to simulate daily IgG levels for each child in the cohort. That we describe in detail below. We simulated 100 datasets with stochastically generated boosting and waning profiles for each child, and then downsampled the daily resolution at sampling intervals of 30, 60, 180, and 360 days; in Kenya, the cohort was only followed for 6 months, so we did not simulate a 360 day interval. 
 
@@ -1435,7 +1435,7 @@ sim_res_plot %>%
 
 ```
 
-The results of the simulations show thatseroconversion rates estimated with a 180 day sampling interval were internally consistent with the empirical estimates from the cohort. The simulations show that in cases of nearly continuous IgG boosting and waning, less frequenty measured cohorts will underestimate force of infection, but the magnitude of difference was < 1 episode per year for all pathogens except for ETEC and _Campylobacter_ (below).
+The results of the simulations show that seroconversion rates estimated with a 180 day sampling interval were internally consistent with the empirical estimates from the cohort. The simulations show that in cases of nearly continuous IgG boosting and waning, less frequenty measured cohorts will underestimate force of infection, but the magnitude of difference was < 1 episode per year for all pathogens except for ETEC and _Campylobacter_ (below).
 
 
 ## Figure: difference in rates
