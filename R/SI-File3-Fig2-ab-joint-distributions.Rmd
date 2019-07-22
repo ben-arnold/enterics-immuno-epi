@@ -16,7 +16,7 @@ output:
 
 # Notebook summary
 
-This notebook summarizes the joint distribution of antibody responses in each cohort. The first section creates main text Figure 2, which summarizes comparisons between different antigens for the same pathogen plus a comparison between ETEC and cholera, where the beta toxin subunit is known to elicit cross-reactivity.  Each scatter plot also includes the spearman's rank correlation coefficient ($\rho$).  After creating Figure 2, the notebook creates supplemental figures that include pairs plots for the joint distribution of every combination of enteric antibody responses in each cohort.
+This notebook summarizes the joint distribution of antibody responses in each cohort. The first section creates main text Figure 2, which summarizes comparisons between different antigens for the same pathogen plus a comparison between ETEC and cholera, where the toxin B subunit is known to elicit cross-reactivity.  Each scatter plot also includes the spearman's rank correlation coefficient ($\rho$).  After creating Figure 2, the notebook creates supplemental figures that include pairs plots for the joint distribution of every combination of enteric antibody responses in each cohort.
 
 # Script preamble
 ```{r preamble}
