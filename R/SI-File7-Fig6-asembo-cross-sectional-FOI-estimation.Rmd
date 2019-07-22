@@ -916,15 +916,13 @@ est_rcm <- rcmests %>%
 #--------------------------------
 rate_comp <- bind_rows(est_long,est_xc,est_cr,est_rcm) %>%
   mutate(antigenf=factor(antigenf,levels=levels(est_long$antigenf)),
-         method=factor(method,levels=c("Longitudinal","Cross sectional, spline","Cross sectional, exponential","Cross sectional, RCM"))) %>%
+         method=factor(method,levels=c("Longitudinal","Cross sectional, spline","Cross sectional, RCM","Cross sectional, exponential"))) %>%
   arrange(antigenf,outcome,method)
 
 ```
 # Figure 6, FOI Comparison
 
-Create a figure to summarize the comparison
-
-**This is Figure 6 in the manuscript**
+**Figure caption**: Enteropathogen seroconversion and seroreversion rates among 205 children ages 4 to 17 months measured longitudinally in Asembo, Kenya, 2013. The seroconversion rate is a measure of a pathogen’s force of infection. Longitudinal estimates are non-parametric rates of incident seroconversions and seroreversions among children at risk, assumed to oc- cur at the midpoint of the measurement interval. Cross-sectional estimators were derived from age-specific seroprevalence curves using semiparametric cubic splines (spline), a parametric constant rate survival model (exponential), and a reversible catalytic model (RCM) that as- sumed constant seroconversion and seroreversion rates, with the seroreversion rate estimated from prospective data. Lines mark 95% confidence intervals. IgG response measured in mul- tiplex using median fluorescence units minus background (MFI-bg) on the Luminex platform (N=410 measurements from 205 children).
 
 ```{r incidence long xc comp figure,fig.width=10,fig.height=5, warning=FALSE}
 # sort pathogens by rates
@@ -981,7 +979,10 @@ ggsave(here::here("figs","Fig6-asembo-ab-foi-comparison.pdf"),plot=ratecomp_plot
 ggsave(here::here("figs","Fig6-asembo-ab-foi-comparison.TIFF"),plot=ratecomp_plot,device="tiff",width=10,height=4.5)
 
 ```
-Put the estimates on separate scales for lower and higher transmission pathogens to enable clearer comparisons
+
+We note that _Cryptosporidium_ seroconversion rate estimates of 1.1 per child-year are very close to an estimate of 0.8 per child-year from a Peruvian cohort (Priest et al. 2005 J Clin Micro; https://www.ncbi.nlm.nih.gov/pubmed/16208002).
+
+Below, plot the estimates on separate scales for lower and higher transmission pathogens to enable clearer comparisons.
 
 ```{r incidence long xc comp figure 2 panel,fig.width=10,fig.height=5, warning=FALSE}
 
