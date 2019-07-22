@@ -63,7 +63,7 @@ Among 133 children with stool tested during weekly diarrheal surveillance (n=216
 # created with 
 # asembo-enteric-ab-data-format.Rmd
 #-----------------------------
-ds <- readRDS(here::here::here("data","asembo_stool.rds"))
+ds <- readRDS(here::here("data","asembo_stool.rds"))
 
 # set measurement time to "B" to merge to the serology data
 # by matching the stool measurements to follow-up IgG
@@ -79,7 +79,7 @@ ds <- ds %>%
 # asembo-enteric-ab-data-format.Rmd -->
 # Fig1sup3-asembo-ab-distributions.Rmd
 #-----------------------------
-dl <- readRDS(here::here::here("data","asembo_analysis2.rds")) %>%
+dl <- readRDS(here::here("data","asembo_analysis2.rds")) %>%
   ungroup() 
 
 #-----------------------------
@@ -101,9 +101,9 @@ dl2 <- dl %>%
 
 # Cryptosporidium
 
-## IgG levels infection status
+## IgG levels by infection status
 
-**Figure caption:** _Cryptosporidium_ IgG levels at enrollment and 6-months later at follow-up among 132 Kenyan children ages 4-18 months old who had one or more diarrhea episodes during weekly surveillance. Diarrheal stools were tested for _Cryptosporidium_ infection by PCR or immunoassay (Quik Check$^{TM}$, TechLab, Inc. Blacksburg, VA) as described in Morris et al. (2018). Heavy lines indicate medians and boxes contain the interquartile range.  Among 132 children with stool tested during the follow-up period, 17 children tested positive for _Cryptosporidium_. Horizontal dashed lines mark seropositivity cutoffs for each antigen based on ROC curves of known positive and negative specimens (dashed) or based on Gaussian mixture model (dot dash) as described in the Methods. 
+**Figure caption:** _Cryptosporidium_ IgG levels at enrollment and 6-months later at follow-up among 132 Kenyan children ages 4-18 months old who had one or more diarrhea episodes during weekly surveillance. Diarrheal stools were tested for _Cryptosporidium_ infection by PCR or immunoassay (Quik Check<sup>TM</sup>, TechLab, Inc. Blacksburg, VA) as described in Morris et al. (2018). Heavy lines indicate medians and boxes contain the interquartile range.  Among 132 children with stool tested during the follow-up period, 17 children tested positive for _Cryptosporidium_. Horizontal dashed lines mark seropositivity cutoffs for each antigen based on ROC curves of known positive and negative specimens (dashed) or based on Gaussian mixture model (dot dash) as described in the Methods. 
 
 ```{r crypto igg levels by infection,warning=FALSE}
 # ---------------------------
@@ -114,8 +114,8 @@ dcr1 <- dl2 %>%
   group_by(childid,antigenf) %>%
   filter(pathogen=="Cryptosporidium") %>%
   mutate(crypto = max(ifelse(stool_crypto==1,1,0),na.rm=T),
-         cryptof = ifelse(crypto==1,"confirmed infection","no confirmed infection"),
-         cryptof = factor(cryptof,levels=c("no confirmed infection","confirmed infection")),
+         cryptof = ifelse(crypto==1,"stool-confirmed infection","no stool-confirmed infection"),
+         cryptof = factor(cryptof,levels=c("no stool-confirmed infection","stool-confirmed infection")),
          visit=ifelse(time=="A","Enrollment","Follow-up"),
          visit=factor(visit)
   ) %>%
@@ -140,7 +140,7 @@ pcrypto_box <- ggplot(data=dcr1,aes(x=visit,y=logmfi,color=cryptof)) +
   facet_grid(antigenf~cryptof)+
   geom_hline(aes(yintercept=roccut),linetype="dashed")+
   geom_hline(aes(yintercept=mixcut),linetype="dotdash")+ 
-  # plot children without confirmed infections
+  # plot children without stool-confirmed infections
   geom_jitter(width=0.25,size=2,alpha=0.5)+
   geom_boxplot(color="black",fill=NA,outlier.shape = NA)+
   scale_y_continuous(breaks=0:4,labels=log10labs)+
@@ -161,7 +161,7 @@ The figure shows that the median IgG levels were higher at follow-up among child
 
 ## Mean IgG levels by infection status
 
-**Figure caption:** Mean IgG levels at enrollment and at follow-up 6-months later among 132 Kenyan children ages 4-18 months old who had one or more diarrhea episodes during weekly surveillance. Diarrheal stools were tested for _Cryptosporidium_ infection by PCR or immunoassay (Quik Check$^{TM}$, TechLab, Inc. Blacksburg, VA) as described in Morris et al. (2018).  Among 132 children tested during the follow-up period, 17 children tested positive for _Cryptosporidium_. Error bars indicate 95% confidence intervals.
+**Figure caption:** Mean IgG levels at enrollment and at follow-up 6-months later among 132 Kenyan children ages 4-18 months old who had one or more diarrhea episodes during weekly surveillance. Diarrheal stools were tested for _Cryptosporidium_ infection by PCR or immunoassay (Quik Check<sup>TM</sup>, TechLab, Inc. Blacksburg, VA) as described in Morris et al. (2018).  Among 132 children tested during the follow-up period, 17 children tested positive for _Cryptosporidium_. Error bars indicate 95% confidence intervals.
 
 ```{r crypto mean IgG by infection status, warning=FALSE}
 # ---------------------------
@@ -232,7 +232,7 @@ IgG levels to Cp17 and Cp23 increased from enrollment to follow-up among all chi
 
 ## Seroprevalence by infection status
 
-**Figure caption:** Seroprevalence at enrollment and at follow-up 6-months later among 132 Kenyan children ages 4-18 months old who had one or more diarrhea episodes during weekly surveillance. Diarrheal stools were tested for _Cryptosporidium_ infection by PCR or immunoassay (Quik Check$^{TM}$, TechLab, Inc. Blacksburg, VA) as described in Morris et al. (2018).  Among 132 children with stool tested during the follow-up period, 17 children tested positive for _Cryptosporidium_. Error bars indicate 95% exact binomial confidence intervals. Children were classified as seropositive if their IgG levels were above ROC-derived seropositivity cutoffs for either Cp17 or Cp23, as described in the Methods.
+**Figure caption:** Seroprevalence at enrollment and at follow-up 6-months later among 132 Kenyan children ages 4-18 months old who had one or more diarrhea episodes during weekly surveillance. Diarrheal stools were tested for _Cryptosporidium_ infection by PCR or immunoassay (Quik Check<sup>TM</sup>, TechLab, Inc. Blacksburg, VA) as described in Morris et al. (2018).  Among 132 children with stool tested during the follow-up period, 17 children tested positive for _Cryptosporidium_. Error bars indicate 95% exact binomial confidence intervals. Children were classified as seropositive if their IgG levels were above ROC-derived seropositivity cutoffs for either Cp17 or Cp23, as described in the Methods.
 
 ```{r crypto seroprevalence by infection status, warning=FALSE}
 # ---------------------------
@@ -317,7 +317,7 @@ All children had higher seroprevalence to  _Cryptosporidium_ Cp17 or Cp23 at fol
 
 There were 205 children in the cohort with longitudinal serology measurements. Of these, 89 children did not have a diarrheal stool tested.  Among the 116 children with longitudinal serological measurements who were also tested for infection in diarrheal stools during weekly surveillance, 99 were negative and 17 (15%) were positive for _Cryptosporidium_. Summarize the longitudinal trajectories for the 17 children who were confirmed positive for infection during follow-up.
 
-**Figure caption:** IgG Luminex response for antibodies to _Cryptosporidium parvum_ among 17 children with antibodies measured who also had confirmed infections during follow-up based on diarrheal stool testing. Diarrheal stools were tested for _Cryptosporidium_ infection by PCR or immunoassay (Quik Check$^{TM}$, TechLab, Inc. Blacksburg, VA) as described in Morris et al. (2018). Horizontal dashed lines mark seropositivity cutoffs for each antigen based on ROC curves of known positive and negative specimens (dashed) or based on Gaussian mixture model (dot dash) as described in the Methods. Children who did not have at least one measurement above seropositivity cutoffs are labeled with color.
+**Figure caption:** IgG Luminex response for antibodies to _Cryptosporidium parvum_ among 17 children with antibodies measured who also had confirmed infections during follow-up based on diarrheal stool testing. Diarrheal stools were tested for _Cryptosporidium_ infection by PCR or immunoassay (Quik Check<sup>TM</sup>, TechLab, Inc. Blacksburg, VA) as described in Morris et al. (2018). Horizontal dashed lines mark seropositivity cutoffs for each antigen based on ROC curves of known positive and negative specimens (dashed) or based on Gaussian mixture model (dot dash) as described in the Methods. Children who did not have at least one measurement above seropositivity cutoffs are labeled with color.
 
 ```{r crypto IgG levels among infected}
 dcr4 <- dl2 %>%
@@ -372,18 +372,18 @@ pcrypto_long <- ggplot(data=filter(dcr4,seroconv!="no seroconversion"),aes(x=vis
 pcrypto_long
 
 # save PDF and TIFF versions
-ggsave(here::here::here("figs","asembo-mfi-inf-crypto.pdf"),plot=pcrypto_long,device=cairo_pdf,width=5,height=4)
-ggsave(here::here::here("figs","asembo-mfi-inf-crypto.TIFF"),plot=pcrypto_long,device="tiff",width=5,height=4)
+ggsave(here::here("figs","asembo-mfi-inf-crypto.pdf"),plot=pcrypto_long,device=cairo_pdf,width=5,height=4)
+ggsave(here::here("figs","asembo-mfi-inf-crypto.TIFF"),plot=pcrypto_long,device="tiff",width=5,height=4)
 
 ```
 
-Longitudinal IgG trajectories show that there were three children (IDs: 10, 102, 42) who had confirmed _Cryptosporidium_ infection in a diarrhea stool between enrollment and follow-up, but did not seroconvert to either the Cp17 or Cp23 antigens.  Two children (ID: 58, 65) showed evidence of seroconversion by only one antigen. Five children with confirmed infections between enrollment and follow-up were seropositive at enrollment to both antigens, suggesting a prior infection.
+Longitudinal IgG trajectories show that there were three children (IDs: 10, 102, 42) who had confirmed _Cryptosporidium_ infection in a diarrhea stool between enrollment and follow-up, but did not seroconvert to either the Cp17 or Cp23 antigens. A recent assessment in Bangladesh (Kabir et al. 2018 CID; https://www.ncbi.nlm.nih.gov/pubmed/29718129) estimated the immunoassay specificity as 97% for _Cryptosporidium_ infection, so false positives are theoretically possible though unlikely. Two children (ID: 58, 65) showed evidence of seroconversion by only one antigen. Five children with confirmed infections between enrollment and follow-up were seropositive at enrollment to both antigens, suggesting a prior infection.
 
 ## IgG levels by time since confirmed infection
 
 Among children with confirmed infections, examine IgG levels with time since infection to see if there is evidence for substantial decay over short periods.
 
-**Figure caption:** IgG levels by weeks between infection detected in stool and antibody measurement at follow-up among 17 children with confirmed infections. Diarrheal stools were tested for _Cryptosporidium_ infection by PCR or immunoassay (Quik Check$^{TM}$, TechLab, Inc. Blacksburg, VA) as described in Morris et al. (2018). Horizontal dashed lines mark seropositivity cutoffs for each antigen based on ROC curves of known positive and negative specimens (dashed) or based on Gaussian mixture model (dot dash) as described in the Methods. Measurements below seropositivity cutoffs are labeled with color.
+**Figure caption:** IgG levels by weeks between infection detected in stool and antibody measurement at follow-up among 17 children with confirmed infections. Diarrheal stools were tested for _Cryptosporidium_ infection by PCR or immunoassay (Quik Check<sup>TM</sup>, TechLab, Inc. Blacksburg, VA) as described in Morris et al. (2018). Horizontal dashed lines mark seropositivity cutoffs for each antigen based on ROC curves of known positive and negative specimens (dashed) or based on Gaussian mixture model (dot dash) as described in the Methods. Measurements below seropositivity cutoffs are labeled with color.
 
 ```{r crypto time since infection}
 # note: there is one child w/ a confirmed crypto infection
@@ -430,8 +430,8 @@ pcrypto_time <- ggplot(data=filter(dcr5,logmfi>=serocut),aes(x=infwk,y=logmfi)) 
 pcrypto_time
 
 # save PDF and TIFF versions
-ggsave(here::here::here("figs","asembo-mfi-v-inf-wks-crypto.pdf"),plot=pcrypto_time,device=cairo_pdf,width=7,height=4)
-ggsave(here::here::here("figs","asembo-mfi-v-inf-wks-crypto.TIFF"),plot=pcrypto_time,device="tiff",width=7,height=4)
+ggsave(here::here("figs","asembo-mfi-v-inf-wks-crypto.pdf"),plot=pcrypto_time,device=cairo_pdf,width=7,height=4)
+ggsave(here::here("figs","asembo-mfi-v-inf-wks-crypto.TIFF"),plot=pcrypto_time,device="tiff",width=7,height=4)
 ```
 
 Most IgG responses remained high irrespective of time since infection over a range of 5 to 25 weeks. As with the longitudinal trajectories, this figure shows the three children (IDs: 10, 102, 42) who had confirmed infections but did not have IgG levels above seropositivity cutoffs for either Cp17 or Cp23 at their follow-up measurement 9-23 weeks later. Time since infection does not seem to explain why these three children had low IgG levels. 
@@ -440,7 +440,7 @@ Most IgG responses remained high irrespective of time since infection over a ran
 
 ## IgG levels by infection status
 
-**Figure caption:** _Giardia intestinalis_ IgG levels at enrollment and 6-months later at follow-up among 132 Kenyan children ages 4-18 months old who had one or more diarrhea episodes during weekly surveillance. Diarrheal stools were tested for _Giardia_ infection by immunoassay (Quik Check$^{TM}$, TechLab, Inc. Blacksburg, VA) as described in Morris et al. (2018). Heavy lines indicate medians and boxes contain the interquartile range.  Among 132 children tested during the follow-up period, 25 children tested positive for _Giardia_. Horizontal dashed lines mark seropositivity cutoffs for each antigen based on ROC curves of known positive and negative specimens (dashed) or based on Gaussian mixture model (dot dash) as described in the Methods.
+**Figure caption:** _Giardia intestinalis_ IgG levels at enrollment and 6-months later at follow-up among 132 Kenyan children ages 4-18 months old who had one or more diarrhea episodes during weekly surveillance. Diarrheal stools were tested for _Giardia_ infection by immunoassay (Quik Check<sup>TM</sup>, TechLab, Inc. Blacksburg, VA) as described in Morris et al. (2018). Heavy lines indicate medians and boxes contain the interquartile range.  Among 132 children tested during the follow-up period, 25 children tested positive for _Giardia_. Horizontal dashed lines mark seropositivity cutoffs for each antigen based on ROC curves of known positive and negative specimens (dashed) or based on Gaussian mixture model (dot dash) as described in the Methods.
 
 ```{r giardia igg levels by infection,warning=FALSE}
 # ---------------------------
@@ -451,8 +451,8 @@ dgi1 <- dl2 %>%
   group_by(childid,antigenf) %>%
   filter(pathogen=="Giardia") %>%
   mutate(giardia = max(ifelse(stool_giardia==1,1,0),na.rm=T),
-         giardiaf = ifelse(giardia==1,"confirmed infection","no confirmed infection"),
-         giardiaf = factor(giardiaf,levels=c("no confirmed infection","confirmed infection")),
+         giardiaf = ifelse(giardia==1,"stool-confirmed infection","no stool-confirmed infection"),
+         giardiaf = factor(giardiaf,levels=c("no stool-confirmed infection","stool-confirmed infection")),
          visit=ifelse(time=="A","Enrollment","Follow-up"),
          visit=factor(visit)
   ) %>%
@@ -497,7 +497,7 @@ The figure shows that the median IgG levels were higher at follow-up among child
 
 ## Mean IgG levels by infection status
 
-**Figure caption:** Mean _Giardia intestinalis_ IgG levels at enrollment and at follow-up 6-months later among 132 Kenyan children ages 4-18 months old who had one or more diarrhea episodes during weekly surveillance. Diarrheal stools were tested for _Giardia_ infection by immunoassay (Quik Check$^{TM}$, TechLab, Inc. Blacksburg, VA) as described in Morris et al. (2018).  Among 132 children tested during the follow-up period, 25 children tested positive for _Giardia_. Error bars indicate 95% confidence intervals.
+**Figure caption:** Mean _Giardia intestinalis_ IgG levels at enrollment and at follow-up 6-months later among 132 Kenyan children ages 4-18 months old who had one or more diarrhea episodes during weekly surveillance. Diarrheal stools were tested for _Giardia_ infection by immunoassay (Quik Check<sup>TM</sup>, TechLab, Inc. Blacksburg, VA) as described in Morris et al. (2018).  Among 132 children tested during the follow-up period, 25 children tested positive for _Giardia_. Error bars indicate 95% confidence intervals.
 
 ```{r giardia mean IgG by infection status, warning=FALSE}
 # ---------------------------
@@ -572,7 +572,7 @@ Mean IgG levels to VSP-3 and VSP-5 increased from enrollment to follow-up among 
 
 ## Seroprevalence by infection status
 
-**Figure caption:** _Giardia intestinalis_ seroprevalence at enrollment and at follow-up 6-months later among 132 Kenyan children ages 4-18 months old who had one or more diarrhea episodes during weekly surveillance. Diarrheal stools were tested for _Giardia_ infection by immunoassay (Quik Check$^{TM}$, TechLab, Inc. Blacksburg, VA) as described in Morris et al. (2018).  Among 132 children with stool tested during the follow-up period, 25 children tested positive for _Giardia_. Error bars indicate 95% exact binomial confidence intervals. Children were classified as seropositive if their IgG levels were above ROC-derived seropositivity cutoffs for either VSP-3 or VSP-5, as described in the Methods.
+**Figure caption:** _Giardia intestinalis_ seroprevalence at enrollment and at follow-up 6-months later among 132 Kenyan children ages 4-18 months old who had one or more diarrhea episodes during weekly surveillance. Diarrheal stools were tested for _Giardia_ infection by immunoassay (Quik Check<sup>TM</sup>, TechLab, Inc. Blacksburg, VA) as described in Morris et al. (2018).  Among 132 children with stool tested during the follow-up period, 25 children tested positive for _Giardia_. Error bars indicate 95% exact binomial confidence intervals. Children were classified as seropositive if their IgG levels were above ROC-derived seropositivity cutoffs for either VSP-3 or VSP-5, as described in the Methods.
 
 ```{r giardia seroprevalence by infection status, warning=FALSE}
 # ---------------------------
@@ -654,7 +654,7 @@ All children had higher seroprevalence to  _Giardia_ VSP-3 or VSP-5 at follow-up
 
 ## IgG trajectories among those with confirmed infection
 
-**Figure caption:** IgG Luminex response among 25 children with antibodies measured who also had confirmed _Giardia intestinalis_ infections during follow-up based on diarrheal stool testing. Diarrheal stools were tested for _Giardia_ infection by immunoassay (Quik Check$^{TM}$, TechLab, Inc. Blacksburg, VA) as described in Morris et al. (2018). Horizontal dashed lines mark seropositivity cutoffs for each antigen based on ROC curves of known positive and negative specimens (dashed) or based on Gaussian mixture model (dot dash) as described in the Methods. Children who did not have at least one measurement above seropositivity cutoffs are labeled with color.
+**Figure caption:** IgG Luminex response among 25 children with antibodies measured who also had confirmed _Giardia intestinalis_ infections during follow-up based on diarrheal stool testing. Diarrheal stools were tested for _Giardia_ infection by immunoassay (Quik Check <sup>TM</sup>, TechLab, Inc. Blacksburg, VA) as described in Morris et al. (2018). Horizontal dashed lines mark seropositivity cutoffs for each antigen based on ROC curves of known positive and negative specimens (dashed) or based on Gaussian mixture model (dot dash) as described in the Methods. Children whose measurements were below the ROC seropositivity cutoff at follow-up are labeled with color.
 
 ```{r giardia IgG levels among infected}
 dgi <- dl2 %>%
@@ -708,15 +708,15 @@ pgiar_long <- ggplot(data=filter(dgi,seroconv!="no seroconversion"),aes(x=visit,
 pgiar_long
 
 # save PDF and TIFF versions
-ggsave(here::here::here("figs","asembo-mfi-inf-giardia.pdf"),plot=pgiar_long,device=cairo_pdf,width=5,height=4)
-ggsave(here::here::here("figs","asembo-mfi-inf-giardia.TIFF"),plot=pgiar_long,device="tiff",width=5,height=4)
+ggsave(here::here("figs","asembo-mfi-inf-giardia.pdf"),plot=pgiar_long,device=cairo_pdf,width=5,height=4)
+ggsave(here::here("figs","asembo-mfi-inf-giardia.TIFF"),plot=pgiar_long,device="tiff",width=5,height=4)
 ```
 
 Longitudinal IgG trajectories show that there were two children (IDs: 101, 37) who had confirmed _Giardia_ infection in a diarrhea stool between enrollment and follow-up, but did not seroconvert to either the VSP-3 or VSP-5 antigens based on the ROC cutoff (though IgG levels did exceed the mixture model-based cutoff). Child ID=14 was one of two children infected at their first measurement, at enrollment.  Seven children with confirmed infections between enrollment and follow-up were seropositive at enrollment to both antigens based on the ROC cutoff, suggesting a prior infection.
 
 ## IgG levels by time since confirmed infection
 
-**Figure caption:** IgG levels by weeks between infection detected in stool and antibody measurement at follow-up among 25 children with confirmed _Giardia intestinalis_ infections. Diarrheal stools were tested for _Giardia_ infection by immunoassay (Quik Check$^{TM}$, TechLab, Inc. Blacksburg, VA) as described in Morris et al. (2018). Horizontal dashed lines mark seropositivity cutoffs for each antigen based on ROC curves of known positive and negative specimens (dashed) or based on Gaussian mixture model (dot dash) as described in the Methods. Children with measurements below the ROC seropositivity cutoff are labeled with color.
+**Figure caption:** IgG levels by weeks between infection detected in stool and antibody measurement at follow-up among 25 children with confirmed _Giardia intestinalis_ infections. Diarrheal stools were tested for _Giardia_ infection by immunoassay (Quik Check<sup>TM</sup>, TechLab, Inc. Blacksburg, VA) as described in Morris et al. (2018). Horizontal dashed lines mark seropositivity cutoffs for each antigen based on ROC curves of known positive and negative specimens (dashed) or based on Gaussian mixture model (dot dash) as described in the Methods. Children with measurements below the ROC seropositivity cutoff are labeled with color.
 
 ```{r giardia time since infection}
 # ---------------------------
@@ -772,8 +772,8 @@ pgiar_time <- ggplot(data=filter(dgi2,!childid %in% c("101","14","37")),aes(x=in
 pgiar_time
 
 # save PDF and TIFF versions
-ggsave(here::here::here("figs","asembo-mfi-v-inf-wks-giardia.pdf"),plot=pgiar_time,device=cairo_pdf,width=7,height=4)
-ggsave(here::here::here("figs","asembo-mfi-v-inf-wks-giardia.TIFF"),plot=pgiar_time,device="tiff",width=7,height=4)
+ggsave(here::here("figs","asembo-mfi-v-inf-wks-giardia.pdf"),plot=pgiar_time,device=cairo_pdf,width=7,height=4)
+ggsave(here::here("figs","asembo-mfi-v-inf-wks-giardia.TIFF"),plot=pgiar_time,device="tiff",width=7,height=4)
 ```
 
 Most IgG responses remained high irrespective of time since infection over a range of 0 to 28 weeks. As with the longitudinal trajectories, this figure shows the two children (IDs: 101, 37) who had confirmed infections but did not have IgG levels above ROC seropositivity cutoffs for either VSP-3 or VSP-5 at their follow-up measurement 16-23 weeks later. Time since infection does not seem to explain why these three children had low IgG levels, as they are clear outliers from the distribution of the other children.
