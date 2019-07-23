@@ -1,10 +1,10 @@
 # enterics-seroepi
-Seroepidemiology of enteropathogens among children in low-resource settings
+Enteropathogen antibody dynamics and force of infection among children in low-resource settings
 
 
 ## Description
 
-This repository includes data and computational notebooks to support the paper entitled _Enteropathogen seroepidemiology among children in low-resource settings_ (in review). All files required to replicate the analyses are included herein, and the repository is cross-referenced with the Open Science Framework (https://osf.io/r4av7).  For questions, please write Ben Arnold at UC Berkeley (benarnold@berkeley.edu). 
+This repository includes data and computational notebooks to support the paper entitled _Enteropathogen antibody dynamics and force of infection among children in low-resource settings_ (in review). All files required to replicate the analyses are included herein, and the repository is cross-referenced with the Open Science Framework (https://osf.io/r4av7).  For questions, please write Ben Arnold at UC Berkeley (benarnold@berkeley.edu). 
 
 ## Details
 
