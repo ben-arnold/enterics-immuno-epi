@@ -4,7 +4,11 @@ Enteropathogen antibody dynamics and force of infection among children in low-re
 
 ## Description
 
-This repository includes data and computational notebooks to support the paper entitled _Enteropathogen antibody dynamics and force of infection among children in low-resource settings_ (in review). All files required to replicate the analyses are included herein, and the repository is cross-referenced with the Open Science Framework (https://osf.io/r4av7).  For questions, please write Ben Arnold at UC Berkeley (benarnold@berkeley.edu). 
+This repository includes data and computational notebooks to support the paper:
+
+Arnold BF, Martin DL, Juma J, Mkocha H, Ochieng JB, et al. Enteropathogen antibody dynamics and force of infection among children in low-resource settings. _eLife_  2019; 8:e45594 doi: 10.7554/eLife.45594. https://elifesciences.org/articles/45594
+
+The repository includes all files needed to replicate the analyses, and the repository is cross-referenced with the Open Science Framework (https://osf.io/r4av7).  For questions, please write Ben Arnold at UCSF (bfarnold@gmail.com). 
 
 ## Details
 
